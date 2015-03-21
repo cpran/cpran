@@ -14,6 +14,7 @@ sub opt_spec {
   return (
     [ "name|n",        "search in plugin name" ],
     [ "description|d", "search in description" ],
+    [ "installed",     "only consider installed plugins" ],
   );
 }
 
@@ -27,22 +28,29 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   use Path::Class;
+  use Text::Table;
+
+  my $output = Text::Table->new(
+    "Name", "Version", "Description"
+  );
 
   my @files = dir( $CPrAN::ROOT )->children;
 
-  map { display($_) if ($_->basename =~ /$args->[0]/) } @files;
+  map { append($output, $_) if ($_->basename =~ /$args->[0]/) } sort @files;
+  print $output;
 }
 
-sub display {
-  my $file = shift;
+sub append {
+  my ($table, $file) = @_;
 
   use YAML::XS;
   use File::Slurp;
 
   my $content = read_file($file->stringify);
   my $yaml = Load( $content );
-#   print Dumper($yaml);
-  print $yaml->{Plugin} . ' - ' . $yaml->{Description}->{Short} . "\n";
+
+  $table->add($yaml->{Plugin}, $yaml->{Version}, $yaml->{Description}->{Short});
+  return $table;
 }
 
 1;
