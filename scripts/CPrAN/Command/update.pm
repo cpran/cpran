@@ -11,9 +11,9 @@ use Path::Class;
 use autodie;
 
 # No options
-sub opt_Spec {
+sub opt_spec {
   return (
-    [ "verbose|v", "increase verbosity" ],
+    [ "verbose|v+", "increase verbosity" ],
   );
 }
 
@@ -34,18 +34,17 @@ sub execute {
   use GitLab::API::v3;
   use YAML::XS;
   use MIME::Base64;
-  use File::Path;
+#   use File::Path;
 
   my $projects = $api->group('133578')->{projects};
 
-  my $dir = dir( $CPrAN::ROOT );
+  my $dir = Path::Class::dir( $CPrAN::ROOT );
 
   foreach my $plugin (@{$projects}) {
     my $name = substr($plugin->{name}, 7);
-    my $file = $dir->file($name . '.yaml');
+    my $file = $dir->file($name);
 
-    print "Fetching $name... ";
-#     if $opt->{verbose};
+    print "Fetching $name... " if $opt->{verbose};
 
     my $descriptor = decode_base64(
       $api->file($plugin->{id}, {
@@ -55,15 +54,14 @@ sub execute {
     );
     eval { YAML::XS::Load( $descriptor ) };
     if ($@) {
-      print "error: skipping\n";
-#       if $opt->{verbose};
+      print "error: skipping\n" if $opt->{verbose};
+      print "$@" if ($opt->{verbose} > 1);
       $file->remove();
 
     } else {
       my $fh = $file->openw();
       $fh->print($descriptor);
-      print "done\n";
-#       if $opt->{verbose};
+      print "done\n" if $opt->{verbose};
     }
   }
 
