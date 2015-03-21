@@ -7,7 +7,7 @@ Depends:
   - praat: 5.0.0+
   - perl: 5.10+
 Recommends:
-License GPL3
+License: GPL3
 Readme: readme.md
 Description:
   - Short: a package manager for Praat
