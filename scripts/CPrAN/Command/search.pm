@@ -1,4 +1,4 @@
-# ABSTRACT: Search plugins in CPrAN
+# ABSTRACT: Search among available CPrAN plugins
 package CPrAN::Command::search;
 
 use CPrAN -command;
@@ -10,7 +10,6 @@ use Data::Dumper;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
-# No options
 sub opt_spec {
   return (
     [ "name|n",        "search in plugin name" ],
@@ -20,13 +19,15 @@ sub opt_spec {
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
+
+  $args->[0] = '.*' unless @{$args};
 }
 
 sub execute {
   my ($self, $opt, $args) = @_;
 
   use Path::Class;
-  
+
   my @files = dir( $CPrAN::ROOT )->children;
 
   map { display($_) if ($_->basename =~ /$args->[0]/) } @files;

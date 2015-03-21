@@ -1,4 +1,4 @@
-# ABSTRACT: Update local CPrAN list
+# ABSTRACT: Update local plugin list
 package CPrAN::Command::update;
 
 use CPrAN -command;
@@ -10,7 +10,6 @@ use Data::Dumper;
 use Path::Class;
 use autodie;
 
-# No options
 sub opt_spec {
   return (
     [ "verbose|v+", "increase verbosity" ],
@@ -23,18 +22,17 @@ sub validate_args {
   $self->usage_error("No arguments allowed") if @{$args};
 }
 
-my $api = GitLab::API::v3->new(
-  url   => 'https://gitlab.com/api/v3/',
-  token => 'WMe3t_ANxd3yyTLyc7WA',
-);
-
 sub execute {
   my ($self, $opt, $args) = @_;
 
   use GitLab::API::v3;
   use YAML::XS;
   use MIME::Base64;
-#   use File::Path;
+
+  my $api = GitLab::API::v3->new(
+    url   => 'https://gitlab.com/api/v3/',
+    token => 'WMe3t_ANxd3yyTLyc7WA',
+  );
 
   my $projects = $api->group('133578')->{projects};
 
