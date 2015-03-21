@@ -1,0 +1,21 @@
+---
+Plugin: cpran
+Homepage: https://gitlab.com/cpran/plugin_cpran
+Version: 0.0.1
+Maintainer: José Joaquín Atria <jjatria@gmail.com>
+Depends:
+  - praat: 5.0.0+
+  - perl: 5.10+
+Recommends:
+License: GPL3
+Readme: readme.md
+Description:
+  - Short: a package manager for Praat
+  - Long: >
+      CPrAN is a project manager for Praat, inspired by centralised package
+      repositories like CPAN, CTAN, CRAN and the like, but also in more recent
+      solutions like yum and bower.
+
+      This plugin contains a Perl client to interact with a remote instance of
+      CPrAN, as well as wrapper scripts for Praat to allow interaction from
+      within the GUI.
