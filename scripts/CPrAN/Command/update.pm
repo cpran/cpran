@@ -20,7 +20,7 @@ sub opt_Spec {
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-#   $self->usage_error("No arguments allowed") if @{$args};
+  $self->usage_error("No arguments allowed") if @{$args};
 }
 
 my $api = GitLab::API::v3->new(
@@ -34,13 +34,17 @@ sub execute {
   use GitLab::API::v3;
   use YAML::XS;
   use MIME::Base64;
+  use File::Path;
 
   my $projects = $api->group('133578')->{projects};
 
   my $dir = dir( $CPrAN::ROOT );
 
   foreach my $plugin (@{$projects}) {
-    print "Fetching $plugin->{name}... ";
+    my $name = substr($plugin->{name}, 7);
+    my $file = $dir->file($name . '.yaml');
+
+    print "Fetching $name... ";
 #     if $opt->{verbose};
 
     my $descriptor = decode_base64(
@@ -49,12 +53,13 @@ sub execute {
         ref => 'master',
       })->{content}
     );
-    eval { $descriptor = Load($descriptor) };
+    eval { YAML::XS::Load( $descriptor ) };
     if ($@) {
-      print "error: $@\n";
+      print "error: skipping\n";
 #       if $opt->{verbose};
+      $file->remove();
+
     } else {
-      my $file = $dir->file(substr($plugin->{name}, 7) . ".yaml");
       my $fh = $file->openw();
       $fh->print($descriptor);
       print "done\n";

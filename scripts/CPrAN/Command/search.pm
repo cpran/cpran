@@ -10,7 +10,10 @@ use Data::Dumper;
 
 # No options
 sub opt_Spec {
-  return ();
+  return (
+    [ "name|n",        "search in plugin name" ],
+    [ "description|d", "search in description" ],
+  );
 }
 
 sub validate_args {
@@ -21,17 +24,6 @@ sub validate_args {
 
 sub execute {
   my ($self, $opt, $args) = @_;
-
-  use GitLab::API::v3;
-
-  my $api = GitLab::API::v3->new(
-    url   => 'https://gitlab.com/api/v3/',
-    token => 'WMe3t_ANxd3yyTLyc7WA',
-  );
-
-  my $projects = $api->group('133578')->{projects};
-
-  map { print $_->{name} . "\n" if $_->{name} =~ /$args->[0]/ } @{$projects};
 }
 
 1;
