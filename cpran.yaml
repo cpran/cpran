@@ -1,22 +1,11 @@
 ---
-# The plugin name. It will also be the name of the directory, as in plugin_name
-Plugin: name
-# The home page of the plugin. MAY be a git repository
-Homepage: https://example.com
-# MUST be a semantic version number. See www.semver.org for more information
-Version: 1.2.3
-# A list of maintainters for this plugin.
-# If this list has only one entry, the value of this field MAY not be a list, as
-# in the example. If there is more than one maintainer, entries MUST be input as
-# a list, and each entry MUST have a way to contact them, which SHOULD be and
-# email address.
-Maintainer: A. N. Author <author@example.com>
-# A set of dependencies.
-# Each dependency MUST be on a separate line, and have both the name of the
-# dependany as well as the version it requires. Version numbers MAY be followed
-# by a + sign to indicate that any following version will work
+Plugin: cpran
+Homepage: https://gitlab.com/cpran/plugin_cpran
+Version: 0.0.1
+Maintainer: José Joaquín Atria <jjatria@gmail.com>
 Depends:
   praat: 5.0.0+
+  perl: 5.10+
 Recommends:
 License: GPL3
 Readme: readme.md
