@@ -32,6 +32,44 @@ Such a system would not necessarily solve the problems highlighted above, but it
 
 ### Let's get started
 
-The ten plugins hosted under <https://gitlab.com/cpran> are a possible starting point for such an effort. But a lot needs to be discussed in terms of the design of this system. This is an open invitation to talk about this, and about how to make this work.
+The plugins hosted under <https://gitlab.com/cpran> are a possible starting point for such an effort. But a lot needs to be discussed in terms of the design of this system. This is an open invitation to talk about this, and about how to make this work.
 
+### Current work
 
+The current experimental imlementation is written in Perl and uses 
+[GitLab][] for its server-side code. The interface is modeled after `apt`
+and `dpkg`.
+
+Inspired by [bower][], the versioning of plugins is left to git, and each
+[semantic versioning][semver]-compliant tag represents a new release.
+Tags _MUST_ be in the `master` branch to be considered releases.
+
+Each plugin that is in CPrAN _MUST_ have plugin descriptor written in
+properly formatted YAML. This descriptor _MUST_ refer to the most recent
+release. Maybe the best solution would be to set a git hook to
+automatically generate these descriptors every time a new release is
+tagged.
+
+Like `apt-get update`, `cpran update` will maintain a local list of
+the latest versions of use CPrAN plugins. Emulating `apt-cache search`,
+`cpran search` will allow users to find specific plugins from within that
+list, but its output will be more closely based on that of `dpkg`, so
+that the same command can be used to search both remote and installed
+versions.
+
+Currently, output shows the name of the package, the version,
+and the short description, but if this merged behaviour is desireable for
+`cpran search`, then maybe a format like that of `tlmgr`, which shows 
+both local and remote versions might be more suitable.
+
+`cpran show` will serve as `apt-cache show`, to show the full descriptor 
+of a specific plugin. `cpran remove` will work as `apt-get remove --purge`,
+removing the entire plugin from memory.
+
+Installation will be up to `cpran install`, which will behave like `apt-get install`.
+And updating plugins will be the task of `cpran upgrade`, which will act
+like `apt-get upgrade`.
+
+[gitlab]: https://gitlab.com
+[bower]: https://github.com/bower/bower
+[semver]: http://semver.org
