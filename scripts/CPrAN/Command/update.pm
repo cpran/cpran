@@ -12,14 +12,15 @@ use autodie;
 
 # No options
 sub opt_Spec {
-  return ();
+  return (
+    [ "verbose|v", "increase verbosity" ],
+  );
 }
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("No options") if keys %{$opt};
-  $self->usage_error("No arguments") if @{$args};
+#   $self->usage_error("No arguments allowed") if @{$args};
 }
 
 my $api = GitLab::API::v3->new(
@@ -32,19 +33,34 @@ sub execute {
 
   use GitLab::API::v3;
   use YAML::XS;
-
+  use MIME::Base64;
 
   my $projects = $api->group('133578')->{projects};
 
-  my $dir = dir("../.cpran");
+  my $dir = dir( $CPrAN::ROOT );
 
-  map {
-    my $description = describe($_);
-#     my $file = $dir->file($_->{name} . ".yaml");
-#     my $fh = $file->openw();
-#     $fh->print(Dump $description);
-    print Dumper($description);
-  } @{$projects};
+  foreach my $plugin (@{$projects}) {
+    print "Fetching $plugin->{name}... ";
+#     if $opt->{verbose};
+
+    my $descriptor = decode_base64(
+      $api->file($plugin->{id}, {
+        file_path => 'cpran.yaml',
+        ref => 'master',
+      })->{content}
+    );
+    eval { $descriptor = Load($descriptor) };
+    if ($@) {
+      print "error: $@\n";
+#       if $opt->{verbose};
+    } else {
+      my $file = $dir->file(substr($plugin->{name}, 7) . ".yaml");
+      my $fh = $file->openw();
+      $fh->print($descriptor);
+      print "done\n";
+#       if $opt->{verbose};
+    }
+  }
 
 }
 
