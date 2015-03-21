@@ -10,7 +10,7 @@ use Data::Dumper;
 
 sub opt_spec {
   return (
-    [ "yes|y",    "do not ask for confirmation"       ],
+    [ "yes|y",    "do not ask for confirmation" ],
     [ "all",      "process non-CPrAN plugins as well" ],
     [ "debug",    "print debugging messages" ],
     [ "verbose",  "increase verbosity" ],
@@ -22,6 +22,7 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("Missing arguments") unless @{$args};
+
   my $prefix_warning = 0;
   foreach (0..$#{$args}) {
     if ($args->[$_] =~ /^plugin_/) {
@@ -29,7 +30,8 @@ sub validate_args {
     }
     $args->[$_] =~ s/^plugin_//;
   }
-  warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring\n" if ($prefix_warning);
+  warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
+    if ($prefix_warning);
 }
 
 sub execute {
@@ -37,32 +39,28 @@ sub execute {
 
   use Path::Class;
 
-  my @all_files = dir( $CPrAN::PRAAT )->children;
+  my @installed = CPrAN::list_installed();
+
   my %installed;
-  foreach (@all_files) {
-    my $name = $_->basename;
-    $name =~ s/^plugin_//;
-    if (CPrAN::is_plugin( $opt, $_ )) {
-      $installed{$name} = $_;
-    }
-  }
+  $installed{$_} = dir($CPrAN::PRAAT, 'plugin_' . $_) foreach (@installed);
 
   my @files;
   map {
     if (exists $installed{$_}) {
-      my $plugin = dir($CPrAN::PRAAT, 'plugin_' . $_);
+      my $plugin = $installed{$_};
 
       my $is_cpran = CPrAN::is_cpran($opt, $plugin);
       if ( $is_cpran || $opt->{all}) {
-        warn "W: $_ is not a CPrAN plugin, but processing anyway\n" unless $is_cpran;
+        warn "W: $_ is not a CPrAN plugin, but processing anyway.\n"
+          unless $is_cpran;
         push @files, $plugin;
       }
       else {
-        warn "W: $_ is not a CPrAN plugin. Use --all to process anyway\n";
+        warn "W: $_ is not a CPrAN plugin. Use --all to process anyway.\n";
       }
     }
     else {
-      warn "W: $_ is not installed; cannot remove\n";
+      warn "W: $_ is not installed; cannot remove.\n";
     }
   } @{$args};
 
@@ -76,11 +74,11 @@ sub execute {
     };
     print '  ', join(' ', @names), "\n";
     print "Do you want to continue? [y/N] ";
-    if (CPrAN::_yesno($opt, 'n')) {
+    if (CPrAN::yesno($opt, 'n')) {
       foreach (0..$#files) {
         print "Removing $names[$_]... ";
         # TODO(jja) Improve error checking
-        my $ret = $files[$_]->rmtree($opt->{verbose}, %opt->{cautious}) };
+        my $ret = $files[$_]->rmtree($opt->{verbose}, $opt->{cautious});
         if ($ret) {
           print "done\n";
         }

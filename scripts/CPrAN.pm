@@ -56,7 +56,32 @@ sub is_plugin {
   }
 }
 
-sub _yesno {
+sub installed {
+  use Path::Class;
+
+  my @all_files = dir( $CPrAN::PRAAT )->children;
+
+  my @installed;
+  foreach (@all_files) {
+    my $name = $_->basename;
+    $name =~ s/^plugin_//;
+    if (CPrAN::is_plugin( $opt, $_ )) {
+      push @installed, $name;
+    }
+  }
+
+  return @installed;
+}
+
+sub known {
+  use Path::Class;
+
+  return map {
+    $_->basename;
+  } dir( $CPrAN::ROOT )->children;
+}
+
+sub yesno {
   my ($opt, $default) = @_;
 
   if ($opt->{yes}) { print "yes\n"; return 1; }

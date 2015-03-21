@@ -32,33 +32,31 @@ sub execute {
   use Text::Table;
 
   my $output;
-  my @files;
+  my @names;
   if ($opt->{installed}) {
     $output = Text::Table->new(
       "Name", "Local", "Remote", "Description"
     );
-    my @all_files = dir( $CPrAN::PRAAT )->children;
-    map {
-      if (CPrAN::is_cpran($opt, $_)) {
-        my $name = $_->basename;
-        $name =~ s/^plugin_//;
-        push @files, $name;
-      }
-    } @all_files;
+
+    @names = CPrAN::installed();
   }
   else {
     $output = Text::Table->new(
       "Name", "Version", "Description"
     );
-    @files = map {
-      $_->basename;
-    } dir( $CPrAN::ROOT )->children;
+    @names = CPrAN::known();
   }
 
   map {
     $output->add(make_row($opt, $_)) if (/$args->[0]/);
-  } sort @files;
-  print $output;
+  } sort @names;
+
+  if ($output->body_height) {
+    print $output;
+  }
+  else {
+    print "No matches found\n";
+  }
 }
 
 sub make_row {
