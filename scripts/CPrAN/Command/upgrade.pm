@@ -1,4 +1,4 @@
-# ABSTRACT: Check for newer versions of installed plugins
+# ABSTRACT: upgrade installed plugin to its latest version
 package CPrAN::Command::upgrade;
 
 use CPrAN -command;

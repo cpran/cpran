@@ -1,4 +1,4 @@
-# ABSTRACT: Install new plugins
+# ABSTRACT: install new plugins
 package CPrAN::Command::install;
 
 use CPrAN -command;
@@ -27,7 +27,7 @@ sub execute {
 
   my $api = GitLab::API::v3->new(
     url   => 'https://gitlab.com/api/v3/',
-    token => 'WMe3t_ANxd3yyTLyc7WA',
+    token => $CPrAN::TOKEN,
   );
 }
 

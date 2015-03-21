@@ -1,4 +1,4 @@
-# ABSTRACT: Search among available CPrAN plugins
+# ABSTRACT: search among available CPrAN plugins
 package CPrAN::Command::search;
 
 use CPrAN -command;
@@ -14,7 +14,8 @@ sub opt_spec {
   return (
     [ "name|n",        "search in plugin name" ],
     [ "description|d", "search in description" ],
-    [ "installed",     "only consider installed plugins" ],
+    [ "installed|i",   "only consider installed plugins" ],
+    [ "debug",         "show debug messages" ],
   );
 }
 
@@ -30,27 +31,72 @@ sub execute {
   use Path::Class;
   use Text::Table;
 
-  my $output = Text::Table->new(
-    "Name", "Version", "Description"
-  );
+  my $output;
+  my @files;
+  if ($opt->{installed}) {
+    $output = Text::Table->new(
+      "Name", "Local", "Remote", "Description"
+    );
+    my @all_files = dir( $CPrAN::PRAAT )->children;
+    map {
+      if (CPrAN::is_cpran($opt, $_)) {
+        my $name = $_->basename;
+        $name =~ s/^plugin_//;
+        push @files, $name;
+      }
+    } @all_files;
+  }
+  else {
+    $output = Text::Table->new(
+      "Name", "Version", "Description"
+    );
+    @files = map {
+      $_->basename;
+    } dir( $CPrAN::ROOT )->children;
+  }
 
-  my @files = dir( $CPrAN::ROOT )->children;
-
-  map { append($output, $_) if ($_->basename =~ /$args->[0]/) } sort @files;
+  map {
+    $output->add(make_row($opt, $_)) if (/$args->[0]/);
+  } sort @files;
   print $output;
 }
 
-sub append {
-  my ($table, $file) = @_;
+sub make_row {
+  my ($opt, $name) = @_;
 
   use YAML::XS;
   use File::Slurp;
 
-  my $content = read_file($file->stringify);
-  my $yaml = Load( $content );
+  my $yaml;
+  my $content;
+  my $remote_file = file($CPrAN::ROOT, $name);
+  if ($opt->{installed}) {
+    my $local_file  = file($CPrAN::PRAAT, 'plugin_' . $name, 'cpran.yaml');
 
-  $table->add($yaml->{Plugin}, $yaml->{Version}, $yaml->{Description}->{Short});
-  return $table;
+    $content = read_file($local_file->stringify);
+    $yaml = Load( $content );
+
+    my $name = $yaml->{Plugin};
+    my $local_version = $yaml->{Version};
+    my $description = $yaml->{Description}->{Short};
+
+    $content = read_file($remote_file->stringify);
+    $yaml = Load( $content );
+
+    my $remote_version = $yaml->{Version};
+
+    return ($name, $local_version, $remote_version, $description);
+  }
+  else {
+    $content = read_file($remote_file->stringify);
+    $yaml = Load( $content );
+
+    my $name = $yaml->{Plugin};
+    my $remote_version = $yaml->{Version};
+    my $description = $yaml->{Description}->{Short};
+
+    return ($name, $remote_version, $description);
+  }
 }
 
 1;

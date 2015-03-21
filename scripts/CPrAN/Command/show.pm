@@ -1,4 +1,4 @@
-# ABSTRACT: Show specified plugin descriptor
+# ABSTRACT: show specified plugin descriptor
 package CPrAN::Command::show;
 
 use CPrAN -command;

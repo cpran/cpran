@@ -1,4 +1,4 @@
-# ABSTRACT: Update local plugin list
+# ABSTRACT: update local plugin list
 package CPrAN::Command::update;
 
 use CPrAN -command;
@@ -31,7 +31,7 @@ sub execute {
 
   my $api = GitLab::API::v3->new(
     url   => 'https://gitlab.com/api/v3/',
-    token => 'WMe3t_ANxd3yyTLyc7WA',
+    token => $CPrAN::TOKEN,
   );
 
   my $projects = $api->group('133578')->{projects};
