@@ -22,7 +22,7 @@ sub opt_spec {
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $args->[0] = '.*' unless @{$args};
+  $self->usage_error("Must provide a search term") unless @{$args};
 }
 
 sub execute {
