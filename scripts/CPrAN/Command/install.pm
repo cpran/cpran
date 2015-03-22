@@ -19,7 +19,7 @@ sub opt_spec {
 }
 
 sub description {
-  return "The initialize command prepares the application...";
+  return "Install new CPrAN plugins";
 }
 
 sub validate_args {
@@ -95,56 +95,16 @@ sub execute {
     print "Do you want to continue? [y/N] ";
     if (CPrAN::yesno($opt, 'n')) {
       foreach (@schedule) {
-        use GitLab::API::v3;
 
+        # Now that we know what plugins to install and in what order, we get
+        # them and install them
         print "Downloading archive for $_->{name}\n";
+        my $gzip = get_archive( $opt, $_->{name}, '' );
 
-        # Now that we know what plugins to install and in what order, we get them
-        my $api = GitLab::API::v3->new(
-          url   => 'https://gitlab.com/api/v3/',
-          token => $CPrAN::TOKEN,
-        );
+        print "Extracting... ";
+        install( $opt, $gzip );
 
-        my $project = shift $api->projects({ search => 'plugin_' . $_->{name} });
-        my $tag = shift $api->tags($project->{id});
-
-        my %params = ( sha => $tag->{commit}->{id} );
-  #       # HACK(jja) This should work, but the Perl GitLab API seems to currently be
-  #       # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
-  #       my $archive = $api->archive(
-  #         $project->{id},
-  #         \%params
-  #       );
-
-        # HACK(jja) This is a workaround while the Perl GitLab API is fixed
-        use LWP::Curl;
-        use File::Temp;
-        use Path::Class;
-        use Archive::Extract;
-
-        my $referer = '';
-        my $get_url = 'http://gitlab.com/api/v3/projects/' . $project->{id} . '/repository/archive?private_token=' . $CPrAN::TOKEN . '&sha=' . $params{sha};
-        my $lwpcurl = LWP::Curl->new();
-        my $content = $lwpcurl->get($get_url, $referer);
-
-        my $tmp = File::Temp->new(
-          dir => '.',
-          template => 'tempXXXXX',
-          suffix => '.tar.gz',
-        );
-        my $archive = file($tmp->filename);
-        my $fh = $archive->openw();
-        $fh->print($content);
-        print "D: Wrote to $archive\n" if $opt->{debug};
-        my $ae = Archive::Extract->new( archive => $tmp->filename );
-        my $ok = $ae->extract( to => $CPrAN::PRAAT )
-          or die "Could not extract package: $ae->error";
-
-        # GitLab archives have a ".git" suffix in their directory names
-        # We need to remove that suffix
-        use File::Copy;
-        my $dir = dir( $CPrAN::PRAAT, 'plugin_' . $_->{name} );
-        move($ae->extract_path, $dir);
+        print "done\n";
       }
     }
     else {
@@ -231,6 +191,75 @@ sub order_dependencies {
    }
 
    return map $recs{$_}, $graph->topological_sort();
+}
+
+sub get_archive {
+  my ($opt, $name, $version) = @_;
+
+  use GitLab::API::v3;
+
+  my $api = GitLab::API::v3->new(
+    url   => 'https://gitlab.com/api/v3/',
+    token => $CPrAN::TOKEN,
+  );
+
+  my $project = shift $api->projects({ search => 'plugin_' . $name });
+  my $tag;
+  if ($version eq '') {
+    $tag = shift $api->tags($project->{id});
+  }
+  else {
+    my $tags = $api->tags($project->{id});
+    print Dumper($tags);
+    $tag = shift @{$tags};
+  }
+
+  my %params = ( sha => $tag->{commit}->{id} );
+#   # HACK(jja) This should work, but the Perl GitLab API seems to currently be
+#   # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
+#   my $archive = $api->archive(
+#     $project->{id},
+#     \%params
+#   );
+
+  # HACK(jja) This is a workaround while the Perl GitLab API is fixed
+  use LWP::Curl;
+
+  my $referer = '';
+  my $get_url = 'http://gitlab.com/api/v3/projects/' . $project->{id} . '/repository/archive?private_token=' . $CPrAN::TOKEN . '&sha=' . $params{sha};
+  my $lwpcurl = LWP::Curl->new();
+  return $lwpcurl->get($get_url, $referer);
+}
+
+sub install {
+  my ($opt, $gzip) = @_;
+
+  use Archive::Extract;
+  use File::Temp;
+  use Path::Class;
+
+  my $tmp = File::Temp->new(
+    dir => '.',
+    template => 'cpranXXXXX',
+    suffix => '.tar.gz',
+  );
+  my $archive = file($tmp->filename);
+  my $fh = $archive->openw();
+  $fh->print($gzip);
+  print "D: Wrote to $archive\n" if $opt->{debug};
+
+  my $ae = Archive::Extract->new( archive => $tmp->filename );
+
+  my $ok = $ae->extract( to => $CPrAN::PRAAT )
+    or die "Could not extract package: $ae->error";
+
+  # GitLab archives have a ".git" suffix in their directory names
+  # We need to remove that suffix
+  use File::Copy;
+  my $final_path = $ae->extract_path;
+  $final_path =~ s/\.git$//;
+#   my $dir = dir( $CPrAN::PRAAT, $path );
+  move($ae->extract_path, $final_path);
 }
 
 1;
