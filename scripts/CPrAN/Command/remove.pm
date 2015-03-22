@@ -39,7 +39,7 @@ sub execute {
 
   use Path::Class;
 
-  my @installed = CPrAN::list_installed();
+  my @installed = CPrAN::installed();
 
   my %installed;
   $installed{$_} = dir($CPrAN::PRAAT, 'plugin_' . $_) foreach (@installed);
