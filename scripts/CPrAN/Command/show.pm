@@ -6,8 +6,8 @@ use CPrAN -command;
 use strict;
 use warnings;
 use diagnostics;
-use Data::Dumper;
-use Encode qw(encode decode);
+# use Data::Dumper;
+# use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
 sub opt_spec {
@@ -18,7 +18,7 @@ sub opt_spec {
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("One argument allowed") if (scalar @{$args} != 1);
+  $self->usage_error("Must provide a plugin name") unless @{$args};
 }
 
 sub execute {
@@ -27,9 +27,11 @@ sub execute {
   use Path::Class;
   use File::Slurp;
 
-  my $file = file( $CPrAN::ROOT, $args->[0] );
-  my $content = read_file($file->stringify);
-  print $content;
+  foreach (@{$args}) {
+    my $file = file( $CPrAN::ROOT, $_ );
+    my $content = read_file($file->stringify);
+    print $content;
+  }
 }
 
 1;
