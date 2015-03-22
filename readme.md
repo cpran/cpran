@@ -99,7 +99,7 @@ of a specific plugin. (DONE)
 from memory. (DONE)
 
 Installation will be up to `cpran install`, which will behave like
-`apt-get install`.
+`apt-get install`. (DONE)
 
 And updating plugins will be the task of `cpran upgrade`, which will act like
 `apt-get upgrade`.
