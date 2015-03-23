@@ -68,10 +68,12 @@ sub execute {
     }
 
     my $app = CPrAN->new();
-    my %params = (
-      quiet => 1,
-      yes => 1,
-    );
+
+    # We copy the current options, in case custom paths have been passed
+    my %params = %{$opt};
+    $params{quiet} = 1;
+    $params{yes}   = 1;
+
     if (CPrAN::compare_version( $local, $remote ) < 0) {
       print "Upgrading $name from v$local to v$remote... ";
 
