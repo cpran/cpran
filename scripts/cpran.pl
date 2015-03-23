@@ -52,28 +52,28 @@ See L<CPrAN::Command::remove> for the full documentation.
 
 =over
 
-=item B<praat=PATH>
+=item B<--praat=PATH>
 
 Set the path to Praat preferences directory. See the FILES section for the
 platform-dependant default values if this is not set.
 
-=item B<cpran=PATH>
+=item B<--cpran=PATH>
 
 Set the path to the CPrAN root. See the FILES section for more information on
 what is stored in the root.
 
 This option is useful if using B<CPrAN> with an on-site collection of plugins.
 
-=item B<api-token=TOKEN>
+=item B<--api-token=TOKEN>
 
 Set the private token for access to the GitLab API.
 
-=item B<api-url=URL>
+=item B<--api-url=URL>
 
 Set the URL of the GitLab API. This option is useful if using B<CPrAN> with an
 on-site collection of plugins.
 
-=item B<api-group=ID>
+=item B<--api-group=ID>
 
 Set the id for the GitLab CPrAN group. This option is useful if using B<CPrAN>
 with an on-site collection of plugins.
@@ -200,6 +200,46 @@ the same terms as Perl itself.
 CPrAN, CPrAN::Command::remove, CPrAN::Command::search,
 CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
 CPrAN::Command::install
+
+=head2 Packages used
+
+=over
+
+=item App::Cmd
+
+=item Archive::Tar
+
+=item Carp
+
+=item Config
+
+=item Data::Dumper
+
+=item Encode
+
+=item File::Copy
+
+=item File::Path
+
+=item File::Slurp
+
+=item File::Temp
+
+=item GitLab::API::v3
+
+=item Graph
+
+=item LWP::Simple
+
+=item MIME::Base64
+
+=item Path::Class
+
+=item Text::Table
+
+=item YAML::XS
+
+=back
 
 =head1 VERSION
 
