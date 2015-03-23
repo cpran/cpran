@@ -39,6 +39,8 @@ sub validate_args {
   }
   warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
     if ($prefix_warning);
+
+  CPrAN::set_global( $opt );
 }
 
 sub execute {
@@ -133,7 +135,7 @@ sub dependencies {
       # HACK(jja) Delete a possible "cpran/" prefix
       $plugin =~ s/^cpran\///;
 
-      my $file = file($CPrAN::ROOT, $plugin);
+      my $file = file(CPrAN::root(), $plugin);
       my $descriptor = read_file($file->stringify);
       my $yaml = YAML::XS::Load( $descriptor );
 
@@ -199,8 +201,8 @@ sub get_archive {
   use GitLab::API::v3;
 
   my $api = GitLab::API::v3->new(
-    url   => 'https://gitlab.com/api/v3/',
-    token => $CPrAN::TOKEN,
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
   );
 
   my $project = shift $api->projects({ search => 'plugin_' . $name });
@@ -226,7 +228,7 @@ sub get_archive {
   use LWP::Curl;
 
   my $referer = '';
-  my $get_url = 'http://gitlab.com/api/v3/projects/' . $project->{id} . '/repository/archive?private_token=' . $CPrAN::TOKEN . '&sha=' . $params{sha};
+  my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
   my $lwpcurl = LWP::Curl->new();
   return $lwpcurl->get($get_url, $referer);
 }
@@ -250,7 +252,7 @@ sub install {
 
   my $ae = Archive::Extract->new( archive => $tmp->filename );
 
-  my $ok = $ae->extract( to => $CPrAN::PRAAT )
+  my $ok = $ae->extract( to => CPrAN::praat() )
     or die "Could not extract package: $ae->error";
 
   # GitLab archives have a ".git" suffix in their directory names
@@ -258,7 +260,7 @@ sub install {
   use File::Copy;
   my $final_path = $ae->extract_path;
   $final_path =~ s/\.git$//;
-#   my $dir = dir( $CPrAN::PRAAT, $path );
+#   my $dir = dir( CPrAN::praat(), $path );
   move($ae->extract_path, $final_path);
 }
 

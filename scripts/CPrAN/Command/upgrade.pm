@@ -15,9 +15,11 @@ sub opt_spec {
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
-  
+
   # TODO(jja) If no arguments are provided, all plugins are updated. If names
   # are provided, only update those that are specified.
+
+  CPrAN::set_global( $opt );
 }
 
 sub execute {

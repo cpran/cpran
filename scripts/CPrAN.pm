@@ -2,7 +2,7 @@ package CPrAN;
 
 use App::Cmd::Setup -app;
 use File::Path;
-# use Getopt::Long;
+use Carp;
 
 =encoding utf8
 
@@ -17,11 +17,35 @@ B<CPrAN> - A package manager for Praat
 
 =cut
 
-our $VERSION = '0.0.1';
+{
+  use Path::Class;
+  my $ROOT   = dir('..', '.cpran')->stringify;
+  my $PRAAT  = dir('..', '..')->stringify;
 
-our $ROOT  = "../.cpran";
-our $PRAAT = "../..";
-our $TOKEN = 'WMe3t_ANxd3yyTLyc7WA';
+  my $TOKEN  = 'WMe3t_ANxd3yyTLyc7WA';
+  my $APIURL = 'https://gitlab.com/api/v3/';
+  my $GROUP  = '133578';
+
+  sub root      { return $ROOT   }
+  sub praat     { return $PRAAT  }
+  sub api_token { return $TOKEN  }
+  sub api_url   { return $APIURL }
+  sub api_group { return $GROUP  }
+
+  sub set_global {
+    my $self = shift;
+    my $opt = $self->{app}->{global_options};
+
+    $ROOT   = $opt->{'cpran'}     if $opt->{'cpran'};
+    $PRAAT  = $opt->{'praat'}     if $opt->{'praat'};
+    $TOKEN  = $opt->{'api-token'} if $opt->{'api-token'};
+    $APIURL = $opt->{'api-url'}   if $opt->{'api-url'};
+    $GROUP  = $opt->{'api-group'} if $opt->{'api-group'};
+
+    use Data::Dumper;
+    print Dumper($opt);
+  }
+}
 
 =head1 DESCRIPTION
 
@@ -37,13 +61,17 @@ methods described below to perform general B<CPrAN>-related actions.
 
 =cut
 
-# GetOptions (
-#   'praat=s' => \$PRAAT,
-#   'cpran=s' => \$ROOT,
-#   'token=s' => \$TOKEN,
-# );
+sub global_opt_spec {
+  return (
+    [ "praat=s"     => "set path to Praat preferences directory" ],
+    [ "cpran=s"     => "set path to CPrAN root" ],
+    [ "api-token=s" => "set private token for GitLab API access" ],
+    [ "api-url=s"   => "set url of GitLab API" ],
+    [ "api-group=s" => "set the id for the GitLab CPrAN group" ],
+  );
+}
 
-File::Path::make_path( $ROOT );
+File::Path::make_path( CPrAN::root() );
 
 =head1 METHODS
 
@@ -64,10 +92,11 @@ plugin descriptor (which should follow the example bundled in I<example.yaml>),
 but future versions might.
 
 =cut
+
 sub is_cpran {
   my ($opt, $arg) = @_;
 
-  die "Argument is not a Path::Class object"
+  croak "Argument is not a Path::Class object"
     unless (ref $arg eq 'Path::Class');
 
   use YAML::XS;
@@ -102,19 +131,20 @@ begins with the I<plugin_> identifier are considered valid plugins.
     is_plugin( dir($prefdir, 'plugin_bar') );  # True
 
 =cut
+
 sub is_plugin {
   my ($opt, $arg) = @_;
 
-  die "Argument is not a Path::Class object"
-    unless (ref $arg eq 'Path::Class');
+  croak "Argument is not a Path::Class object"
+    unless (ref($arg) =~ /^Path::Class/);
 
   unless ($arg->is_dir) {
     print STDERR "D: ", $arg->basename, " is not a directory\n" if $opt->{debug};
     return 0;
   }
 
-  unless ($arg->parent eq $CPrAN::PRAAT) {
-    print STDERR "D: ", $arg->basename, " is not in $CPrAN::PRAAT\n" if $opt->{debug};
+  unless ($arg->parent eq CPrAN::praat() ) {
+    print STDERR "D: ", $arg->basename, " is not in " . CPrAN::praat() . "\n" if $opt->{debug};
     return 0;
   }
 
@@ -135,10 +165,11 @@ criteria they need to fulfill.
     print "$_\n" foreach (@installed);
 
 =cut
+
 sub installed {
   use Path::Class;
 
-  my @all_files = dir( $CPrAN::PRAAT )->children;
+  my @all_files = dir( CPrAN::praat() )->children;
 
   my @installed;
   foreach (@all_files) {
@@ -161,12 +192,18 @@ plugins whose descriptors have been saved by C<cpran update>
     print "$_\n" foreach (@known);
 
 =cut
+
 sub known {
   use Path::Class;
 
+  use Data::Dumper;
+  print "Known\n";
+  print Dumper(CPrAN::root());
+  
+  
   return map {
     $_->basename;
-  } dir( $CPrAN::ROOT )->children;
+  } dir( CPrAN::root() )->children;
 }
 
 =item yesno()
@@ -184,6 +221,7 @@ By default, responses matching /^y(es)?$/i are considered to be I<yes>
 responses.
 
 =cut
+
 sub yesno {
   my ($opt, $default) = @_;
 
@@ -211,14 +249,16 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<App::Cmd>, L<YAML::XS>, L<CPrAN::Command::remove>, L<CPrAN::Command::search>,
-L<CPrAN::Command::update>, L<CPrAN::Command::upgrade>, L<CPrAN::Command::show>,
-L<CPrAN::Command::install>
+App::Cmd, YAML::XS, CPrAN::Command::remove, CPrAN::Command::search,
+CPrAN::Command::update>, CPrAN::Command::upgrade, CPrAN::Command::show,
+CPrAN::Command::install
 
 =head1 VERSION
 
 0.0.1
 
 =cut
+
+our $VERSION = '0.0.1';
 
 1;

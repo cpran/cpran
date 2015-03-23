@@ -32,6 +32,8 @@ sub validate_args {
   }
   warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
     if ($prefix_warning);
+
+  CPrAN::set_global( $opt );
 }
 
 sub execute {
@@ -42,7 +44,7 @@ sub execute {
   my @installed = CPrAN::installed();
 
   my %installed;
-  $installed{$_} = dir($CPrAN::PRAAT, 'plugin_' . $_) foreach (@installed);
+  $installed{$_} = dir(CPrAN::praat(), 'plugin_' . $_) foreach (@installed);
 
   my @files;
   map {

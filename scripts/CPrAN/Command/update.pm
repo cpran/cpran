@@ -20,6 +20,8 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("No arguments allowed") if @{$args};
+
+  CPrAN::set_global( $opt );
 }
 
 sub execute {
@@ -30,13 +32,13 @@ sub execute {
   use MIME::Base64;
 
   my $api = GitLab::API::v3->new(
-    url   => 'https://gitlab.com/api/v3/',
-    token => $CPrAN::TOKEN,
+    url   => CPrAN::apiurl(),
+    token => CPrAN::token(),
   );
 
-  my $projects = $api->group('133578')->{projects};
+  my $projects = $api->group( CPrAN::group() )->{projects};
 
-  my $dir = Path::Class::dir( $CPrAN::ROOT );
+  my $dir = Path::Class::dir( CPrAN::root() );
 
   foreach my $plugin (@{$projects}) {
     my $name = substr($plugin->{name}, 7);

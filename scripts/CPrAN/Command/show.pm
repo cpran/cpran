@@ -19,6 +19,8 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("Must provide a plugin name") unless @{$args};
+
+  CPrAN::set_global( $opt );
 }
 
 sub execute {
@@ -28,7 +30,7 @@ sub execute {
   use File::Slurp;
 
   foreach (@{$args}) {
-    my $file = file( $CPrAN::ROOT, $_ );
+    my $file = file( CPrAN::root(), $_ );
     my $content = read_file($file->stringify);
     print $content;
   }

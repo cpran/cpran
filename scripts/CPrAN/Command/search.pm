@@ -12,8 +12,8 @@ binmode STDOUT, ':utf8';
 
 sub opt_spec {
   return (
-    [ "name|n",        "search in plugin name" ],
-    [ "description|d", "search in description" ],
+#     [ "name|n",        "search in plugin name" ],
+#     [ "description|d", "search in description" ],
     [ "installed|i",   "only consider installed plugins" ],
     [ "debug",         "show debug messages" ],
   );
@@ -23,6 +23,8 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("Must provide a search term") unless @{$args};
+
+  CPrAN::set_global( $self );
 }
 
 sub execute {
@@ -39,12 +41,14 @@ sub execute {
     );
 
     @names = CPrAN::installed();
+    print "D: " . scalar @names . " installed plugins\n" if $opt->{debug};
   }
   else {
     $output = Text::Table->new(
       "Name", "Version", "Description"
     );
     @names = CPrAN::known();
+    print "D: " . scalar @names . " known plugins\n" if $opt->{debug};
   }
 
   map {
@@ -67,9 +71,9 @@ sub make_row {
 
   my $yaml;
   my $content;
-  my $remote_file = file($CPrAN::ROOT, $name);
+  my $remote_file = file(CPrAN::root(), $name);
   if ($opt->{installed}) {
-    my $local_file  = file($CPrAN::PRAAT, 'plugin_' . $name, 'cpran.yaml');
+    my $local_file  = file(CPrAN::praat(), 'plugin_' . $name, 'cpran.yaml');
 
     $content = read_file($local_file->stringify);
     $yaml = Load( $content );
