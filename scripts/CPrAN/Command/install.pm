@@ -125,21 +125,20 @@ sub execute {
   }
 }
 
-sub rebuild_list() {
-    my $opt = shift;
+sub rebuild_list {
+  my $opt = shift;
 
-    CPrAN::make_root();
+  CPrAN::make_root();
 
-    my $app = CPrAN->new();
+  my $app = CPrAN->new();
 
-    # We copy the current options, in case custom paths have been passed
-    my %params = %{$opt};
-    $params{verbose} = 0;
+  # We copy the current options, in case custom paths have been passed
+  my %params = %{$opt};
+  $params{verbose} = 0;
 
-    print "Rebuilding plugin list... " unless ($opt->{quiet});
-    $app->execute_command('CPrAN::Command::update', \%params, ());
-    print "done\n" unless ($opt->{quiet});
-  }
+  print "Rebuilding plugin list... " unless ($opt->{quiet});
+  $app->execute_command('CPrAN::Command::update', \%params, ());
+  print "done\n" unless ($opt->{quiet});
 }
 
 sub get_archive {
@@ -200,6 +199,7 @@ sub install {
   print 'D: Wrote to ' . $tmp->filename . "\n" if $opt->{debug};
   $fh->close();
 
+  print Dumper($tar) if ($opt->{debug});
   my $tar = Archive::Tar->new( $tmp->filename )
     or croak "Could not read " . $tmp->filename . ": $!";
 
