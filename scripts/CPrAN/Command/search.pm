@@ -50,17 +50,20 @@ sub execute {
     @names = CPrAN::known();
     print "D: " . scalar @names . " known plugins\n" if $opt->{debug};
   }
+  @names = sort @names;
 
+  my @found;
   map {
-    $output->add(make_row($opt, $_)) if (/$args->[0]/);
-  } sort @names;
+    if (/$args->[0]/) {
+      $output->add(make_row($opt, $_));
+      push @found, $_;
+    }
+  } @names;
 
-  if ($output->body_height) {
-    print $output;
-  }
-  else {
-    print "No matches found\n";
-  }
+  if (@found) { print $output }
+  else { print "No matches found\n" }
+
+  return @found;
 }
 
 sub make_row {
