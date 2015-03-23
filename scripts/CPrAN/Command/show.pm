@@ -5,13 +5,15 @@ use CPrAN -command;
 
 use strict;
 use warnings;
+use Carp;
 # use diagnostics;
-# use Data::Dumper;
+use Data::Dumper;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
 sub opt_spec {
   return (
+    [ "installed|i" => "only consider installed plugins" ],
   );
 }
 
@@ -26,14 +28,47 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+#   print Dumper($args);
+  
   use Path::Class;
   use File::Slurp;
 
+  # Get a hash of installed plugins (ie, plugins in the preferences directory)
+  my %installed;
+  $installed{$_} = 1 foreach (CPrAN::installed());
+
+  # Get a hash of known plugins (ie, plugins in the CPrAN list)
+  my %known;
+  $known{$_} = 1 foreach (CPrAN::known());
+
+  my $stream;
+  my $file = '';
   foreach (@{$args}) {
-    my $file = file( CPrAN::root(), $_ );
-    my $content = read_file($file->stringify);
-    print decode('utf8', $content);
+    if ($opt->{installed}) {
+      if (exists $installed{$_}) {
+        $file = file( CPrAN::praat(), 'plugin_' . $_, 'cpran.yaml' );
+      }
+      else {
+        croak "E: $_ is not installed";
+      }
+    }
+    else {
+      if (exists $known{$_}) {
+        $file = file( CPrAN::root(), $_ );
+      }
+      else {
+#         print Dumper($_);
+        croak "E: $_ is not a CPrAN plugin";
+      }
+    }
+    if ($file) {
+      my $content = read_file($file->stringify);
+      my $s = $content;
+      $stream .= $s;
+      print decode('utf8', $s) unless $opt->{quiet};
+    }
   }
+  return $stream;
 }
 
 1;
