@@ -7,6 +7,7 @@ use strict;
 use warnings;
 use diagnostics;
 use Data::Dumper;
+use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
@@ -87,7 +88,8 @@ sub execute {
   # TODO(jja) What does --force mean in this context?
   my @schedule;
   foreach (@ordered) {
-    push @schedule, $_ unless (exists $installed{$_->{name}});
+    push @schedule, $_
+      unless (exists $installed{$_->{name}} && !$opt->{force});
   }
 
   # Output and user query modeled after apt's
@@ -127,12 +129,15 @@ sub get_archive {
     token => CPrAN::api_token(),
   );
 
-  my $project = shift $api->projects({ search => 'plugin_' . $name });
+  my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
   my $tag;
   if ($version eq '') {
-    $tag = shift $api->tags($project->{id});
+    my @tags = @{$api->tags($project->{id})};
+    croak "No tags for $name" unless (@tags);
+    $tag = shift ;
   }
   else {
+    # TODO(jja) Enable installation of specific versions
     my $tags = $api->tags($project->{id});
     print Dumper($tags);
     $tag = shift @{$tags};
@@ -179,11 +184,20 @@ sub install {
 
   # GitLab archives have a ".git" suffix in their directory names
   # We need to remove that suffix
-  use File::Copy;
   my $final_path = $ae->extract_path;
   $final_path =~ s/\.git$//;
-#   my $dir = dir( CPrAN::praat(), $path );
-  move($ae->extract_path, $final_path);
+
+  # TODO(jja) If we are forcing the re-install of a plugin, the previously
+  # existing directory needs to be removed. Maybe this could be better handled?
+  if (-e $final_path && $opt->{force}) {
+    use File::Path qw(remove_tree);
+    remove_tree($final_path);
+  }
+
+  # Rename directory
+  use File::Copy;
+  move($ae->extract_path, $final_path)
+    or croak "Move failed: $!";
 }
 
 1;
