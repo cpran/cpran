@@ -14,6 +14,7 @@ sub opt_spec {
   return (
     [ "yes|y", "do not ask for confirmation" ],
     [ "force|f", "print debugging messages" ],
+    [ "quiet",    "produce no output" ],
     [ "debug", "force installation of plugin" ],
   );
 }
@@ -50,6 +51,10 @@ sub execute {
   my %installed;
   $installed{$_} = 1 foreach (CPrAN::installed());
 
+  # Get a hash of known plugins (ie, plugins in the CPrAN list)
+  my %known;
+  $known{$_} = 1 foreach (CPrAN::known());
+
   # Plugins that are already installed cannot be installed again (unless the
   # user orders a forced-reinstall).
   # @names will hold the names of the plugins passed as arguments that are
@@ -61,26 +66,21 @@ sub execute {
       warn "W: $_ is already installed\n";
     }
     else {
-      my %known;
-      $known{$_} = 1 foreach (CPrAN::known());
-      if (exists $known{$_}) {
-        push @names, 'cpran/' . $_;
-      }
-      else {
-        warn "W: no plugin named $_\n";
-      }
+      # HACK(jja) We add the 'cpran/' prefix to distinguish CPrAN requirements
+      if (exists $known{$_}) { push @names, 'cpran/' . $_ }
+      else { warn "W: no plugin named $_\n" }
     }
   }
 
   # Get a source dependency tree for the plugins that are to be installed.
   # The dependencies() subroutine calls itself recursively to include the
   # dependencies of the dependencies, and so on.
-  my @deps = dependencies($opt, \@names);
+  my @deps = CPrAN::dependencies($opt, \@names);
 
   # The source tree is then ordered to get a schedule of plugin installation.
   # In the resulting list, plugins with no dependencies come first, and those
   # that depend on them come later.
-  my @ordered = order_dependencies(@deps);
+  my @ordered = CPrAN::order_dependencies(@deps);
 
   # Scheduled plugins that are already installed need to be removed from the
   # schedule
@@ -92,107 +92,29 @@ sub execute {
 
   # Output and user query modeled after apt's
   if (@schedule) {
-    print "The following plugins will be INSTALLED:\n";
-    print '  ', join(' ', map { $_->{name} } @schedule), "\n";
-    print "Do you want to continue? [y/N] ";
+    unless ($opt->{quiet}) {
+      print "The following plugins will be INSTALLED:\n";
+      print '  ', join(' ', map { $_->{name} } @schedule), "\n";
+      print "Do you want to continue? [y/N] ";
+    }
     if (CPrAN::yesno($opt, 'n')) {
       foreach (@schedule) {
 
         # Now that we know what plugins to install and in what order, we get
         # them and install them
-        print "Downloading archive for $_->{name}\n";
+        print "Downloading archive for $_->{name}\n" unless ($opt->{quiet});
         my $gzip = get_archive( $opt, $_->{name}, '' );
 
-        print "Extracting... ";
+        print "Extracting... " unless ($opt->{quiet});
         install( $opt, $gzip );
 
-        print "done\n";
+        print "done\n" unless ($opt->{quiet});
       }
     }
     else {
-      print "Abort.\n";
+      print "Abort.\n" unless ($opt->{quiet});
     }
   }
-}
-
-# Query the desired plugins for dependencies
-# Takes either the name of a single plugin, or a list of names, and returns
-# an array of hashes properly formatted for processing with order_dependencies()
-sub dependencies {
-  my ($opt, $args) = @_;
-
-  use Path::Class;
-  use File::Slurp;
-  use YAML::XS;
-
-  my @dependencies;
-
-  # If the argument is a scalar, convert it to a list with it as its single item
-  $args = [ $args ] if (!ref $args);
-
-  foreach my $plugin (@{$args}) {
-
-      # HACK(jja) Delete a possible "cpran/" prefix
-      $plugin =~ s/^cpran\///;
-
-      my $file = file(CPrAN::root(), $plugin);
-      my $descriptor = read_file($file->stringify);
-      my $yaml = YAML::XS::Load( $descriptor );
-
-      # HACK(jja) Only consider CPrAN dependencies and delete the "cpran/"
-      # prefix in the dependency list
-      my @deps;
-      foreach my $dep (keys %{$yaml->{Depends}}) {
-        if ($dep =~ /^cpran/) {
-          $dep =~ s/^cpran\///;
-          push @deps, $dep;
-        }
-      }
-
-      # HACK(jja) We need to restore the stripped "cpran/" prefix so we can
-      # recognize them later
-      my @vers = map {
-        $yaml->{Depends}->{'cpran/' . $_};
-      } @deps;
-
-      my %deps = (
-        name     => $yaml->{Plugin},
-        requires => \@deps,
-        version  => \@vers,
-      );
-
-      push @dependencies, \%deps;
-      # Recursively query dependencies for all dependencies
-      foreach (@{$deps{requires}}) {
-        @dependencies = (@dependencies, dependencies($opt, $_));
-      }
-  }
-  return @dependencies;
-}
-
-# Order required packages, so that those that are depended up come up first than
-# those that depend on them
-# The argument is an array of hashes, each of which needs a "name" key that
-# identifies the item, and a "requires" holding the reference to an array with
-# the names of the items that are required.
-# Closely modeled after http://stackoverflow.com/a/12166653/807650
-sub order_dependencies {
-  use Graph qw();
-
-   my %recs;
-   my $graph = Graph->new();
-   foreach my $rec (@_) {
-      my ($name, $requires) = @{$rec}{qw( name requires )};
-
-      $graph->add_vertex($name);
-      foreach (@{$requires}) {
-        $graph->add_edge($_, $name);
-      }
-
-      $recs{$name} = $rec;
-   }
-
-   return map $recs{$_}, $graph->topological_sort();
 }
 
 sub get_archive {
