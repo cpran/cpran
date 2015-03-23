@@ -112,14 +112,20 @@ to help by running it on your own machine, comments are very welcome. Since Praa
 is cross-platform, it is extremely important for CPrAN to also work in those same
 platforms, and care has been made to write it so that that is possible.
 
-To install it, download the contents of [this branch][zip]. It should be able to
-run from anywhere in your computer, but it's probably better if you save it as you
-would with any other plugin: in the [preferences directory][]. Please note that some
-testing seems to indicate that this is particularly important across filesystem
-barriers, so at the very least make sure it is in the same filesystem as the
-preferences directory.
+The absolute easiest way to install it is to use `git`. Go to the Praat [preferences
+directory][] and run `git clone https://gitlab.com/cpran/plugin_cpran.git`. You'll
+need to checkout the `perl` branch until these are merged. Then skip the next
+paragraph and read on.
 
-The important script to run is in the `scripts` folder in the root of this plugin.
+Alternatively, you can download the contents of [this branch][zip]. It should be
+able to run from anywhere in your computer, but it's probably better if you save
+it as you would with any other plugin: in the [preferences directory][]. Please
+note that some testing seems to indicate that this is particularly important across
+filesystem barriers, so at the very least make sure it is in the same filesystem as
+the preferences directory.
+
+The important script to run is `cpran.pl`, in the `scripts` folder in the root of
+this plugin.
 
 You will need Perl to run it. If you are on GNU/Linux then chances are you already
 have it. If not, check your distro's documentation on how to get it. If you are on
