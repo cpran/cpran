@@ -1,9 +1,5 @@
 #!/usr/bin/perl
 
-# use Config;
-# use Data::Dumper;
-# print Dumper(\%Config);
-
 use CPrAN;
 CPrAN->run;
 
