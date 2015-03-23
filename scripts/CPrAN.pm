@@ -86,11 +86,20 @@ sub global_opt_spec {
   );
 }
 
-File::Path::make_path( CPrAN::root() );
-
 =head1 METHODS
 
 =cut
+
+=item make_root()
+
+Makes the B<CPrAN> root directory.
+
+=cut
+
+sub make_root {
+  File::Path::make_path( CPrAN::root() );
+}
+make_root();
 
 =over
 
