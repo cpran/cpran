@@ -111,6 +111,23 @@ sub execute {
         install( $opt, $gzip );
 
         print "done\n" unless ($opt->{quiet});
+        
+        if ($_->{name} eq 'cpran') {
+          # CPrAN is installing itself!
+          # HACK(jja) currently, a reinstall deletes the original directory
+          # which in the case of CPrAN will likely destroy the CPrAN root.
+          # If that's the case, we rebuild it.
+          unless (-e CPrAN::root()) {
+            CPrAN::make_root();
+            my $app = CPrAN->new();
+            # We copy the current options, in case custom paths have been passed
+            my %params = %{$opt};
+            $params{verbose} = 0;
+            print "Rebuilding plugin list... " unless ($opt->{quiet});
+            $app->execute_command('CPrAN::Command::update', \%params, ());
+            print "done\n" unless ($opt->{quiet});
+          }
+        }
       }
     }
     else {
@@ -188,13 +205,11 @@ sub install {
 
   my $extract_path = shift(@extracted)->{name};
   $extract_path =~ s%/$%%;
-  
+
   # GitLab archives have a ".git" suffix in their directory names
   # We need to remove that suffix
   my $final_path = $extract_path;
-  print "$final_path -> ";
   $final_path =~ s%\.git$%%;
-  print "$final_path\n";
   $final_path = dir(CPrAN::praat(), $final_path);
 
   # TODO(jja) If we are forcing the re-install of a plugin, the previously
@@ -214,13 +229,8 @@ sub install {
 #     }
   }
 
-  if (-e $final_path->stringify) {
-    print "still exists!!\n";
-  }
-
   # Rename directory
   use File::Copy;
-  print "$extract_path -> $final_path\n";
   move($extract_path, $final_path)
     or croak "Move failed: $!";
 }
