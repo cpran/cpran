@@ -19,8 +19,26 @@ B<CPrAN> - A package manager for Praat
 
 {
   use Path::Class;
-  my $ROOT   = dir('..', '.cpran')->stringify;
-  my $PRAAT  = dir('..', '..')->stringify;
+  use Config;
+  my $user = getlogin || getpwuid($<) || "???";
+  my ($ROOT, $PRAAT);
+  if ($Config{osname} eq 'darwin') {
+    # Mac
+#     print "$user\@mac\n";
+    $PRAAT  = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat', 'Prefs')->stringify;
+    $ROOT   = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
+  }
+  elsif ($Config{osname} eq 'MSWin32') {
+    # Windows
+#     print "$user\@windows\n";
+    $PRAAT = dir('C:', 'Documents and Settings', $user, 'Praat')->stringify;
+  }
+  else {
+    # Linux
+#     print "$user\@linux\n";
+    $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+  }
+  $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
 
   my $TOKEN  = 'WMe3t_ANxd3yyTLyc7WA';
   my $APIURL = 'https://gitlab.com/api/v3/';
@@ -41,9 +59,6 @@ B<CPrAN> - A package manager for Praat
     $TOKEN  = $opt->{'api-token'} if $opt->{'api-token'};
     $APIURL = $opt->{'api-url'}   if $opt->{'api-url'};
     $GROUP  = $opt->{'api-group'} if $opt->{'api-group'};
-
-    use Data::Dumper;
-    print Dumper($opt);
   }
 }
 
@@ -196,11 +211,6 @@ plugins whose descriptors have been saved by C<cpran update>
 sub known {
   use Path::Class;
 
-  use Data::Dumper;
-  print "Known\n";
-  print Dumper(CPrAN::root());
-  
-  
   return map {
     $_->basename;
   } dir( CPrAN::root() )->children;
