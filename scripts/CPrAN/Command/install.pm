@@ -143,7 +143,6 @@ sub get_archive {
     $tag = shift @{$tags};
   }
 
-  print Dumper($tag);
   my %params = ( sha => $tag->{commit}->{id} );
 #   # HACK(jja) This should work, but the Perl GitLab API seems to currently be
 #   # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
@@ -155,7 +154,10 @@ sub get_archive {
   # HACK(jja) This is a workaround while the Perl GitLab API is fixed
   use LWP::Simple;
 
-  my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
+  # HACK(jja) Hacks upon hacks. The GitLab API does not seem to allow the
+  # download of a zip archive.
+#   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
+  my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
   return get($get_url);
 }
 
@@ -169,7 +171,7 @@ sub install {
   my $tmp = File::Temp->new(
     dir => '.',
     template => 'cpranXXXXX',
-    suffix => '.tar.gz',
+    suffix => '.zip',
   );
   my $archive = file($tmp->filename);
   my $fh = $archive->openw();
