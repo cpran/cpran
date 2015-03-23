@@ -14,6 +14,7 @@ sub opt_spec {
     [ "all",      "process non-CPrAN plugins as well" ],
     [ "debug",    "print debugging messages" ],
     [ "verbose",  "increase verbosity" ],
+    [ "quiet",    "produce no output" ],
     [ "cautious", "be extra-careful while removing files" ],
   );
 }
@@ -67,30 +68,32 @@ sub execute {
   } @{$args};
 
   if (@files) {
-    print "The following plugins will be REMOVED:\n";
     my @names;
-    foreach (@files) {
-      my $name = $_->basename;
-      $name =~ s/^plugin_//;
-      push @names, $name;
-    };
-    print '  ', join(' ', @names), "\n";
-    print "Do you want to continue? [y/N] ";
+    unless ($opt->{quiet}) {
+      print "The following plugins will be REMOVED:\n";
+      foreach (@files) {
+        my $name = $_->basename;
+        $name =~ s/^plugin_//;
+        push @names, $name;
+      };
+      print '  ', join(' ', @names), "\n";
+      print "Do you want to continue? [y/N] ";
+    }
     if (CPrAN::yesno($opt, 'n')) {
       foreach (0..$#files) {
-        print "Removing $names[$_]... ";
+        print "Removing $names[$_]... " unless ($opt->{quiet});
         # TODO(jja) Improve error checking
         my $ret = $files[$_]->rmtree($opt->{verbose}, $opt->{cautious});
         if ($ret) {
-          print "done\n";
+          print "done\n" unless ($opt->{quiet});
         }
         else {
-          print "error\n"
+          print "error\n" unless ($opt->{quiet});
         }
       }
     }
     else {
-      print "Abort.\n";
+      print "Abort.\n" unless ($opt->{quiet});
     }
   }
 }
