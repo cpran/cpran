@@ -7,7 +7,7 @@ use strict;
 use warnings;
 use diagnostics;
 # use Data::Dumper;
-# use Encode qw(encode decode);
+use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
 sub opt_spec {
@@ -32,7 +32,7 @@ sub execute {
   foreach (@{$args}) {
     my $file = file( CPrAN::root(), $_ );
     my $content = read_file($file->stringify);
-    print $content;
+    print decode('utf8', $content);
   }
 }
 
