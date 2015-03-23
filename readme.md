@@ -84,26 +84,87 @@ release. Maybe the best solution would be to set a git hook to
 automatically generate these descriptors every time a new release is
 tagged.
 
-`cpran update` will be like `apt-get update`, and will maintain a local list of
-the latest versions of use CPrAN plugins. (DONE)
+`cpran update` maintains a local list of the latest versions of use CPrAN plugins,
+and should be the first command to run to make sure the list is up to date. In this
+sense, it behaves like `apt-get update`.
 
-`cpran search` will be the equivalent of `apt-cache search`, and will allow 
-users to find specific plugins from within the list. However, its output will be
-more similar to that of `dpkg` or `tlmgr`, so that the same command can be used
-to search both remote and installed versions. (DONE)
+Queries to this list are done through `cpran search`, which also makes it possible
+to search through the plugins that are already installed. In that sense, it serves
+both as `apt-cache search` to look for plugins to install, and as `dpkg -l | grep ii`
+to show what plugins are already installed. When used in this latter form, it will
+show the local versions as well as those of the remote repository.
 
-`cpran show` will serve as `apt-cache show`, to show the full descriptor
-of a specific plugin. (DONE)
+`cpran show` displays information about specific plugins. A number of plugins can
+be specified at the same time, and their description will be printed as a stream.
+It is the equivalent of `apt-cache show`.
 
-`cpran remove` will work as `apt-get remove --purge`, removing the entire plugin
-from memory. (DONE)
+`cpran remove` takes care of deleting plugins from disk, and in that sense behaves
+like  `apt-get remove --purge`.
 
-Installation will be up to `cpran install`, which will behave like
-`apt-get install`. (DONE)
+Installation is done through `cpran install`, which behaves like `apt-get install`.
+And upgrading plugins to their most recent version is done with `cpran upgrade`,
+which acts like `apt-get upgrade`.
 
-And updating plugins will be the task of `cpran upgrade`, which will act like
-`apt-get upgrade`.
+### Installation
+
+As this is an experimental version, it is still in its testing stages. If you want
+to help by running it on your own machine, comments are very welcome. Since Praat
+is cross-platform, it is extremely important for CPrAN to also work in those same
+platforms, and care has been made to write it so that that is possible.
+
+To install it, download the contents of [this branch][zip]. It should be able to
+run from anywhere in your computer, but it's probably better if you save it as you
+would with any other plugin: in the [preferences directory][]. Please note that some
+testing seems to indicate that this is particularly important across filesystem
+barriers, so at the very least make sure it is in the same filesystem as the
+preferences directory.
+
+The important script to run is in the `scripts` folder in the root of this plugin.
+
+You will need Perl to run it. If you are on GNU/Linux then chances are you already
+have it. If not, check your distro's documentation on how to get it. If you are on
+Windows, you can find instructions on how to install it [here][winperl]. If you are
+on Mac, please see [here][macperl].
+
+You will also need to install some modules from CPAN. When you install Perl, chances
+are you'll also get `cpan`. Check the appropriate documentation to see how to install
+CPAN modules. Note you'll need a compiler to do this (but it's normally a pretty
+automatic task).
+
+These are the modules that are currently needed:
+
+* App::Cmd
+* Archive::Tar
+* Carp
+* Data::Dumper
+* Encode
+* File::Copy
+* File::Path
+* File::Slurp
+* File::Temp
+* GitLab::API::v3
+* Graph
+* LWP::Simple
+* MIME::Base64
+* Path::Class
+* Text::Table
+
+Once all that is done, you should be able to run `cpran.pl` from the command line. To
+make sure that all is well, try running `perl cpran.pl --version`. If taht command still
+fails and you've followed all the steps so far, go check out the [issues][] page for
+similar problems, or open a new issue to get help. 
+
+You can get some basic usage information by running `perl cpran.pl help` or `perl cpran.pl
+help <command>`, where `<command>` is the name of the command you want help with. Or you
+can use `perlpod cpran.pl` for much more detailed information.
+
+And make sure to report any problems or successes you might have on your setup!
 
 [gitlab]: https://gitlab.com
 [bower]: https://github.com/bower/bower
+[zip]: https://gitlab.com/cpran/plugin_cpran/repository/archive.zip?ref=perl
 [semver]: http://semver.org
+[preferences directory]: http://www.fon.hum.uva.nl/praat/manual/preferences_directory.html
+[winperl]: http://learn.perl.org/installing/windows.html
+[macperl]: http://learn.perl.org/installing/osx.html
+[issues]: https://gitlab.com/cpran/plugin_cpran/issues
