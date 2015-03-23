@@ -32,8 +32,8 @@ sub execute {
   use MIME::Base64;
 
   my $api = GitLab::API::v3->new(
-    url   => CPrAN::apiurl(),
-    token => CPrAN::token(),
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
   );
 
   my $projects = $api->group( CPrAN::group() )->{projects};
