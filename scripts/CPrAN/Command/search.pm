@@ -5,7 +5,7 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-use diagnostics;
+# use diagnostics;
 use Data::Dumper;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';

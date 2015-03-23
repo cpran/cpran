@@ -5,7 +5,7 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-use diagnostics;
+# use diagnostics;
 use Data::Dumper;
 use Carp;
 use Encode qw(encode decode);
