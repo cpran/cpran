@@ -82,7 +82,7 @@ sub make_row {
     my $local_version = $yaml->{Version};
     my $description = $yaml->{Description}->{Short};
 
-    my $remote_version = '-';
+    my $remote_version = '';
     if (-e $remote_file->stringify) {
       $content = read_file($remote_file->stringify);
       $yaml = Load( $content );
