@@ -30,7 +30,7 @@ B<CPrAN> - A package manager for Praat
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
-      $PRAAT = dir('C:', 'Documents and Settings', $user, 'Praat')->stringify;
+      $PRAAT = dir('C:\\', 'Documents and Settings', $user, 'Praat')->stringify;
     }
     elsif ($Config{osname} eq 'cygwin') {
       # cygwin

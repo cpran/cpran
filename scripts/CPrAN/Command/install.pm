@@ -61,6 +61,12 @@ sub execute {
   #   b) not already installed (unless the user forces reinstallation)
   my @names;
   foreach (@{$args}) {
+    # BUG(jja) What to do here?
+    use Config;
+    if ($_ eq 'cpran' && $Config{osname} eq 'MSWin32') {
+      croak "Cannot currently use CPrAN to install CPrAN in Windows\n";
+    }
+
     if (exists $installed{$_} && !$opt->{force}) {
       warn "W: $_ is already installed\n";
     }
@@ -98,15 +104,15 @@ sub execute {
       print "Do you want to continue? [y/N] ";
     }
     if (CPrAN::yesno($opt, 'n')) {
-      foreach (@schedule) {
+      PLUGIN: foreach (@schedule) {
 
         # Now that we know what plugins to install and in what order, we get
         # them and install them
         print "Downloading archive for $_->{name}\n" unless ($opt->{quiet});
-        my $gzip = get_archive( $opt, $_->{name}, '' );
+        my $archive = get_archive( $opt, $_->{name}, '' );
 
         print "Extracting... " unless ($opt->{quiet});
-        install( $opt, $gzip );
+        install( $opt, $archive );
 
         print "done\n" unless ($opt->{quiet});
 
@@ -179,32 +185,34 @@ sub get_archive {
   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
   # HACK(jja) Or maybe a zip file?
   # my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
-  return get($get_url);
-}
 
-sub install {
-  my ($opt, $gzip) = @_;
-
-  use Archive::Tar;
   use File::Temp;
-  use Path::Class;
-
   my $tmp = File::Temp->new(
     dir => '.',
     template => 'cpranXXXXX',
     suffix => '.tar.gz',
+    unlink => 0,
   );
-  my $fh = file($tmp->filename)->openw();
-  $fh->print($gzip);
-  print 'D: Wrote to ' . $tmp->filename . "\n" if $opt->{debug};
-  $fh->close();
 
-  print Dumper($tar) if ($opt->{debug});
-  my $tar = Archive::Tar->new( $tmp->filename )
-    or croak "Could not read " . $tmp->filename . ": $!";
+  getstore($get_url, $tmp->filename);
+
+  return $tmp->filename;
+}
+
+sub install {
+  my ($opt, $archive) = @_;
+
+  use Archive::Tar;
+  use Path::Class;
+
+  my $tar = Archive::Tar->new( $archive )
+    or croak "Could not read " . $archive . ": $!";
 
   my @extracted = $tar->extract();
   croak "Could not extract archive" unless @extracted;
+
+  $archive = file($archive);
+  $archive->remove();
 
   my $extract_path = shift(@extracted)->{name};
   $extract_path =~ s%/$%%;
@@ -221,8 +229,7 @@ sub install {
   # will be removed!
   # Currently, the list is being manually recreated in the main loop.
   if (-e $final_path->stringify && $opt->{force}) {
-    use File::Path qw(remove_tree);
-    remove_tree($final_path, { error => \my $e });
+    $final_path->rmtree(1, 1);
   }
 
   # Rename directory
