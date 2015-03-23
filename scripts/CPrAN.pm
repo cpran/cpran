@@ -112,7 +112,7 @@ sub is_cpran {
   my ($opt, $arg) = @_;
 
   croak "Argument is not a Path::Class object"
-    unless (ref $arg eq 'Path::Class');
+    unless (ref($arg) =~ /^Path::Class/);
 
   use YAML::XS;
   use File::Slurp;
@@ -216,6 +216,100 @@ sub known {
   } dir( CPrAN::root() )->children;
 }
 
+=item dependencies()
+
+Query the desired plugins for dependencies.
+
+Takes either the name of a single plugin, or a list of names, and returns
+an array of hashes properly formatted for processing with order_dependencies()
+
+=cut
+
+sub dependencies {
+  my ($opt, $args) = @_;
+
+  use Path::Class;
+  use File::Slurp;
+  use YAML::XS;
+
+  my @dependencies;
+
+  # If the argument is a scalar, convert it to a list with it as its single item
+  $args = [ $args ] if (!ref $args);
+
+  foreach my $plugin (@{$args}) {
+
+      # HACK(jja) Delete a possible "cpran/" prefix
+      $plugin =~ s/^cpran\///;
+
+      my $file = file(CPrAN::root(), $plugin);
+      my $descriptor = read_file($file->stringify);
+      my $yaml = YAML::XS::Load( $descriptor );
+
+      # HACK(jja) Only consider CPrAN dependencies and delete the "cpran/"
+      # prefix in the dependency list
+      my @deps;
+      foreach my $dep (keys %{$yaml->{Depends}}) {
+        if ($dep =~ /^cpran/) {
+          $dep =~ s/^cpran\///;
+          push @deps, $dep;
+        }
+      }
+
+      # HACK(jja) We need to restore the stripped "cpran/" prefix so we can
+      # recognize them later
+      my @vers = map {
+        $yaml->{Depends}->{'cpran/' . $_};
+      } @deps;
+
+      my %deps = (
+        name     => $yaml->{Plugin},
+        requires => \@deps,
+        version  => \@vers,
+      );
+
+      push @dependencies, \%deps;
+      # Recursively query dependencies for all dependencies
+      foreach (@{$deps{requires}}) {
+        @dependencies = (@dependencies, dependencies($opt, $_));
+      }
+  }
+  return @dependencies;
+}
+
+=item order_dependencies()
+
+Order required packages, so that those that are depended upon come up first than
+those that depend on them.
+
+The argument is an array of hashes, each of which needs a "name" key that
+identifies the item, and a "requires" holding the reference to an array with
+the names of the items that are required. See dependencies() for a method to
+generate such an array.
+
+Closely modeled after http://stackoverflow.com/a/12166653/807650
+
+=cut
+
+sub order_dependencies {
+  use Graph qw();
+
+   my %recs;
+   my $graph = Graph->new();
+   foreach my $rec (@_) {
+      my ($name, $requires) = @{$rec}{qw( name requires )};
+
+      $graph->add_vertex($name);
+      foreach (@{$requires}) {
+        $graph->add_edge($_, $name);
+      }
+
+      $recs{$name} = $rec;
+   }
+
+   return map $recs{$_}, $graph->topological_sort();
+}
+
 =item yesno()
 
 Gets either a I<yes> or a I<no> answer from STDIN. As arguments, it first
@@ -235,13 +329,48 @@ responses.
 sub yesno {
   my ($opt, $default) = @_;
 
-  if ($opt->{yes}) { print "yes\n"; return 1; }
+  if ($opt->{quiet} && !$opt->{yes}) {
+    return 0;
+  }
+
+  if ($opt->{yes}) {
+    print "yes\n" unless ($opt->{quiet});
+    return 1;
+  }
 
   my $input;
   $input = <STDIN>;
   chomp $input;
   $input = $default if ($input eq "");
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
+}
+
+=item compare_versions()
+
+Compares two semantic version numbers that match /^\d+\.\d+\.\d$/. Returns 1 if
+the first is larger (=newer), -1 if the second is larger, and 0 if they are the
+same;
+
+=cut
+
+sub compare_version {
+  my ($a, $b) = @_;
+
+  croak "Incorrectly formatted version number: $a, $b"
+    if ($a !~ /^\d+\.\d+\.\d+$/ || $b !~ /^\d+\.\d+\.\d+$/);
+
+  return 0 if ($a eq $b);
+
+  my @a = split /\./, $a;
+  my @b = split /\./, $b;
+
+  if    ($a[0] > $b[0]) { return  1 }
+  elsif ($a[0] < $b[0]) { return -1 }
+  elsif ($a[1] > $b[1]) { return  1 }
+  elsif ($a[1] < $b[1]) { return -1 }
+  elsif ($a[2] > $b[2]) { return  1 }
+  elsif ($a[2] < $b[2]) { return -1 }
+  else { croak "What happened?" }
 }
 
 =back
