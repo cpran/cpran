@@ -134,7 +134,7 @@ sub get_archive {
   if ($version eq '') {
     my @tags = @{$api->tags($project->{id})};
     croak "No tags for $name" unless (@tags);
-    $tag = shift ;
+    $tag = shift @tags;
   }
   else {
     # TODO(jja) Enable installation of specific versions
@@ -143,6 +143,7 @@ sub get_archive {
     $tag = shift @{$tags};
   }
 
+  print Dumper($tag);
   my %params = ( sha => $tag->{commit}->{id} );
 #   # HACK(jja) This should work, but the Perl GitLab API seems to currently be
 #   # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
@@ -152,12 +153,10 @@ sub get_archive {
 #   );
 
   # HACK(jja) This is a workaround while the Perl GitLab API is fixed
-  use LWP::Curl;
+  use LWP::Simple;
 
-  my $referer = '';
   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
-  my $lwpcurl = LWP::Curl->new();
-  return $lwpcurl->get($get_url, $referer);
+  return get($get_url);
 }
 
 sub install {
