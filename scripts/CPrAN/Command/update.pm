@@ -36,7 +36,7 @@ sub execute {
     token => CPrAN::api_token(),
   );
 
-  my $projects = $api->group( CPrAN::group() )->{projects};
+  my $projects = $api->group( CPrAN::api_group() )->{projects};
 
   my $dir = Path::Class::dir( CPrAN::root() );
 
