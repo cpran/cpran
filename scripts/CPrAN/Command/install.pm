@@ -156,48 +156,72 @@ sub get_archive {
 
   # HACK(jja) Hacks upon hacks. The GitLab API does not seem to allow the
   # download of a zip archive.
-#   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
-  my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
+  my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
+  # Or maybe a zip file?
+#   my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
   return get($get_url);
 }
 
 sub install {
   my ($opt, $gzip) = @_;
 
-  use Archive::Extract;
+  use Archive::Tar;
   use File::Temp;
   use Path::Class;
 
   my $tmp = File::Temp->new(
     dir => '.',
     template => 'cpranXXXXX',
-    suffix => '.zip',
+    suffix => '.tar.gz',
+#     unlink => 0,
   );
   my $archive = file($tmp->filename);
   my $fh = $archive->openw();
   $fh->print($gzip);
   print "D: Wrote to $archive\n" if $opt->{debug};
+  $fh->close();
 
-  my $ae = Archive::Extract->new( archive => $tmp->filename );
+  my $tar = Archive::Tar->new( $tmp->filename )
+    or croak "Could not read " . $tmp->filename . ": $!";
+  my @extracted = $tar->extract();
+  croak "Could not extract archive" unless @extracted;
 
-  my $ok = $ae->extract( to => CPrAN::praat() )
-    or die "Could not extract package: $ae->error";
-
+  my $extract_path = shift(@extracted)->{name};
+  $extract_path =~ s%/$%%;
+  
   # GitLab archives have a ".git" suffix in their directory names
   # We need to remove that suffix
-  my $final_path = $ae->extract_path;
-  $final_path =~ s/\.git$//;
+  my $final_path = $extract_path;
+  print "$final_path -> ";
+  $final_path =~ s%\.git$%%;
+  print "$final_path\n";
+  $final_path = dir(CPrAN::praat(), $final_path);
 
   # TODO(jja) If we are forcing the re-install of a plugin, the previously
   # existing directory needs to be removed. Maybe this could be better handled?
-  if (-e $final_path && $opt->{force}) {
+  # Because if we are, say, reinstalling cpran itself, the .cpran root
+  # will be removed!
+  if (-e $final_path->stringify && $opt->{force}) {
     use File::Path qw(remove_tree);
-    remove_tree($final_path);
+    remove_tree($final_path, { error => \my $e });
+    # For error checking
+#     if (@{$e}) {
+#       foreach (@{$e}) {
+#         my ($file, $message) = %{$_};
+#         if ($file eq '') { warn "general error: $message\n" }
+#         else { warn "problem unlinking $file: $message\n" }
+#       }
+#     }
+  }
+
+  if (-e $final_path->stringify) {
+    print "still exists!!\n";
   }
 
   # Rename directory
   use File::Copy;
-  move($ae->extract_path, $final_path)
+  print "$extract_path -> $final_path\n";
+  move($extract_path, $final_path)
     or croak "Move failed: $!";
 }
 
