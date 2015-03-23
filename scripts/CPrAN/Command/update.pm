@@ -19,8 +19,6 @@ sub opt_spec {
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("No arguments allowed") if @{$args};
-
   CPrAN::set_global( $opt );
 }
 
@@ -36,10 +34,22 @@ sub execute {
     token => CPrAN::api_token(),
   );
 
-  my $projects = $api->group( CPrAN::api_group() )->{projects};
+  my $projects;
+  if (@{$args}) {
+    my @p;
+    foreach (@{$args}) {
+      my $p = $api->projects( { search => 'plugin_' . $_ } );
+      push @p, @{$p};
+    }
+    $projects = \@p;
+  }
+  else {
+    $projects = $api->group( CPrAN::api_group() )->{projects};
+  }
 
   my $dir = Path::Class::dir( CPrAN::root() );
 
+  my $descriptors;
   foreach my $plugin (@{$projects}) {
     my $name = substr($plugin->{name}, 7);
     my $file = $dir->file($name);
@@ -62,9 +72,10 @@ sub execute {
       my $fh = $file->openw();
       $fh->print($descriptor);
       print "done\n" if $opt->{verbose};
+      $descriptors .= $descriptor;
     }
   }
-
+  return $descriptors;
 }
 
 1;
