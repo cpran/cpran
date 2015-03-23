@@ -12,10 +12,10 @@ binmode STDOUT, ':utf8';
 
 sub opt_spec {
   return (
-#     [ "name|n",        "search in plugin name" ],
-#     [ "description|d", "search in description" ],
-    [ "installed|i",   "only consider installed plugins" ],
-    [ "debug",         "show debug messages" ],
+#     [ "name|n"        => "search in plugin name" ],
+#     [ "description|d" => "search in description" ],
+    [ "installed|i"   => "only consider installed plugins" ],
+    [ "debug"         => "show debug messages" ],
   );
 }
 

@@ -10,12 +10,12 @@ use Data::Dumper;
 
 sub opt_spec {
   return (
-    [ "yes|y",    "do not ask for confirmation" ],
-    [ "all",      "process non-CPrAN plugins as well" ],
-    [ "debug",    "print debugging messages" ],
-    [ "verbose",  "increase verbosity" ],
-    [ "quiet",    "produce no output" ],
-    [ "cautious", "be extra-careful while removing files" ],
+    [ "yes|y"    => "do not ask for confirmation" ],
+    [ "all"      => "process non-CPrAN plugins as well" ],
+    [ "debug"    => "print debugging messages" ],
+    [ "verbose"  => "increase verbosity" ],
+    [ "quiet"    => "produce no output" ],
+    [ "cautious" => "be extra-careful while removing files" ],
   );
 }
 

@@ -12,7 +12,7 @@ use autodie;
 
 sub opt_spec {
   return (
-    [ "verbose|v+", "increase verbosity" ],
+    [ "verbose|v+" => "increase verbosity" ],
   );
 }
 

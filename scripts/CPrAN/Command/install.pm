@@ -13,10 +13,10 @@ binmode STDOUT, ':utf8';
 
 sub opt_spec {
   return (
-    [ "yes|y", "do not ask for confirmation" ],
-    [ "force|f", "print debugging messages" ],
-    [ "quiet",    "produce no output" ],
-    [ "debug", "force installation of plugin" ],
+    [ "yes|y"   => "do not ask for confirmation" ],
+    [ "force|f" => "print debugging messages" ],
+    [ "quiet"   => "produce no output" ],
+    [ "debug"   => "force installation of plugin" ],
   );
 }
 
@@ -33,11 +33,9 @@ sub validate_args {
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
   # but a (clumsy) way for Praat to recognize plugin directories.
   my $prefix_warning = 0;
-  foreach (0..$#{$args}) {
-    if ($args->[$_] =~ /^plugin_/) {
-      $prefix_warning = 1;
-    }
-    $args->[$_] =~ s/^plugin_//;
+  foreach (@{$args}) {
+    $prefix_warning = 1 if (/^plugin_/);
+    s/^plugin_//;
   }
   warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
     if ($prefix_warning);
@@ -111,28 +109,36 @@ sub execute {
         install( $opt, $gzip );
 
         print "done\n" unless ($opt->{quiet});
-        
+
         if ($_->{name} eq 'cpran') {
           # CPrAN is installing itself!
           # HACK(jja) currently, a reinstall deletes the original directory
           # which in the case of CPrAN will likely destroy the CPrAN root.
           # If that's the case, we rebuild it.
-          unless (-e CPrAN::root()) {
-            CPrAN::make_root();
-            my $app = CPrAN->new();
-            # We copy the current options, in case custom paths have been passed
-            my %params = %{$opt};
-            $params{verbose} = 0;
-            print "Rebuilding plugin list... " unless ($opt->{quiet});
-            $app->execute_command('CPrAN::Command::update', \%params, ());
-            print "done\n" unless ($opt->{quiet});
-          }
+          rebuild_list($opt) unless (-e CPrAN::root());
         }
       }
     }
     else {
       print "Abort.\n" unless ($opt->{quiet});
     }
+  }
+}
+
+sub rebuild_list() {
+    my $opt = shift;
+
+    CPrAN::make_root();
+
+    my $app = CPrAN->new();
+
+    # We copy the current options, in case custom paths have been passed
+    my %params = %{$opt};
+    $params{verbose} = 0;
+
+    print "Rebuilding plugin list... " unless ($opt->{quiet});
+    $app->execute_command('CPrAN::Command::update', \%params, ());
+    print "done\n" unless ($opt->{quiet});
   }
 }
 
@@ -161,21 +167,19 @@ sub get_archive {
   }
 
   my %params = ( sha => $tag->{commit}->{id} );
-#   # HACK(jja) This should work, but the Perl GitLab API seems to currently be
-#   # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
-#   my $archive = $api->archive(
-#     $project->{id},
-#     \%params
-#   );
+  # # HACK(jja) This should work, but the Perl GitLab API seems to currently be
+  # # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
+  # my $archive = $api->archive(
+  #   $project->{id},
+  #   \%params
+  # );
 
   # HACK(jja) This is a workaround while the Perl GitLab API is fixed
   use LWP::Simple;
 
-  # HACK(jja) Hacks upon hacks. The GitLab API does not seem to allow the
-  # download of a zip archive.
   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
-  # Or maybe a zip file?
-#   my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
+  # HACK(jja) Or maybe a zip file?
+  # my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
   return get($get_url);
 }
 
@@ -190,16 +194,15 @@ sub install {
     dir => '.',
     template => 'cpranXXXXX',
     suffix => '.tar.gz',
-#     unlink => 0,
   );
-  my $archive = file($tmp->filename);
-  my $fh = $archive->openw();
+  my $fh = file($tmp->filename)->openw();
   $fh->print($gzip);
-  print "D: Wrote to $archive\n" if $opt->{debug};
+  print 'D: Wrote to ' . $tmp->filename . "\n" if $opt->{debug};
   $fh->close();
 
   my $tar = Archive::Tar->new( $tmp->filename )
     or croak "Could not read " . $tmp->filename . ": $!";
+
   my @extracted = $tar->extract();
   croak "Could not extract archive" unless @extracted;
 
@@ -216,17 +219,10 @@ sub install {
   # existing directory needs to be removed. Maybe this could be better handled?
   # Because if we are, say, reinstalling cpran itself, the .cpran root
   # will be removed!
+  # Currently, the list is being manually recreated in the main loop.
   if (-e $final_path->stringify && $opt->{force}) {
     use File::Path qw(remove_tree);
     remove_tree($final_path, { error => \my $e });
-    # For error checking
-#     if (@{$e}) {
-#       foreach (@{$e}) {
-#         my ($file, $message) = %{$_};
-#         if ($file eq '') { warn "general error: $message\n" }
-#         else { warn "problem unlinking $file: $message\n" }
-#       }
-#     }
   }
 
   # Rename directory

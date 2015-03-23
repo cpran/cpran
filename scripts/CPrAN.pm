@@ -20,26 +20,29 @@ B<CPrAN> - A package manager for Praat
 {
   use Path::Class;
   use Config;
-  my $user = getlogin || getpwuid($<) || "???";
   my ($ROOT, $PRAAT);
-  if ($Config{osname} eq 'darwin') {
-    # Mac
-#     print "$user\@mac\n";
-    $PRAAT  = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat', 'Prefs')->stringify;
-    $ROOT   = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
+  {
+    my $user = getlogin || getpwuid($<) || "???";
+    if ($Config{osname} eq 'darwin') {
+      # Mac
+      $PRAAT = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat', 'Prefs')->stringify;
+      $ROOT  = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
+    }
+    elsif ($Config{osname} eq 'MSWin32') {
+      # Windows
+      $PRAAT = dir('C:', 'Documents and Settings', $user, 'Praat')->stringify;
+    }
+    elsif ($Config{osname} eq 'cygwin') {
+      # cygwin
+      warn "Cygwin not tested. Treating as if GNU/Linux\n";
+      $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+    }
+    else {
+      # GNU/Linux
+      $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+    }
+    $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
   }
-  elsif ($Config{osname} eq 'MSWin32') {
-    # Windows
-#     print "$user\@windows\n";
-    $PRAAT = dir('C:', 'Documents and Settings', $user, 'Praat')->stringify;
-  }
-  else {
-    # Linux
-#     print "$user\@linux\n";
-    $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
-  }
-  $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
-
   my $TOKEN  = 'WMe3t_ANxd3yyTLyc7WA';
   my $APIURL = 'https://gitlab.com/api/v3/';
   my $GROUP  = '133578';
@@ -64,8 +67,8 @@ B<CPrAN> - A package manager for Praat
 
 =head1 DESCRIPTION
 
-B<CPrAN> is the parent class for an App::Cmd application to search, install, remove
-and update Praat plugins.
+B<CPrAN> is the parent class for an App::Cmd application to search, install,
+remove and update Praat plugins.
 
 As a App::Cmd application, use of this module is separated over a number of
 different files. The main script invokes the root module and executes it, as in
@@ -108,8 +111,8 @@ make_root();
 Takes an object of type Path::Class and checks whether it is a B<CPrAN> Praat
 plugin. See I<is_plugin()> for the criteria they need to fulfill ot be a plugin.
 
-In order to be considered a B<CPrAN> plugin, a valid plugin must additionally have
-a I<plugin descriptor> written in valid YAML.
+In order to be considered a B<CPrAN> plugin, a valid plugin must additionally
+have a I<plugin descriptor> written in valid YAML.
 
 This method does not currently make any sanity checks on the structure of the
 plugin descriptor (which should follow the example bundled in I<example.yaml>),
@@ -135,7 +138,8 @@ sub is_cpran {
     $descriptor = 1 if $_->basename eq 'cpran.yaml';
   } @contents;
   unless ($descriptor) {
-    print STDERR "D: ", $arg->basename, " does not have a descriptor\n" if $opt->{debug};
+    print STDERR "D: ", $arg->basename, " does not have a descriptor\n"
+      if $opt->{debug};
     return 0;
   }
 
@@ -163,17 +167,20 @@ sub is_plugin {
     unless (ref($arg) =~ /^Path::Class/);
 
   unless ($arg->is_dir) {
-    print STDERR "D: ", $arg->basename, " is not a directory\n" if $opt->{debug};
+    print STDERR "D: ", $arg->basename, " is not a directory\n"
+      if $opt->{debug};
     return 0;
   }
 
   unless ($arg->parent eq CPrAN::praat() ) {
-    print STDERR "D: ", $arg->basename, " is not in " . CPrAN::praat() . "\n" if $opt->{debug};
+    print STDERR "D: ", $arg->basename, " is not in " . CPrAN::praat() . "\n"
+      if $opt->{debug};
     return 0;
   }
 
   unless ($arg->basename =~ /^plugin_/) {
-    print STDERR "D: ", $arg->basename, " is not properly named\n" if $opt->{debug};
+    print STDERR "D: ", $arg->basename, " is not properly named\n"
+      if $opt->{debug};
     return 0;
   }
 
@@ -209,8 +216,8 @@ sub installed {
 
 =item known()
 
-Returns a list of all plugins known by B<CPrAN>. In practice, this is the list of
-plugins whose descriptors have been saved by C<cpran update>
+Returns a list of all plugins known by B<CPrAN>. In practice, this is the list
+of plugins whose descriptors have been saved by C<cpran update>
 
     my @known = known();
     print "$_\n" foreach (@known);
