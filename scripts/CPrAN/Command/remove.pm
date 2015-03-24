@@ -11,7 +11,7 @@ use Data::Dumper;
 sub opt_spec {
   return (
     [ "yes|y"    => "do not ask for confirmation" ],
-    [ "all"      => "process non-CPrAN plugins as well" ],
+    [ "force"    => "attempt to work around errors" ],
     [ "debug"    => "print debugging messages" ],
     [ "verbose"  => "increase verbosity" ],
     [ "quiet"    => "produce no output" ],
@@ -59,7 +59,7 @@ sub execute {
         push @files, $plugin;
       }
       else {
-        warn "W: $_ is not a CPrAN plugin. Use --all to process anyway.\n";
+        warn "W: $_ is not a CPrAN plugin. Use --force to process anyway.\n";
       }
     }
     else {
