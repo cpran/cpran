@@ -21,6 +21,9 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("Must provide a plugin name") unless @{$args};
+  foreach (@{$args}) {
+    croak "Empty argument" unless $_;
+  }
 
   CPrAN::set_global( $opt );
 }
@@ -29,7 +32,7 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
 #   print Dumper($args);
-  
+
   use Path::Class;
   use File::Slurp;
 
