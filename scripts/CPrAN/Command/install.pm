@@ -167,7 +167,7 @@ sub execute {
           # HACK(jja) currently, a reinstall deletes the original directory
           # which in the case of CPrAN will likely destroy the CPrAN root.
           # If that's the case, we rebuild it.
-          rebuild_list($opt) unless (-e CPrAN::root());
+          rebuild_list($self, $opt) unless (-e CPrAN::root());
         }
       }
     }
@@ -178,18 +178,17 @@ sub execute {
 }
 
 sub rebuild_list {
-  my $opt = shift;
+  my ($self, $opt) = @_;
 
   CPrAN::make_root();
-
-  my $app = CPrAN->new();
 
   # We copy the current options, in case custom paths have been passed
   my %params = %{$opt};
   $params{verbose} = 0;
 
   print "Rebuilding plugin list... " unless ($opt->{quiet});
-  $app->execute_command('CPrAN::Command::update', \%params, ());
+  my ($cmd) = $self->app->prepare_command('update');
+  $self->app->execute_command( $cmd, \%params, () );
   print "done\n" unless ($opt->{quiet});
 }
 
