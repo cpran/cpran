@@ -50,7 +50,7 @@ sub execute {
     @names = CPrAN::known();
     print "D: " . scalar @names . " known plugins\n" if $opt->{debug};
   }
-  @names = sort @names;
+  @names = sort { "\L$a" cmp "\L$b" } @names;
 
   my @found;
   map {
@@ -76,23 +76,31 @@ sub make_row {
   my $content;
   my $remote_file = file(CPrAN::root(), $name);
   if ($opt->{installed}) {
-    my $local_file  = file(CPrAN::praat(), 'plugin_' . $name, 'cpran.yaml');
+    my $plugin = dir(CPrAN::praat(), 'plugin_' . $name);
 
-    $content = read_file($local_file->stringify);
-    $yaml = Load( $content );
+    if (CPrAN::is_cpran( $opt, $plugin )) {
+      my $local_file  = file( $plugin, 'cpran.yaml' );
 
-    my $name = $yaml->{Plugin};
-    my $local_version = $yaml->{Version};
-    my $description = $yaml->{Description}->{Short};
-
-    my $remote_version = '';
-    if (-e $remote_file->stringify) {
-      $content = read_file($remote_file->stringify);
+      $content = read_file($local_file->stringify);
       $yaml = Load( $content );
-      $remote_version = $yaml->{Version};
-    }
 
-    return ($name, $local_version, $remote_version, $description);
+      my $name          = $yaml->{Plugin};
+      my $local_version = $yaml->{Version};
+      my $description   = $yaml->{Description}->{Short};
+
+      my $remote_version = '';
+      if (-e $remote_file->stringify) {
+        $content        = read_file($remote_file->stringify);
+        $yaml           = Load( $content );
+        $remote_version = $yaml->{Version};
+      }
+
+      return ($name, $local_version, $remote_version, $description);
+    }
+    else {
+      # Not a CPrAN plugin
+      return ($name, '', '', '[Not a CPrAN plugin]');
+    }
   }
   else {
     $content = read_file($remote_file->stringify);
