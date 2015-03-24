@@ -18,6 +18,9 @@ B<CPrAN> - A package manager for Praat
 
 =cut
 
+# HACK(jja) Ideally, this block would get run automatically, after the App has
+# been iniitalised, and after the options have been parsed, but before any
+# commands get executed.
 {
   use Path::Class;
   use Config;
@@ -63,6 +66,15 @@ B<CPrAN> - A package manager for Praat
     $TOKEN  = $opt->{'api-token'} if $opt->{'api-token'};
     $APIURL = $opt->{'api-url'}   if $opt->{'api-url'};
     $GROUP  = $opt->{'api-group'} if $opt->{'api-group'};
+
+    croak "E: Cannot read from CPrAN root at " . CPrAN::root()
+      unless (-r CPrAN::root());
+    croak "E: Cannot write to CPrAN root at " . CPrAN::root()
+      unless (-w CPrAN::root());
+    croak "E: Cannot read from preferences directory at " . CPrAN::praat()
+      unless (-r CPrAN::praat());
+    croak "E: Cannot write to preferences directory at " . CPrAN::praat()
+      unless (-w CPrAN::praat());
   }
 }
 
