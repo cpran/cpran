@@ -80,17 +80,22 @@ sub execute {
 
     if (exists $known{$plugin->{name}}) {
       my $install = 0;
+
       if (exists $installed{$plugin->{name}}) {
+
         use YAML::XS;
-        my $app = CPrAN->new();
-        my $descriptor = $app->execute_command(
-          'CPrAN::Command::show',
-          { quiet => 1, installed => 1},
-          $plugin->{name}
+
+        my ($cmd) = $self->app->prepare_command('show');
+        my $descriptor = $self->app->execute_command(
+          $cmd, { quiet => 1, installed => 1 }, $plugin->{name}
         );
-        my $yaml = Load($descriptor);
-        my $local = $yaml->{Version};
-        my $newer = CPrAN::compare_version( $local, $plugin->{version} );
+
+        my $newer = 0;
+        if ($descriptor) {
+          my $yaml = Load($descriptor);
+          my $local = $yaml->{Version};
+          $newer = CPrAN::compare_version( $local, $plugin->{version} );
+        }
 
         if ($newer) {
           # Plugin is installed, but we are upgrading
@@ -101,7 +106,9 @@ sub execute {
             # Plugin is installed, but user forced re-install or downgrade
             $install = 1;
           }
-          else { warn "W: $plugin->{name} is already installed\n" }
+          else {
+            warn "W: $plugin->{name} is already installed. Use --force to reinstall\n";
+          }
         }
       }
       else {
@@ -242,39 +249,82 @@ sub install {
   my ($opt, $archive) = @_;
 
   use Archive::Tar;
-  use Path::Class;
-
-  my $tar = Archive::Tar->new( $archive )
-    or croak "Could not read " . $archive . ": $!";
-
-  my @extracted = $tar->extract();
-  croak "Could not extract archive" unless @extracted;
+  use Path::Class qw(file dir foreign_file foreign_dir);
 
   $archive = file($archive);
-  $archive->remove();
 
-  my $extract_path = shift(@extracted)->{name};
-  $extract_path =~ s%/$%%;
+  my $retval = 1;
 
-  # GitLab archives have a ".git" suffix in their directory names
-  # We need to remove that suffix
-  my $final_path = $extract_path;
-  $final_path =~ s%\.git$%%;
-  $final_path = dir(CPrAN::praat(), $final_path);
+  # GitLab archives have a ".git" suffix in their directory names. We need to
+  # remove that suffix and extract the archive into the new plugin directory.
+  # So far, the best way to do so seems to be to iterate through the contents of
+  # the archive and rename each one to remove the /.git$/.
+  # We then construct a new target name and extract directly into that location,
+  # avoiding moving files, which is tricky.
+  my $next = Archive::Tar->iter( $archive->stringify, 1, { filter => qr/.*/ } );
 
-  # TODO(jja) If we are forcing the re-install of a plugin, the previously
-  # existing directory needs to be removed. Maybe this could be better handled?
-  # Because if we are, say, reinstalling cpran itself, the .cpran root
-  # will be removed!
+  # TODO(jja) Improve handling of existing target directories
+  # If we are forcing the re-install of a plugin, the previously existing
+  # directory needs to be removed. Maybe this could be better handled? Because
+  # if we are, say, reinstalling cpran itself, the .cpran root will be removed
   # Currently, the list is being manually recreated in the main loop.
-  if (-e $final_path->stringify && $opt->{force}) {
-    $final_path->rmtree(1, 1);
+
+  # We make a new root in the preferences directory, and remove it if it
+  # already exists
+  my $root = $next->()->full_path;
+  $root = dir(CPrAN::praat(), $root);
+  if (-e $root->stringify && $opt->{force}) {
+    print "Removing $root\n";
+    use File::Path qw(remove_tree);
+    remove_tree( $root->stringify, { verbose => 1, safe => 0, error => \my $e } );
+    if (@{$e}) {
+      foreach (@{$e}) {
+        my ($file, $message) = %{$_};
+          if ($file eq '') {
+          warn "General error: $message\n";
+        }
+        else {
+          warn "Problem unlinking $file: $message\n";
+        }
+      }
+    }
   }
 
-  # Rename directory
-  use File::Copy;
-  move($extract_path, $final_path)
-    or croak "Move failed: $!";
+  while (my $f = $next->()) {
+    # $path is a Path::Class object for the current item in the archive
+    my $path;
+    if ($f->name =~ /\/$/) {
+      $path = Path::Class::Dir->new_foreign('Unix', $f->name);
+    }
+    else {
+      $path = Path::Class::File->new_foreign('Unix', $f->name);
+    }
+
+    # @components has all the items (directories and files) in the current name
+    # so we strip the /.git$/ of the first one (ie, the root)
+    my @components = $path->components();
+    $components[0] =~ s/\.git$//;
+
+    # We place the preferences directory at the beginning of the new path
+    unshift @components, CPrAN::praat();
+
+    # And make a new Path::Class object pointing to it
+    my $final_path;
+    if ($path->is_dir()) {
+      $final_path = Path::Class::Dir->new( @components );
+    }
+    else {
+      $final_path = Path::Class::File->new( @components );
+    }
+
+    # We use that new path to extract directly into it
+    my $outcome = $f->extract( $final_path );
+    unless ($outcome) {
+      warn "Could not extract to $final_path";
+      $retval = 0;
+    }
+  }
+  $archive->remove();
 }
 
 sub strip_prefix {
