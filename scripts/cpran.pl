@@ -95,9 +95,9 @@ with an on-site collection of plugins.
     # Install a plugin by name
     cpran install name
     # Upgrade all plugins to their most recent version
-    cpran update
+    cpran upgrade
     # Upgrade a plugin by name to its most recent version
-    cpran update name
+    cpran upgrade name
     # Remove a plugin by name from disk
     cpran remove name
 

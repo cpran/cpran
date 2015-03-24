@@ -15,27 +15,27 @@ remove and update Praat plugins.
 
 - **update**
 
-    See [CPrAN::Command::update] for the full documentation.
+    See [CPrAN::Command::update](#) for the full documentation.
 
 - **search**
 
-    See [CPrAN::Command::search] for the full documentation.
+    See [CPrAN::Command::search](#) for the full documentation.
 
 - **show**
 
-    See [CPrAN::Command::show] for the full documentation.
+    See [CPrAN::Command::show](#) for the full documentation.
 
 - **install**
 
-    See [CPrAN::Command::install] for the full documentation.
+    See [CPrAN::Command::install](#) for the full documentation.
 
 - **upgrade**
 
-    See [CPrAN::Command::upgrade] for the full documentation.
+    See [CPrAN::Command::upgrade](#) for the full documentation.
 
 - **remove**
 
-    See [CPrAN::Command::remove] for the full documentation.
+    See [CPrAN::Command::remove](#) for the full documentation.
 
 ## Options
 
@@ -80,9 +80,9 @@ remove and update Praat plugins.
     # Install a plugin by name
     cpran install name
     # Upgrade all plugins to their most recent version
-    cpran update
+    cpran upgrade
     # Upgrade a plugin by name to its most recent version
-    cpran update name
+    cpran upgrade name
     # Remove a plugin by name from disk
     cpran remove name
 
