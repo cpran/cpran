@@ -2,6 +2,7 @@ package CPrAN;
 
 use App::Cmd::Setup -app;
 use File::Path;
+use Data::Dumper;
 use Carp;
 
 =encoding utf8
@@ -86,6 +87,7 @@ sub global_opt_spec {
     [ "api-token=s" => "set private token for GitLab API access" ],
     [ "api-url=s"   => "set url of GitLab API" ],
     [ "api-group=s" => "set the id for the GitLab CPrAN group" ],
+    [ "quiet"       => "quietly say no to everything" ],
   );
 }
 
@@ -251,33 +253,59 @@ sub dependencies {
   my @dependencies;
 
   # If the argument is a scalar, convert it to a list with it as its single item
-  $args = [ $args ] if (!ref $args);
+  $args = [ { name => $args, version => '' } ] if (!ref $args);
 
   foreach my $plugin (@{$args}) {
 
-      # HACK(jja) Delete a possible "cpran/" prefix
-      $plugin =~ s/^cpran\///;
+    if ($plugin->{version} eq '') {
+      $plugin->{version} = CPrAN::get_latest_version( $plugin->{name} );
+    }
 
-      my $file = file(CPrAN::root(), $plugin);
-      my $descriptor = read_file($file->stringify);
-      my $yaml = YAML::XS::Load( $descriptor );
+    my $app = CPrAN->new();
+    my $descriptor = $app->execute_command(
+      'CPrAN::Command::show',
+      { quiet => 1 },
+      $plugin->{name}
+    );
+    my $yaml = YAML::XS::Load( $descriptor );
+    if ($yaml->{Version} ne $plugin->{version}) {
+      # Requested version is not the newest on record
+      # We fetch that version's descriptor from server to check for that
+      # version's dependencies
+      $plugin_id = CPrAN::get_plugin_id( $plugin->{name} );
 
-      # HACK(jja) Only consider CPrAN dependencies and delete the "cpran/"
-      # prefix in the dependency list
-      my @deps;
-      foreach my $dep (keys %{$yaml->{Depends}}) {
-        if ($dep =~ /^cpran/) {
-          $dep =~ s/^cpran\///;
-          push @deps, $dep;
+      use GitLab::API::v3;
+      my $api = GitLab::API::v3->new(
+        url   => CPrAN::api_url(),
+        token => CPrAN::api_token(),
+      );
+      my $tags = $api->tags($plugin_id);
+      my $sha;
+      foreach (@{$tags}) {
+        if ($_->{name} eq "v$plugin->{version}") {
+          $sha = $_->{commit}->{id};
         }
       }
+      croak "Could not find $plugin->{name} (v$plugin->{version})" unless $sha;
 
-      # HACK(jja) We need to restore the stripped "cpran/" prefix so we can
-      # recognize them later
-      my @vers = map {
-        $yaml->{Depends}->{'cpran/' . $_};
-      } @deps;
+      # # HACK(jja) This should work, but the Perl GitLab API seems to currently be
+      # # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
+      # $descriptor = decode_base64(
+      #   $api->file($plugin_id, {
+      #     file_path => 'cpran.yaml',
+      #     sha => $sha,
+      #   })->{content}
+      # );
+      use LWP::Simple;
+      my $get = 'https://gitlab.com/cpran/plugin_' . $plugin->{name} . '/raw/' . $sha . '/cpran.yaml';
+      $descriptor = get($get);
+    }
 
+    # We are only interested in CPrAN dependencies
+    if (exists $yaml->{Depends}->{Plugins}) {
+      my %raw_deps = %{$yaml->{Depends}->{Plugins}};
+      my @deps = keys %raw_deps;
+      my @vers = map { $raw_deps{$_} } @deps;
       my %deps = (
         name     => $yaml->{Plugin},
         requires => \@deps,
@@ -289,6 +317,14 @@ sub dependencies {
       foreach (@{$deps{requires}}) {
         @dependencies = (@dependencies, dependencies($opt, $_));
       }
+    }
+    else {
+      push @dependencies, {
+        name => $yaml->{Plugin},
+        requires => [],
+        version => [],
+      };
+    }
   }
   return @dependencies;
 }
@@ -387,6 +423,50 @@ sub compare_version {
   elsif ($a[2] > $b[2]) { return  1 }
   elsif ($a[2] < $b[2]) { return -1 }
   else { croak "What happened?" }
+}
+
+=item get_latest_version()
+
+Gets the latest known version for a plugin specified by name.
+
+=cut
+
+sub get_latest_version {
+  my $name = shift;
+
+  use YAML::XS;
+
+  my $app = CPrAN->new();
+  my $descriptor = $app->execute_command(
+    'CPrAN::Command::show',
+    { quiet => 1 },
+    $name
+  );
+  my $yaml = Load($descriptor);
+  return $yaml->{Version};
+}
+
+=item get_plugin_id()
+
+Fetches the GitLab id for the project specified by name
+
+=cut
+
+sub get_plugin_id {
+  my $name = shift;
+
+  use GitLab::API::v3;
+  my $api = GitLab::API::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  my $project = $api->projects( { search => 'plugin_' . $name } );
+
+  foreach (@{$project}) {
+    return $_->{id} if ($_->{name} eq 'plugin_' . $name);
+  }
+  return '';
 }
 
 =back

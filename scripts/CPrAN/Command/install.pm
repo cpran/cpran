@@ -15,7 +15,6 @@ sub opt_spec {
   return (
     [ "yes|y"   => "do not ask for confirmation" ],
     [ "force|f" => "print debugging messages" ],
-    [ "quiet"   => "produce no output" ],
     [ "debug"   => "force installation of plugin" ],
   );
 }
@@ -32,13 +31,18 @@ sub validate_args {
   # Users might be tempted to input the names of plugin as "plugin_name", but
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
   # but a (clumsy) way for Praat to recognize plugin directories.
-  my $prefix_warning = 0;
+  $args = strip_prefix($args);
+
   foreach (@{$args}) {
-    $prefix_warning = 1 if (/^plugin_/);
-    s/^plugin_//;
+    my @parts = split /-/, $_;
+    push @parts, '' unless /-\d+\.\d+\.\d+$/;
+    my $version = pop @parts;
+    my $name = join '-', @parts;
+    $_ = {
+      version => $version,
+      name    => $name,
+    };
   }
-  warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
-    if ($prefix_warning);
 
   CPrAN::set_global( $opt );
 }
@@ -56,40 +60,75 @@ sub execute {
 
   # Plugins that are already installed cannot be installed again (unless the
   # user orders a forced-reinstall).
-  # @names will hold the names of the plugins passed as arguments that are
+  # @plugins will hold the names and versions of the plugins passed as arguments
+  # that are
   #   a) valid CPrAN plugin names; and
-  #   b) not already installed (unless the user forces reinstallation)
-  my @names;
-  foreach (@{$args}) {
+  #   b) not already installed (unless the user forces re-installation); or
+  #   c) newer than those installed (unless the user forces downgrade)
+  my @plugins;
+  foreach my $plugin (@{$args}) {
     # BUG(jja) What to do here?
     use Config;
-    if ($_ eq 'cpran' && $Config{osname} eq 'MSWin32') {
+    if ($plugin->{name} eq 'cpran' && $Config{osname} eq 'MSWin32') {
       croak "Cannot currently use CPrAN to install CPrAN in Windows\n";
     }
 
-    if (exists $installed{$_} && !$opt->{force}) {
-      warn "W: $_ is already installed\n";
+    # User requested an unversioned plugin, default to the newest on record
+    if ($plugin->{version} eq '') {
+      $plugin->{version} = CPrAN::get_latest_version( $plugin->{name} );
+    }
+
+    if (exists $known{$plugin->{name}}) {
+      my $install = 0;
+      if (exists $installed{$plugin->{name}}) {
+        use YAML::XS;
+        my $app = CPrAN->new();
+        my $descriptor = $app->execute_command(
+          'CPrAN::Command::show',
+          { quiet => 1, installed => 1},
+          $plugin->{name}
+        );
+        my $yaml = Load($descriptor);
+        my $local = $yaml->{Version};
+        my $newer = CPrAN::compare_version( $local, $plugin->{version} );
+
+        if ($newer) {
+          # Plugin is installed, but we are upgrading
+          $install = 1;
+        }
+        else {
+          if ($opt->{force}) {
+            # Plugin is installed, but user forced re-install or downgrade
+            $install = 1;
+          }
+          else { warn "W: $plugin->{name} is already installed\n" }
+        }
+      }
+      else {
+        # Plugin is not installed
+        $install = 1;
+      }
+      push @plugins, $plugin if $install;
     }
     else {
-      # HACK(jja) We add the 'cpran/' prefix to distinguish CPrAN requirements
-      if (exists $known{$_}) { push @names, 'cpran/' . $_ }
-      else { warn "W: no plugin named $_\n" }
+      warn "W: no known plugin named $plugin->{name}\n"
     }
   }
 
   # Get a source dependency tree for the plugins that are to be installed.
   # The dependencies() subroutine calls itself recursively to include the
   # dependencies of the dependencies, and so on.
-  my @deps = CPrAN::dependencies($opt, \@names);
+  my @deps = CPrAN::dependencies( $opt, \@plugins );
 
   # The source tree is then ordered to get a schedule of plugin installation.
   # In the resulting list, plugins with no dependencies come first, and those
   # that depend on them come later.
-  my @ordered = CPrAN::order_dependencies(@deps);
+  my @ordered = CPrAN::order_dependencies( @deps );
 
   # Scheduled plugins that are already installed need to be removed from the
   # schedule
   # TODO(jja) What does --force mean in this context?
+  # TODO(jja) 
   my @schedule;
   foreach (@ordered) {
     push @schedule, $_
@@ -103,7 +142,7 @@ sub execute {
       print '  ', join(' ', map { $_->{name} } @schedule), "\n";
       print "Do you want to continue? [y/N] ";
     }
-    if (CPrAN::yesno($opt, 'n')) {
+    if (CPrAN::yesno( $opt, 'n' )) {
       PLUGIN: foreach (@schedule) {
 
         # Now that we know what plugins to install and in what order, we get
@@ -167,7 +206,7 @@ sub get_archive {
   else {
     # TODO(jja) Enable installation of specific versions
     my $tags = $api->tags($project->{id});
-    print Dumper($tags);
+#     print Dumper($tags);
     $tag = shift @{$tags};
   }
 
@@ -236,6 +275,20 @@ sub install {
   use File::Copy;
   move($extract_path, $final_path)
     or croak "Move failed: $!";
+}
+
+sub strip_prefix {
+  my $args = shift;
+
+  my $prefix_warning = 0;
+  foreach (@{$args}) {
+    $prefix_warning = 1 if (/^plugin_/);
+    s/^plugin_//;
+  }
+  warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
+    if ($prefix_warning);
+
+  return $args;
 }
 
 1;
