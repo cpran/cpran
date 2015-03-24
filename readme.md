@@ -155,14 +155,15 @@ These are the modules that are currently needed:
 * Path::Class
 * Text::Table
 
-Once all that is done, you should be able to run `cpran.pl` from the command line. To
-make sure that all is well, try running `perl cpran.pl --version`. If taht command still
-fails and you've followed all the steps so far, go check out the [issues][] page for
-similar problems, or open a new issue to get help. 
+Once all that is done, you should be able to run `cpran.pl` from the command
+line. To make sure that all is well, try running `perl cpran.pl --version`.
+If that command still fails and you've followed all the steps so far, go check
+out the [issues][] page for similar problems, or open a new issue to get help. 
 
-You can get some basic usage information by running `perl cpran.pl help` or `perl cpran.pl
-help <command>`, where `<command>` is the name of the command you want help with. Or you
-can use `perlpod cpran.pl` for much more detailed information.
+You can get some basic usage information by running `perl cpran.pl help` or
+`perl cpran.pl help <command>`, where `<command>` is the name of the command
+you want help with. Or you can use `perlpod cpran.pl` or check out the [markdown
+version of the POD][mainpod] for much more detailed information.
 
 And make sure to report any problems or successes you might have on your setup!
 
@@ -174,3 +175,4 @@ And make sure to report any problems or successes you might have on your setup!
 [winperl]: http://learn.perl.org/installing/windows.html
 [macperl]: http://learn.perl.org/installing/osx.html
 [issues]: https://gitlab.com/cpran/plugin_cpran/issues
+[mainpod]: https://gitlab.com/cpran/plugin_cpran/blob/perl/main.md

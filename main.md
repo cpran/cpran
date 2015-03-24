@@ -15,27 +15,27 @@ remove and update Praat plugins.
 
 - **update**
 
-    See [CPrAN::Command::update](https://metacpan.org/pod/CPrAN::Command::update) for the full documentation.
+    See [CPrAN::Command::update] for the full documentation.
 
 - **search**
 
-    See [CPrAN::Command::search](https://metacpan.org/pod/CPrAN::Command::search) for the full documentation.
+    See [CPrAN::Command::search] for the full documentation.
 
 - **show**
 
-    See [CPrAN::Command::show](https://metacpan.org/pod/CPrAN::Command::show) for the full documentation.
+    See [CPrAN::Command::show] for the full documentation.
 
 - **install**
 
-    See [CPrAN::Command::install](https://metacpan.org/pod/CPrAN::Command::install) for the full documentation.
+    See [CPrAN::Command::install] for the full documentation.
 
 - **upgrade**
 
-    See [CPrAN::Command::upgrade](https://metacpan.org/pod/CPrAN::Command::upgrade) for the full documentation.
+    See [CPrAN::Command::upgrade] for the full documentation.
 
 - **remove**
 
-    See [CPrAN::Command::remove](https://metacpan.org/pod/CPrAN::Command::remove) for the full documentation.
+    See [CPrAN::Command::remove] for the full documentation.
 
 ## Options
 
