@@ -56,6 +56,7 @@ sub execute {
       }
     }
     else {
+      # TODO(jja) Why are we not using CPrAN::is_cpran() here?
       if (exists $known{$_}) {
         $file = file( CPrAN::root(), $_ );
       }
@@ -64,11 +65,15 @@ sub execute {
         croak "E: $_ is not a CPrAN plugin";
       }
     }
-    if ($file) {
+    if ($file && -e $file->stringify) {
       my $content = read_file($file->stringify);
       my $s = $content;
       $stream .= $s;
       print decode('utf8', $s) unless $opt->{quiet};
+    }
+    else {
+      warn "Cannot find $file->stringify\n" unless $opt->{quiet};
+      return undef;
     }
   }
   return $stream;
