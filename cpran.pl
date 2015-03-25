@@ -293,6 +293,8 @@ CPrAN::Command::install
 
 =item LWP::Simple
 
+=item LWP::UserAgent
+
 =item MIME::Base64
 
 =item Path::Class

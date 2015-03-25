@@ -152,6 +152,7 @@ These are the modules that are currently needed:
 * GitLab::API::v3
 * Graph
 * LWP::Simple
+* LWP::UserAgent
 * MIME::Base64
 * Path::Class
 * Text::Table
@@ -159,7 +160,7 @@ These are the modules that are currently needed:
 And you should be able to just paste this line and install them (although be
 advised that it will take a while):
 
-    cpan App::Cmd Archive::Tar Carp Data::Dumper Encode File::Copy File::Path File::Slurp File::Temp GitLab::API::v3 Graph LWP::Simple MIME::Base64 Path::Class Text::Table
+    cpan App::Cmd Archive::Tar Carp Data::Dumper Encode File::Copy File::Path File::Slurp File::Temp GitLab::API::v3 Graph LWP::UserAgent LWP::Simple MIME::Base64 Path::Class Text::Table
 
 Once all that is done, you should be able to run `cpran.pl` from the command
 line. To make sure that all is well, try running `perl cpran.pl --version`.

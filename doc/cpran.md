@@ -259,6 +259,7 @@ CPrAN::Command::install
 - GitLab::API::v3
 - Graph
 - LWP::Simple
+- LWP::UserAgent
 - MIME::Base64
 - Path::Class
 - Text::Table
