@@ -68,7 +68,7 @@ sub validate_args {
   CPrAN::set_global( $opt );
 }
 
-=head1 SYNOPSIS
+=head1 EXAMPLES
 
     # Install some plugins
     cpran install myplugin someplugin
