@@ -159,9 +159,10 @@ a version stripped of comments, for simplicity:
       Long: >
         This file serves as an example of a CPrAN plugin descriptor.
 
-        This long description is optional, but very useful to have. Line
-        breaks in the long description will be converted to spaces, but you
-        can start a new paragraph by using a blank line.
+        This long description is optional, but very useful to have.
+        Line breaks in the long description will be converted to
+        spaces, but you can start a new paragraph by using a blank
+        line.
 
         Like so.
 
