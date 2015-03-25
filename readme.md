@@ -119,7 +119,7 @@ The absolute easiest way to install it is to use `git`. Go to the Praat
 `git clone https://gitlab.com/cpran/plugin_cpran.git`. Then skip the next
 paragraph and read on.
 
-Alternatively, you can download the contents of [this repositoru][zip]. It
+Alternatively, you can download the contents of [this repository][zip]. It
 should be able to run from anywhere in your computer, but it's probably better
 if you save it as you would with any other plugin: in the [preferences
 directory][]. Please note that some testing seems to indicate that this is
@@ -182,4 +182,4 @@ And make sure to report any problems or successes you might have on your setup!
 [winperl]: http://learn.perl.org/installing/windows.html
 [macperl]: http://learn.perl.org/installing/osx.html
 [issues]: https://gitlab.com/cpran/plugin_cpran/issues
-[mainpod]: https://gitlab.com/cpran/plugin_cpran/blob/perl/main.md
+[mainpod]: https://gitlab.com/cpran/plugin_cpran/blob/master/doc/cpran.md
