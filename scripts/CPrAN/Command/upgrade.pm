@@ -77,7 +77,7 @@ sub execute {
     if (CPrAN::compare_version( $local, $remote ) < 0) {
       print "Upgrading $name from v$local to v$remote... ";
 
-      $app->execute_command('CPrAN::Command::remove', \%params, $name);
+      $app->execute_command('CPrAN::Command::remove',  \%params, $name);
       $app->execute_command('CPrAN::Command::install', \%params, $name);
 
       print "done\n";
