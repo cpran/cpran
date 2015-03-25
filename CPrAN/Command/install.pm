@@ -469,14 +469,14 @@ sub strip_prefix {
   my $args = shift;
 
   my $prefix_warning = 0;
-  my @args = map {
+  foreach (@{$args}) {
     $prefix_warning = 1 if (/^plugin_/);
     s/^plugin_//;
-  } @{$args};
+  };
   warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
     if ($prefix_warning);
 
-  return \@args;
+  return $args;
 }
 
 =back
