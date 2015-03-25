@@ -20,7 +20,7 @@ Plugin names can be appended with a specific version number to request for
 versioned installation, but this is not currently implemented. When it is, names
 will likely be of the form `name-1.0.0`.
 
-# SYNOPSIS
+# EXAMPLES
 
     # Install some plugins
     cpran install myplugin someplugin
