@@ -24,27 +24,88 @@ remove and update Praat plugins.
 
 =item B<update>
 
-See L<CPrAN::Command::update> for the full documentation.
+    cpran update [options]
+    cpran update [options] [names]
+
+CPrAN keeps a list of the available plugins, with information about each one,
+including what its latest verion is and who is in charge of maintaining it.
+
+As its name implies, the B<update> command takes care of keeping this list up to
+date, so it should probably be the first command to run. It might be useful to
+run it with the B<--verbose> option enabled, to keep track on what it is doing.
+
+The list is currently implemented as individual files in the .cpran directory,
+which is under the CPrAN root. See CPrAN::Command::update for the full
+documentation.
 
 =item B<search>
 
-See L<CPrAN::Command::search> for the full documentation.
+    cpran search [options] [regex]
+
+B<search> makes it possible to look for plugins in the plugin list. If you are
+not sure about the name of a plugin, you can use B<search> to explore the list
+and try to find it. Or you can just use it to browse, to find unknown plugins
+that might do what you need.
+
+B<search> will return a list of all plugin names that match the provided regular
+expression. Currently, it only attempts to match it in the plugin's name.
+
+By using the B<--installed> option you can perform this search on your installed
+plugins, which will additionally show you the local and remote versions, so you
+can visually check if plugins any need upgrading.
+
+See CPrAN::Command::search for the full documentation.
 
 =item B<show>
 
-See L<CPrAN::Command::show> for the full documentation.
+    cpran show [options] [names]
+
+Each plugin has a descriptor with general information about the plugin,
+including its name, version, homepage, maintainer, description, etc. B<show>
+allows you to read the contents of this file.
+
+By default, it will show you the descriptors downloaded by B<update>, but you
+can also use the B<--installed> option to read the descriptors of installed
+plugins.
+
+See CPrAN::Command::show for the full documentation.
 
 =item B<install>
 
-See L<CPrAN::Command::install> for the full documentation.
+    cpran install [options] [names]
+
+Once you've found a plugin with B<search> and figured out if you want to install
+it or not thanks to B<show>, you can use B<install> to download a copy of the
+latest version to your local Praat preferences directory. If the plugin's
+descriptor specifies any dependencies, B<install> will also offer to install
+these.
+
+You also use B<install> to re-install a plugin that has already been installed
+with the B<--force> option. This is useful if your local version somehow becomes
+corrupted (eg, if you've accidentally deleted files from within it).
+
+See CPrAN::Command::install for the full documentation.
 
 =item B<upgrade>
 
-See L<CPrAN::Command::upgrade> for the full documentation.
+    cpran upgrade
+    cpran upgrade [options] [names]
+
+If a new version of an installed plugin has been released, you can use
+B<upgrade> to bring your local installation up to date. You can specify a name
+to upgrade that individual plugin, or you can call it with no arguments, to
+upgrade all plugins that are out of date.
+
+See CPrAN::Command::upgrade for the full documentation.
 
 =item B<remove>
 
-See L<CPrAN::Command::remove> for the full documentation.
+    cpran remove [options] [names]
+
+If you are not going to be using a plugin anymore, you can remove it with
+B<remove>.
+
+See CPrAN::Command::remove for the full documentation.
 
 =back
 

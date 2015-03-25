@@ -15,27 +15,88 @@ remove and update Praat plugins.
 
 - **update**
 
-    See [CPrAN::Command::update](#) for the full documentation.
+        cpran update [options]
+        cpran update [options] [names]
+
+    CPrAN keeps a list of the available plugins, with information about each one,
+    including what its latest verion is and who is in charge of maintaining it.
+
+    As its name implies, the **update** command takes care of keeping this list up to
+    date, so it should probably be the first command to run. It might be useful to
+    run it with the **--verbose** option enabled, to keep track on what it is doing.
+
+    The list is currently implemented as individual files in the .cpran directory,
+    which is under the CPrAN root. See CPrAN::Command::update for the full
+    documentation.
 
 - **search**
 
-    See [CPrAN::Command::search](#) for the full documentation.
+        cpran search [options] [regex]
+
+    **search** makes it possible to look for plugins in the plugin list. If you are
+    not sure about the name of a plugin, you can use **search** to explore the list
+    and try to find it. Or you can just use it to browse, to find unknown plugins
+    that might do what you need.
+
+    **search** will return a list of all plugin names that match the provided regular
+    expression. Currently, it only attempts to match it in the plugin's name.
+
+    By using the **--installed** option you can perform this search on your installed
+    plugins, which will additionally show you the local and remote versions, so you
+    can visually check if plugins any need upgrading.
+
+    See CPrAN::Command::search for the full documentation.
 
 - **show**
 
-    See [CPrAN::Command::show](#) for the full documentation.
+        cpran show [options] [names]
+
+    Each plugin has a descriptor with general information about the plugin,
+    including its name, version, homepage, maintainer, description, etc. **show**
+    allows you to read the contents of this file.
+
+    By default, it will show you the descriptors downloaded by **update**, but you
+    can also use the **--installed** option to read the descriptors of installed
+    plugins.
+
+    See CPrAN::Command::show for the full documentation.
 
 - **install**
 
-    See [CPrAN::Command::install](#) for the full documentation.
+        cpran install [options] [names]
+
+    Once you've found a plugin with **search** and figured out if you want to install
+    it or not thanks to **show**, you can use **install** to download a copy of the
+    latest version to your local Praat preferences directory. If the plugin's
+    descriptor specifies any dependencies, **install** will also offer to install
+    these.
+
+    You also use **install** to re-install a plugin that has already been installed
+    with the **--force** option. This is useful if your local version somehow becomes
+    corrupted (eg, if you've accidentally deleted files from within it).
+
+    See CPrAN::Command::install for the full documentation.
 
 - **upgrade**
 
-    See [CPrAN::Command::upgrade](#) for the full documentation.
+        cpran upgrade
+        cpran upgrade [options] [names]
+
+    If a new version of an installed plugin has been released, you can use
+    **upgrade** to bring your local installation up to date. You can specify a name
+    to upgrade that individual plugin, or you can call it with no arguments, to
+    upgrade all plugins that are out of date.
+
+    See CPrAN::Command::upgrade for the full documentation.
 
 - **remove**
 
-    See [CPrAN::Command::remove](#) for the full documentation.
+        cpran remove [options] [names]
+
+    If you are not going to be using a plugin anymore, you can remove it with
+    **remove**.
+
+    See CPrAN::Command::remove for the full documentation.
 
 ## Options
 
@@ -140,9 +201,10 @@ a version stripped of comments, for simplicity:
       Long: >
         This file serves as an example of a CPrAN plugin descriptor.
 
-        This long description is optional, but very useful to have. Line
-        breaks in the long description will be converted to spaces, but you
-        can start a new paragraph by using a blank line.
+        This long description is optional, but very useful to have.
+        Line breaks in the long description will be converted to
+        spaces, but you can start a new paragraph by using a blank
+        line.
 
         Like so.
 
