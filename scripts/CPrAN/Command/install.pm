@@ -225,7 +225,8 @@ sub get_archive {
   # );
 
   # HACK(jja) This is a workaround while the Perl GitLab API is fixed
-  use LWP::Simple;
+  use LWP::UserAgent;
+  my $lwp = LWP::UserAgent->new();
 
   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
   # HACK(jja) Or maybe a zip file?
@@ -239,14 +240,20 @@ sub get_archive {
     unlink => 0,
   );
 
-  my $return = getstore($get_url, $tmp->filename);
-  if ($return ne '200') {
-    warn "Attempted to get $get_url\n";
-    warn "But server responded with code $return. Couldn't fetch archive\n";
-	croak;
+  # From http://search.cpan.org/dist/libwww-perl/lwpcook.pod
+  my $req = HTTP::Request->new(GET => $get_url);
+  my $res = $lwp->request($req, $tmp->filename);
+  if ($res->is_success) {
+    return $tmp->filename;
   }
-
-  return $tmp->filename;
+  else {
+    use Path::Class;
+    my $file = file($tmp->filename);
+    $file->remove();
+    # TODO(jja) Should this die, or warn?
+    croak $res->status_line;
+    return undef;
+  }
 }
 
 sub install {
@@ -334,7 +341,7 @@ sub install {
       $retval = 0;
     }
   }
-  #$archive->remove();
+  $archive->remove();
 }
 
 sub strip_prefix {
