@@ -5,23 +5,44 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-# use diagnostics;
 use Data::Dumper;
 use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
-sub opt_spec {
-  return (
-    [ "yes|y"   => "do not ask for confirmation" ],
-    [ "force|f" => "print debugging messages" ],
-    [ "debug"   => "force installation of plugin" ],
-  );
-}
+=encoding utf8
+
+=head1 NAME
+
+B<install> - Install new CPrAN plugins
+
+=head1 SYNOPSIS
+
+cpran install [options] [arguments]
+
+=head1 DESCRIPTION
+
+Equivalent in spirit to apt-get install, this command checks the dependencies
+of the specified plugins, schedules the installation of plugins needed or
+requested, downloads them from the server, tests them, and finally installs
+them.
+
+Currently, no testing is done, and installation works sometimes in Windows.
+
+=cut
 
 sub description {
   return "Install new CPrAN plugins";
 }
+
+=pod
+
+Arguments to B<install> must be at least one and optionally more plugin names.
+Plugin names can be appended with a specific version number to request for
+versioned installation, but this is not currently implemented. When it is, names
+will likely be of the form C<name-1.0.0>.
+
+=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
@@ -47,6 +68,20 @@ sub validate_args {
   CPrAN::set_global( $opt );
 }
 
+=head1 SYNOPSIS
+
+    # Install some plugins
+    cpran install myplugin someplugin
+    # Install a specific version of a plugin (not implemented)
+    cpran install someplugin-0.5.3
+    # Re-install an installed plugin
+    cpran install --force
+    # Do not ask for confirmation
+    cpran install --force -y
+
+=cut
+
+# TODO(jja) Break execute into smaller subroutines.
 sub execute {
   my ($self, $opt, $args) = @_;
 
@@ -177,6 +212,49 @@ sub execute {
   }
 }
 
+=head1 OPTIONS
+
+=over
+
+=item B<--yes, -y>
+
+Assumes yes for all questions.
+
+=item B<--force>
+
+Tries to work around problems. For example, if an installed plugin is requested
+for installation, it re-installs it instead of refusing. When tests are enabled,
+B<--force> should allow for installation regardless of test outcomes.
+
+=item B<--debug>
+
+Print debug messages.
+
+=back
+
+=cut
+
+sub opt_spec {
+  return (
+    [ "yes|y"   => "do not ask for confirmation" ],
+    [ "force" => "print debugging messages" ],
+    [ "debug"   => "force installation of plugin" ],
+  );
+}
+
+=head1 METHODS
+
+=over
+
+=cut
+
+=item B<rebuild_list()>
+
+Rebuild the plugin list. This method is just a wrapper around B<update>, used
+for re-creating the list when CPrAN is used to install itself.
+
+=cut
+
 sub rebuild_list {
   my ($self, $opt) = @_;
 
@@ -192,6 +270,16 @@ sub rebuild_list {
   print "done\n" unless ($opt->{quiet});
 }
 
+=item B<get_archive()>
+
+Downloads a plugin's tarball from the server. Returns the name of the tarball on
+disk.
+
+=cut
+
+# TODO(jja) Fix on Windows
+# TODO(jja) Improve error handling, add re-tries
+# TODO(jja) Improve return values: return undef on failure?
 sub get_archive {
   my ($opt, $name, $version) = @_;
 
@@ -249,6 +337,13 @@ sub get_archive {
   return $tmp->filename;
 }
 
+=item B<install()>
+
+Extract the downloaded tarball.
+
+=cut
+
+# TODO(jja) Add return values.
 sub install {
   my ($opt, $archive) = @_;
 
@@ -334,21 +429,55 @@ sub install {
       $retval = 0;
     }
   }
-  #$archive->remove();
+  $archive->remove();
 }
+
+=item B<strip_prefix()>
+
+Praat uses a rather clumsy method to identify plugins: it looks for directories
+in the preferences directory whose name begins with the strnig "plugin_".
+However, this is conceptually I<not> part of the name.
+
+Since user's might be tempted to include it in the name of the plugin, we remove
+it, and issue a warning to slowly teach them to Do The Right Thing™ 
+
+The method takes the reference to a list of plugin names, and returns a
+reference to the same list, without the prefix.
+
+=cut
 
 sub strip_prefix {
   my $args = shift;
 
   my $prefix_warning = 0;
-  foreach (@{$args}) {
+  my @args = map {
     $prefix_warning = 1 if (/^plugin_/);
     s/^plugin_//;
-  }
+  } @{$args};
   warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
     if ($prefix_warning);
 
-  return $args;
+  return \@args;
 }
+
+=back
+
+=head1 AUTHOR
+
+José Joaquín Atria <jjatria@gmail.com>
+
+=head1 LICENSE
+
+Copyright 2015 José Joaquín Atria
+
+This program is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+CPrAN, CPrAN::Command::remove, CPrAN::Command::search,
+CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
+
+=cut
 
 1;
