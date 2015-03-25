@@ -252,21 +252,22 @@ sub get_archive {
   my $tries = 0;
   my $res;
   do {
-	  $tries++;
-	  print "." unless $opt->{quiet};
-	  $res = $lwp->request($req, $tmp->filename);
+    $tries++;
+    print "." if ($tries > 1 && !$opt->{quiet});
+    $res = $lwp->request($req, $tmp->filename);
+    # HACK(jja) Magic number: number of tries
   } until ($tries >= 40 || $res->is_success);
   if ($res->is_success) {
-	print "\n" unless $opt->{quiet};
-	return $tmp->filename;
+  print "\n" unless $opt->{quiet};
+  return $tmp->filename;
   }
   else {
     use Path::Class;
-	my $file = file($tmp->filename);
-	$file->remove();
+  my $file = file($tmp->filename);
+  $file->remove();
     print "\nGiving up after $tries tries. Take a break and try again?\n"
-		unless $opt->{quiet};
-	croak $res->status_line;
+    unless $opt->{quiet};
+  croak $res->status_line;
   }
 }
 
