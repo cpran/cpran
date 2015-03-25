@@ -162,7 +162,7 @@ out the [issues][] page for similar problems, or open a new issue to get help.
 
 You can get some basic usage information by running `perl cpran.pl help` or
 `perl cpran.pl help <command>`, where `<command>` is the name of the command
-you want help with. Or you can use `perlpod cpran.pl` or check out the [markdown
+you want help with. Or you can use `perldoc cpran.pl` or check out the [markdown
 version of the POD][mainpod] for much more detailed information.
 
 And make sure to report any problems or successes you might have on your setup!
