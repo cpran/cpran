@@ -131,16 +131,16 @@ CPrAN::Command::install
 
 # VERSION
 
-0.0.1
+0.0.2
 
 # POD ERRORS
 
 Hey! **The above document had some coding errors, which are explained below:**
 
-- Around line 98:
+- Around line 110:
 
     '=item' outside of any '=over'
 
-- Around line 474:
+- Around line 486:
 
     You forgot a '=back' before '=head1'
