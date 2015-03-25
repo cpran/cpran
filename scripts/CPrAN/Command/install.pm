@@ -234,12 +234,17 @@ sub get_archive {
   use File::Temp;
   my $tmp = File::Temp->new(
     dir => '.',
-    template => 'cpranXXXXX',
+    template => $name . '-XXXXX',
     suffix => '.tar.gz',
     unlink => 0,
   );
 
-  getstore($get_url, $tmp->filename);
+  my $return = getstore($get_url, $tmp->filename);
+  if ($return ne '200') {
+    warn "Attempted to get $get_url\n";
+    warn "But server responded with code $return. Couldn't fetch archive\n";
+	croak;
+  }
 
   return $tmp->filename;
 }
@@ -270,7 +275,13 @@ sub install {
 
   # We make a new root in the preferences directory, and remove it if it
   # already exists
-  my $root = $next->()->full_path;
+  my $root = $next->();
+  unless ($root) {
+	warn "Something went wrong\n";
+	print Dumper($next);
+	exit;
+  }
+  $root = $root->full_path;
   $root = dir(CPrAN::praat(), $root);
   if (-e $root->stringify && $opt->{force}) {
     print "Removing $root\n";
@@ -323,7 +334,7 @@ sub install {
       $retval = 0;
     }
   }
-  $archive->remove();
+  #$archive->remove();
 }
 
 sub strip_prefix {
