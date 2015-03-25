@@ -70,7 +70,7 @@ sub execute {
     # BUG(jja) What to do here?
     use Config;
     if ($plugin->{name} eq 'cpran' && $Config{osname} eq 'MSWin32') {
-      croak "Cannot currently use CPrAN to install CPrAN in Windows\n";
+      warn "Cannot currently use CPrAN to install CPrAN in Windows\n";
     }
 
     # User requested an unversioned plugin, default to the newest on record
@@ -154,7 +154,6 @@ sub execute {
 
         # Now that we know what plugins to install and in what order, we get
         # them and install them
-        print "Downloading archive for $_->{name}\n" unless ($opt->{quiet});
         my $archive = get_archive( $opt, $_->{name}, '' );
 
         print "Extracting... " unless ($opt->{quiet});
@@ -202,6 +201,8 @@ sub get_archive {
     token => CPrAN::api_token(),
   );
 
+  print "Downloading archive for $name " unless ($opt->{quiet});
+  
   my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
   my $tag;
   if ($version eq '') {
@@ -227,6 +228,7 @@ sub get_archive {
   # HACK(jja) This is a workaround while the Perl GitLab API is fixed
   use LWP::UserAgent;
   my $lwp = LWP::UserAgent->new();
+  #print Dumper($lwp);
 
   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
   # HACK(jja) Or maybe a zip file?
@@ -241,18 +243,30 @@ sub get_archive {
   );
 
   # From http://search.cpan.org/dist/libwww-perl/lwpcook.pod
+
+  # BUG(jja) Error 500: A non-blocking socket operation could not be completed
+  # On Linux this succeeds without a hitch. On Windows, it's hit and miss,
+  # sometimes going through without problem, other times failing even 40 times
+  # in a row. Why is this happening?
   my $req = HTTP::Request->new(GET => $get_url);
-  my $res = $lwp->request($req, $tmp->filename);
+  my $tries = 0;
+  my $res;
+  do {
+	  $tries++;
+	  print "." unless $opt->{quiet};
+	  $res = $lwp->request($req, $tmp->filename);
+  } until ($tries >= 40 || $res->is_success);
   if ($res->is_success) {
-    return $tmp->filename;
+	print "\n" unless $opt->{quiet};
+	return $tmp->filename;
   }
   else {
     use Path::Class;
-    my $file = file($tmp->filename);
-    $file->remove();
-    # TODO(jja) Should this die, or warn?
-    croak $res->status_line;
-    return undef;
+	my $file = file($tmp->filename);
+	$file->remove();
+    print "\nGiving up after $tries tries. Take a break and try again?\n"
+		unless $opt->{quiet};
+	croak $res->status_line;
   }
 }
 
