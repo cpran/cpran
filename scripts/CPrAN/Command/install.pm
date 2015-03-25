@@ -105,7 +105,7 @@ sub execute {
     # BUG(jja) What to do here?
     use Config;
     if ($plugin->{name} eq 'cpran' && $Config{osname} eq 'MSWin32') {
-      croak "Cannot currently use CPrAN to install CPrAN in Windows\n";
+      warn "Cannot currently use CPrAN to install CPrAN in Windows\n";
     }
 
     # User requested an unversioned plugin, default to the newest on record
@@ -170,7 +170,7 @@ sub execute {
   # Scheduled plugins that are already installed need to be removed from the
   # schedule
   # TODO(jja) What does --force mean in this context?
-  # TODO(jja) 
+  # See https://gitlab.com/cpran/plugin_cpran/issues/3
   my @schedule;
   foreach (@ordered) {
     push @schedule, $_
@@ -189,7 +189,6 @@ sub execute {
 
         # Now that we know what plugins to install and in what order, we get
         # them and install them
-        print "Downloading archive for $_->{name}\n" unless ($opt->{quiet});
         my $archive = get_archive( $opt, $_->{name}, '' );
 
         print "Extracting... " unless ($opt->{quiet});
@@ -277,9 +276,7 @@ disk.
 
 =cut
 
-# TODO(jja) Fix on Windows
-# TODO(jja) Improve error handling, add re-tries
-# TODO(jja) Improve return values: return undef on failure?
+# TODO(jja) More testing on Windows: Non-blocking sockets?
 sub get_archive {
   my ($opt, $name, $version) = @_;
 
@@ -289,6 +286,8 @@ sub get_archive {
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
+
+  print "Downloading archive for $name " unless ($opt->{quiet});
 
   my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
   my $tag;
@@ -300,7 +299,6 @@ sub get_archive {
   else {
     # TODO(jja) Enable installation of specific versions
     my $tags = $api->tags($project->{id});
-#     print Dumper($tags);
     $tag = shift @{$tags};
   }
 
@@ -313,10 +311,12 @@ sub get_archive {
   # );
 
   # HACK(jja) This is a workaround while the Perl GitLab API is fixed
-  use LWP::Simple;
+  use LWP::UserAgent;
+  my $lwp = LWP::UserAgent->new();
+  #print Dumper($lwp);
 
   my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
-  # HACK(jja) Or maybe a zip file?
+  # NOTE(jja) Or maybe a zip file?
   # my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
 
   use File::Temp;
@@ -327,14 +327,33 @@ sub get_archive {
     unlink => 0,
   );
 
-  my $return = getstore($get_url, $tmp->filename);
-  if ($return ne '200') {
-    warn "Attempted to get $get_url\n";
-    warn "But server responded with code $return. Couldn't fetch archive\n";
-	croak;
-  }
 
+  # BUG(jja) Error 500: A non-blocking socket operation could not be completed
+  # On Linux this succeeds without a hitch. On Windows, it's hit and miss,
+  # sometimes going through without problem, other times failing even 40 times
+  # in a row. Why is this happening?
+  # From http://search.cpan.org/dist/libwww-perl/lwpcook.pod
+  my $req = HTTP::Request->new(GET => $get_url);
+  my $tries = 0;
+  my $res;
+  do {
+    $tries++;
+    print "." if ($tries > 1 && !$opt->{quiet});
+    $res = $lwp->request($req, $tmp->filename);
+    # HACK(jja) Magic number: number of tries
+  } until ($tries >= 40 || $res->is_success);
+  if ($res->is_success) {
+  print "\n" unless $opt->{quiet};
   return $tmp->filename;
+  }
+  else {
+    use Path::Class;
+    my $file = file($tmp->filename);
+    $file->remove();
+    print "\nGiving up after $tries tries. Take a break and try again?\n"
+    unless $opt->{quiet};
+    croak $res->status_line;
+  }
 }
 
 =item B<install()>
@@ -343,7 +362,6 @@ Extract the downloaded tarball.
 
 =cut
 
-# TODO(jja) Add return values.
 sub install {
   my ($opt, $archive) = @_;
 
@@ -372,9 +390,9 @@ sub install {
   # already exists
   my $root = $next->();
   unless ($root) {
-	warn "Something went wrong\n";
-	print Dumper($next);
-	exit;
+    warn "Something went wrong\n";
+    print Dumper($next);
+    exit;
   }
   $root = $root->full_path;
   $root = dir(CPrAN::praat(), $root);
@@ -430,6 +448,7 @@ sub install {
     }
   }
   $archive->remove();
+  return $retval;
 }
 
 =item B<strip_prefix()>
@@ -439,7 +458,7 @@ in the preferences directory whose name begins with the strnig "plugin_".
 However, this is conceptually I<not> part of the name.
 
 Since user's might be tempted to include it in the name of the plugin, we remove
-it, and issue a warning to slowly teach them to Do The Right Thing™ 
+it, and issue a warning to slowly teach them to Do The Right Thing™
 
 The method takes the reference to a list of plugin names, and returns a
 reference to the same list, without the prefix.
