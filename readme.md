@@ -60,28 +60,11 @@ Now, on to the installation.
 [macperl]: http://learn.perl.org/installing/osx.html
 [winperl]: http://learn.perl.org/installing/windows.html
 
-2.  Install the necessary CPAN modules. These are the modules you'll need:
+2.  Install the necessary CPAN modules.
 
-    * App::Cmd
-    * Archive::Tar
-    * Carp
-    * Data::Dumper
-    * Encode
-    * File::Copy
-    * File::Path
-    * File::Slurp
-    * File::Temp
-    * GitLab::API::v3
-    * Graph
-    * LWP::Simple
-    * LWP::UserAgent
-    * MIME::Base64
-    * Path::Class
-    * Text::Table
-
-    And you should be able to just use this (rather dauting) line to install
-    them. Depending on your system, it might take some time, but it should be a
-    fairly automatic process.
+    You should be able to just use this (acceptedly intimidating) line to
+    install them. Depending on your system, it might take some time, but it
+    should be a fairly automatic process.
 
         cpan App::Cmd Archive::Tar Carp Data::Dumper Encode File::Copy File::Path File::Slurp File::Temp GitLab::API::v3 Graph LWP::UserAgent LWP::Simple MIME::Base64 Path::Class Text::Table
 
