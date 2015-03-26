@@ -45,84 +45,84 @@ different platforms is recquired.
 
 Now, on to the installation.
 
-1. You will need Perl to run the current version. Skip to step ??? if you
-   already have Perl and the modules you'll need, or if you know how to set that
-   up.
+1.  You will need Perl to run the current version. Skip to step ??? if you
+    already have Perl and the modules you'll need, or if you know how to set
+    that up.
 
-   If you are on GNU/Linux then chances are you already have it. If not, check
-   your distro's documentation on how to get it.
+    If you are on GNU/Linux then chances are you already have it. If not, check
+    your distro's documentation on how to get it.
 
-   If you are on Windows, you can find instructions on how to install it
-   [here][winperl].
+    If you are on Windows, you can find instructions on how to install it
+    [here][winperl].
 
-   If you are on Mac, please see [here][macperl].
+    If you are on Mac, please see [here][macperl].
 
 [macperl]: http://learn.perl.org/installing/osx.html
 [winperl]: http://learn.perl.org/installing/windows.html
 
-2. Install the necessary CPAN modules. These are the modules you'll need:
+2.  Install the necessary CPAN modules. These are the modules you'll need:
 
-   * App::Cmd
-   * Archive::Tar
-   * Carp
-   * Data::Dumper
-   * Encode
-   * File::Copy
-   * File::Path
-   * File::Slurp
-   * File::Temp
-   * GitLab::API::v3
-   * Graph
-   * LWP::Simple
-   * LWP::UserAgent
-   * MIME::Base64
-   * Path::Class
-   * Text::Table
+    * App::Cmd
+    * Archive::Tar
+    * Carp
+    * Data::Dumper
+    * Encode
+    * File::Copy
+    * File::Path
+    * File::Slurp
+    * File::Temp
+    * GitLab::API::v3
+    * Graph
+    * LWP::Simple
+    * LWP::UserAgent
+    * MIME::Base64
+    * Path::Class
+    * Text::Table
 
-   And you should be able to just use this (rather dauting) line to install
-   them. Depending on your system, it might take some time, but it should be a
-   fairly automatic process.
+    And you should be able to just use this (rather dauting) line to install
+    them. Depending on your system, it might take some time, but it should be a
+    fairly automatic process.
 
-       cpan App::Cmd Archive::Tar Carp Data::Dumper Encode File::Copy File::Path File::Slurp File::Temp GitLab::API::v3 Graph LWP::UserAgent LWP::Simple MIME::Base64 Path::Class Text::Table
+        cpan App::Cmd Archive::Tar Carp Data::Dumper Encode File::Copy File::Path File::Slurp File::Temp GitLab::API::v3 Graph LWP::UserAgent LWP::Simple MIME::Base64 Path::Class Text::Table
 
-3. Install the CPrAN plugin
+3.  Install the CPrAN plugin
 
-   The absolute easiest way to install it is to use `git`. If you know how to
-   use git, go to the Praat [preferences directory][] and run
+    The absolute easiest way to install it is to use `git`. If you know how to
+    use git, go to the Praat [preferences directory][] and run
 
-       git clone https://gitlab.com/cpran/plugin_cpran.git
+        git clone https://gitlab.com/cpran/plugin_cpran.git
 
-   and you should be done.
+    and you should be done.
 
-   Alternatively, you can install it manually. Download the contents of [this
-   repository][zip] and extract them to your [preferences directory][]. It
-   should be able to run from anywhere in your computer, but it's probably
-   better if you save it there, as you would with any other plugin.
+    Alternatively, you can install it manually. Download the contents of [this
+    repository][zip] and extract them to your [preferences directory][]. It
+    should be able to run from anywhere in your computer, but it's probably
+    better if you save it there, as you would with any other plugin.
 
-   At the very least, try to save it so that it has direct access to the
-   [preferences directory][]. It seems reading and writing over filesystem
-   boundaries is difficult in some platforms.
+    At the very least, try to save it so that it has direct access to the
+    [preferences directory][]. It seems reading and writing over filesystem
+    boundaries is difficult in some platforms.
 
-4. Run the client.
+4.  Run the client.
 
-   The important script to run is `cpran.pl`, in the root of this plugin.
+    The important script to run is `cpran.pl`, in the root of this plugin.
 
-   To make sure that all is well, try running `perl cpran.pl --version` from the
-   command line. If that command still fails and you've followed all steps so
-   far, go check out the [issues][] page for similar problems, or open a new
-   issue to get help.
+    To make sure that all is well, try running `perl cpran.pl --version` from the
+    command line. If that command still fails and you've followed all steps so
+    far, go check out the [issues][] page for similar problems, or open a new
+    issue to get help.
 
-   You can get some basic usage information by running `perl cpran.pl help` or
-   `perl cpran.pl help <command>`, where `<command>` is the name of the command
-   you want help with.
+    You can get some basic usage information by running `perl cpran.pl help` or
+    `perl cpran.pl help <command>`, where `<command>` is the name of the command
+    you want help with.
 
-   You can also check the [wiki pages][wiki] for more detailed information about
-   all available commands. Note that these pages are automatically generated
-   from the documentation in the source of each command, so you can also check
-   them offline with `perldoc <filename>`.
+    You can also check the [wiki pages][wiki] for more detailed information about
+    all available commands. Note that these pages are automatically generated
+    from the documentation in the source of each command, so you can also check
+    them offline with `perldoc <filename>`.
 
-5. Make sure to get back with reports of any problems or successes you might
-   have on your setup!
+5.  Make sure to get back with reports of any problems or successes you might
+    have on your setup!
 
 [gitlab]: https://gitlab.com
 [bower]: https://github.com/bower/bower
