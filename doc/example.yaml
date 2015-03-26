@@ -2,7 +2,7 @@
 # "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 # interpreted as described in RFC 2119 <http://tools.ietf.org/html/rfc2119>.
 ---
-# The plugin name. It will also be the name of the directory, as in plugin_name
+# The plugin name, which will be used in the plugin path, as in "plugin_name"
 Plugin: name
 # The home page of the plugin. MAY be a git repository
 Homepage: https://example.com
