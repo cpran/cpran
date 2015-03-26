@@ -5,19 +5,43 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-# use diagnostics;
+
 use Data::Dumper;
+use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
-sub opt_spec {
-  return (
-#     [ "name|n"        => "search in plugin name" ],
-#     [ "description|d" => "search in description" ],
-    [ "installed|i"   => "only consider installed plugins" ],
-    [ "debug"         => "show debug messages" ],
-  );
+=encoding utf8
+
+=head1 NAME
+
+B<search> - Search CPrAN plugins
+
+=head1 SYNOPSIS
+
+cpran search [options] [arguments]
+
+=head1 DESCRIPTION
+
+Searches both the local and remote catalogs of CPrAN plugins.
+
+=cut
+
+sub description {
+  return "Perform searches among CPrAN plugins";
 }
+
+=pod
+
+The argument to B<search> must be a single regular expression. Currently,
+B<search> tries to match it on the plugni's name, and returns a list of all
+those who do.
+
+When executed directly, it will print information on the matched plugins,
+including their name, version, and a short description. If searching the locally
+installed plugins, both the local and the remote versions will be displayed.
+
+=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
@@ -26,6 +50,15 @@ sub validate_args {
 
   CPrAN::set_global( $self );
 }
+
+=head1 EXAMPLES
+
+    # Show all available plugins
+    cpran search .*
+    # Show installed plugins with the string "utils" in their name
+    cpran search -i utils
+
+=cut
 
 sub execute {
   my ($self, $opt, $args) = @_;
@@ -65,6 +98,48 @@ sub execute {
 
   return @found;
 }
+
+=head1 OPTIONS
+
+=over
+
+=item B<--installed>
+
+Search the local (installed) CPrAN catalog.
+
+=item B<--debug>
+
+Print debug messages.
+
+=back
+
+=cut
+
+sub opt_spec {
+  return (
+    # [ "name|n"        => "search in plugin name" ],
+    # [ "description|d" => "search in description" ],
+    [ "installed|i"   => "only consider installed plugins" ],
+    [ "debug"         => "show debug messages" ],
+  );
+}
+
+=head1 METHODS
+
+=over
+
+=cut
+
+=item B<make_row()>
+
+Generates the appropriate line for a single plugin specified by name. Takes the
+name as an argument, and returns a list suitable to be plugged into a
+Text::Table object.
+
+The output depends on the current options: if B<--installed> is enabled, the
+returned list will have both the local and the remote versions.
+
+=cut
 
 sub make_row {
   my ($opt, $name) = @_;
@@ -113,5 +188,25 @@ sub make_row {
     return ($name, $remote_version, $description);
   }
 }
+
+=back
+
+=head1 AUTHOR
+
+José Joaquín Atria <jjatria@gmail.com>
+
+=head1 LICENSE
+
+Copyright 2015 José Joaquín Atria
+
+This program is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+CPrAN, CPrAN::Command::install, CPrAN::Command::remove,
+CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
+
+=cut
 
 1;

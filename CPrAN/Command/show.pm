@@ -5,17 +5,40 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-use Carp;
-# use diagnostics;
+
 use Data::Dumper;
+use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
-sub opt_spec {
-  return (
-    [ "installed|i" => "only consider installed plugins" ],
-  );
+=encoding utf8
+
+=head1 NAME
+
+B<show> - Shows details of CPrAN plugins
+
+=head1 SYNOPSIS
+
+cpran show [options] [arguments]
+
+=head1 DESCRIPTION
+
+Shows the descriptor of specified plugins. Depending on the options used, it can
+be used to display information about the latest available version, or the
+currently installed version.
+
+=cut
+
+sub description {
+  return "Show details for specified CPrAN plugins";
 }
+
+=pod
+
+Arguments to B<search> must be at least one and optionally more plugin names
+whose descriptors will be displayed.
+
+=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
@@ -28,6 +51,16 @@ sub validate_args {
   CPrAN::set_global( $opt );
 }
 
+=head1 EXAMPLES
+
+    # Show details of a plugin
+    cpran show oneplugin
+    # Show the descriptors of many installed plugins
+    cpran show -i oneplugin anotherplugin
+
+=cut
+
+# TODO(jja) Break execute into smaller chunks
 sub execute {
   my ($self, $opt, $args) = @_;
 
@@ -78,5 +111,47 @@ sub execute {
   }
   return $stream;
 }
+
+=head1 OPTIONS
+
+=over
+
+=item B<--installed>
+
+Show the descriptor of installed CPrAN plugins.
+
+=back
+
+=cut
+
+sub opt_spec {
+  return (
+    [ "installed|i" => "only consider installed plugins" ],
+  );
+}
+
+=head1 METHODS
+
+=over
+
+=back
+
+=head1 AUTHOR
+
+José Joaquín Atria <jjatria@gmail.com>
+
+=head1 LICENSE
+
+Copyright 2015 José Joaquín Atria
+
+This program is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+CPrAN, CPrAN::Command::install, CPrAN::Command::search,
+CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::remove,
+
+=cut
 
 1;

@@ -5,19 +5,37 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-# use diagnostics;
-use Data::Dumper;
 
-sub opt_spec {
-  return (
-    [ "yes|y"    => "do not ask for confirmation" ],
-    [ "force"    => "attempt to work around errors" ],
-    [ "debug"    => "print debugging messages" ],
-    [ "verbose"  => "increase verbosity" ],
-    [ "quiet"    => "produce no output" ],
-    [ "cautious" => "be extra-careful while removing files" ],
-  );
+use Data::Dumper;
+use Carp;
+
+=encoding utf8
+
+=head1 NAME
+
+B<remove> - Remove installed CPrAN plugins
+
+=head1 SYNOPSIS
+
+cpran remove [options] [arguments]
+
+=head1 DESCRIPTION
+
+Deletes a CPrAN plugin that has been installed.
+
+=cut
+
+sub description {
+  return "Delete an installed CPrAN plugin";
 }
+
+=pod
+
+Arguments to B<remove> must be at least one and optionally more plugin names to
+remove. For each named passed as argument, all contents of the directory named
+"plugin_<name>" will be removed from disk.
+
+=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
@@ -36,6 +54,15 @@ sub validate_args {
 
   CPrAN::set_global( $opt );
 }
+
+=head1 EXAMPLES
+
+    # Remove some plugins
+    cpran remove oneplugin otherplugin
+    # Do not ask for confirmation
+    cpran remove -y oneplugin
+
+=cut
 
 sub execute {
   my ($self, $opt, $args) = @_;
@@ -97,5 +124,66 @@ sub execute {
     }
   }
 }
+
+=head1 OPTIONS
+
+=over
+
+=item B<--yes, -y>
+
+Assumes yes for all questions.
+
+=item B<--force>
+
+Tries to work around problems.
+
+=item B<--debug>
+
+Print debug messages.
+
+=item B<--verbose>
+
+=item B<--quiet>
+
+=item B<--cautious>
+
+=back
+
+=cut
+
+sub opt_spec {
+  return (
+    [ "yes|y"    => "do not ask for confirmation" ],
+    [ "force"    => "attempt to work around errors" ],
+    [ "debug"    => "print debugging messages" ],
+    [ "verbose"  => "increase verbosity" ],
+    [ "quiet"    => "produce no output" ],
+    [ "cautious" => "be extra-careful while removing files" ],
+  );
+}
+
+=head1 METHODS
+
+=over
+
+=back
+
+=head1 AUTHOR
+
+José Joaquín Atria <jjatria@gmail.com>
+
+=head1 LICENSE
+
+Copyright 2015 José Joaquín Atria
+
+This program is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+CPrAN, CPrAN::Command::install, CPrAN::Command::search,
+CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
+
+=cut
 
 1;

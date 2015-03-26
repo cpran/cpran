@@ -5,13 +5,38 @@ use CPrAN -command;
 
 use strict;
 use warnings;
-# use diagnostics;
-use Data::Dumper;
 
-sub opt_spec {
-  return (
-  );
+use Data::Dumper;
+use Carp;
+
+=encoding utf8
+
+=head1 NAME
+
+B<upgrade> - Upgrades installed CPrAN plugins to their latest versions
+
+=head1 SYNOPSIS
+
+cpran upgrade [options] [arguments]
+
+=head1 DESCRIPTION
+
+Upgrades the specified CPrAN plugins to their latest known versions.
+
+=cut
+
+sub description {
+  return "Updates the catalog of CPrAN plugins";
 }
+
+=pod
+
+B<upgrade> can take as argument a list of plugin names. If provided, only
+those plugins will be upgraded. Otherwise, all installed plugins will be checked
+for updates and upgraded. This second case should be the recommended use, but it
+is not currently implemented.
+
+=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
@@ -22,6 +47,16 @@ sub validate_args {
   CPrAN::set_global( $self );
 }
 
+=head1 EXAMPLES
+
+    # Upgrades all installed plugins
+    cpran upgrade
+    # Upgrade specific plugins
+    cpran upgrade oneplugin otherplugin
+
+=cut
+
+# TODO(jja) Break execute into smaller chunks
 sub execute {
   my ($self, $opt, $args) = @_;
 
@@ -97,5 +132,42 @@ sub execute {
     print "Abort.\n" unless ($opt->{quiet});
   }
 }
+
+=head1 OPTIONS
+
+=over
+
+=back
+
+=cut
+
+sub opt_spec {
+  return (
+  );
+}
+
+=head1 METHODS
+
+=over
+
+=back
+
+=head1 AUTHOR
+
+José Joaquín Atria <jjatria@gmail.com>
+
+=head1 LICENSE
+
+Copyright 2015 José Joaquín Atria
+
+This program is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+CPrAN, CPrAN::Command::install, CPrAN::Command::search,
+CPrAN::Command::show, CPrAN::Command::update, CPrAN::Command::remove,
+
+=cut
 
 1;
