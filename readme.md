@@ -45,7 +45,7 @@ different platforms is recquired.
 
 Now, on to the installation.
 
-1.  You will need Perl to run the current version. Skip to step ??? if you
+1.  You will need Perl to run the current version. Skip to step 3 if you
     already have Perl and the modules you'll need, or if you know how to set
     that up.
 
