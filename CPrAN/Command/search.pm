@@ -201,8 +201,12 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-CPrAN, CPrAN::Command::install, CPrAN::Command::remove,
-CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
+L<CPrAN|cpran>,
+L<CPrAN::Command::install|install>,
+L<CPrAN::Command::show|show>,
+L<CPrAN::Command::update|update>,
+L<CPrAN::Command::upgrade|upgrade>,
+L<CPrAN::Command::remove|remove>
 
 =cut
 

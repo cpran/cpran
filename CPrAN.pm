@@ -591,9 +591,13 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-App::Cmd, YAML::XS, CPrAN::Command::remove, CPrAN::Command::search,
-CPrAN::Command::update>, CPrAN::Command::upgrade, CPrAN::Command::show,
-CPrAN::Command::install
+L<App::Cmd>, L<YAML::XS>,
+L<CPrAN::Command::install|install>,
+L<CPrAN::Command::search|search>,
+L<CPrAN::Command::show|show>,
+L<CPrAN::Command::update|update>,
+L<CPrAN::Command::upgrade|upgrade>,
+L<CPrAN::Command::remove|remove>
 
 =head1 VERSION
 

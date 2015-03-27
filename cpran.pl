@@ -11,11 +11,11 @@ B<CPrAN> - A package manager for Praat
 
 =head1 SYNOPSIS
 
-cpran [global options] command [options] [arguments]
+cpran <command> [global options] [options] [arguments]
 
 =head1 DESCRIPTION
 
-B<cpran> is the main script for an App::Cmd application to search, install,
+B<cpran> is the main script for an L<App::Cmd> application to search, install,
 remove and update Praat plugins.
 
 =head2 Commands
@@ -35,7 +35,7 @@ date, so it should probably be the first command to run. It might be useful to
 run it with the B<--verbose> option enabled, to keep track on what it is doing.
 
 The list is currently implemented as individual files in the .cpran directory,
-which is under the CPrAN root. See CPrAN::Command::update for the full
+which is under the CPrAN root. See L<CPrAN::Command::update|update> for the full
 documentation.
 
 =item B<search>
@@ -54,7 +54,7 @@ By using the B<--installed> option you can perform this search on your installed
 plugins, which will additionally show you the local and remote versions, so you
 can visually check if plugins any need upgrading.
 
-See CPrAN::Command::search for the full documentation.
+See L<CPrAN::Command::search|search> for the full documentation.
 
 =item B<show>
 
@@ -68,7 +68,7 @@ By default, it will show you the descriptors downloaded by B<update>, but you
 can also use the B<--installed> option to read the descriptors of installed
 plugins.
 
-See CPrAN::Command::show for the full documentation.
+See L<CPrAN::Command::show|show> for the full documentation.
 
 =item B<install>
 
@@ -84,7 +84,7 @@ You also use B<install> to re-install a plugin that has already been installed
 with the B<--force> option. This is useful if your local version somehow becomes
 corrupted (eg, if you've accidentally deleted files from within it).
 
-See CPrAN::Command::install for the full documentation.
+See L<CPrAN::Command::install|install> for the full documentation.
 
 =item B<upgrade>
 
@@ -96,7 +96,7 @@ B<upgrade> to bring your local installation up to date. You can specify a name
 to upgrade that individual plugin, or you can call it with no arguments, to
 upgrade all plugins that are out of date.
 
-See CPrAN::Command::upgrade for the full documentation.
+See L<CPrAN::Command::upgrade|upgrade> for the full documentation.
 
 =item B<remove>
 
@@ -113,31 +113,41 @@ See CPrAN::Command::remove for the full documentation.
 
 =over
 
-=item B<--praat=PATH>
+=item B<--praat>=PATH
 
-Set the path to Praat preferences directory. See the FILES section for the
-platform-dependant default values if this is not set.
+The path to use as the preferences directory for Praat. See the FILES section
+for information on the platform-dependant default values used.
 
-=item B<--cpran=PATH>
+=item B<--cpran>=PATH
 
-Set the path to the CPrAN root. See the FILES section for more information on
-what is stored in the root.
+The path to use as the CPrAN root directory. See the FILES section
+for information on the platform-dependant default values used.
 
-This option is useful if using B<CPrAN> with an on-site collection of plugins.
+=item B<--api-token>=TOKEN
 
-=item B<--api-token=TOKEN>
+=item B<--api-group>=GROUP_ID
 
-Set the private token for access to the GitLab API.
+=item B<--api-url>=URL
 
-=item B<--api-url=URL>
+These options set the credentials to talk to the GitLab API to obtain the
+plugin archives and descriptors. As such, it is implementation-dependant, and is
+currently tied to GitLab. These options are particularly useful if using CPrAN
+as an in-house plugin distribution system.
 
-Set the URL of the GitLab API. This option is useful if using B<CPrAN> with an
-on-site collection of plugins.
+=item B<--verbose>, B<--v>
 
-=item B<--api-group=ID>
+Increase the verbosity of the output. This option can be called multiple times
+to make the program even more talkative.
 
-Set the id for the GitLab CPrAN group. This option is useful if using B<CPrAN>
-with an on-site collection of plugins.
+=item B<--quiet>, B<--q>
+
+Opposed to B<--verbose>, this option I<suppresses> all output. If both options
+are set simultaneously, this one takes precedence.
+
+=item B<--debug>, B<--D>
+
+Enables the output of debug information. Like B<--verbose>, this option can be
+used multiple times to increase the number of debug messages that are printed.
 
 =back
 
@@ -239,10 +249,10 @@ the list that known() looks in, and the list from where the B<show> command gets
 its data.
 
 The descriptors are saved in a B<CPrAN> root folder whose path is stored
-internally and accessible through CPrAN::root(). By default, it will be a directory named
-C<.cpran> in the root of the B<CPrAN> plugin (CPrAN::praat() . '/plugin_cpran'). In
-that directory, the descriptors are renamed with the name of the plugin they
-represent.
+internally and accessible through CPrAN::root(). By default, it will be a
+directory named C<.cpran> in the root of the B<CPrAN> plugin (CPrAN::praat() .
+'/plugin_cpran'). In that directory, the descriptors are renamed with the name
+of the plugin they represent.
 
 This list is updated with the B<update> command.
 
@@ -259,51 +269,13 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-CPrAN, CPrAN::Command::remove, CPrAN::Command::search,
-CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
-CPrAN::Command::install
-
-=head2 Packages used
-
-=over
-
-=item App::Cmd
-
-=item Archive::Tar
-
-=item Carp
-
-=item Config
-
-=item Data::Dumper
-
-=item Encode
-
-=item File::Copy
-
-=item File::Path
-
-=item File::Slurp
-
-=item File::Temp
-
-=item GitLab::API::v3
-
-=item Graph
-
-=item LWP::Simple
-
-=item LWP::UserAgent
-
-=item MIME::Base64
-
-=item Path::Class
-
-=item Text::Table
-
-=item YAML::XS
-
-=back
+L<CPrAN|cpran>,
+L<CPrAN::Command::install|install>,
+L<CPrAN::Command::search|search>,
+L<CPrAN::Command::show|show>,
+L<CPrAN::Command::update|update>,
+L<CPrAN::Command::upgrade|upgrade>,
+L<CPrAN::Command::remove|remove>
 
 =head1 VERSION
 
