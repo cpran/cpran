@@ -43,8 +43,6 @@ sub validate_args {
 
   # TODO(jja) If no arguments are provided, all plugins are updated. If names
   # are provided, only update those that are specified.
-
-  CPrAN::set_global( $self );
 }
 
 =head1 EXAMPLES

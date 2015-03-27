@@ -18,9 +18,10 @@ B<CPrAN> - A package manager for Praat
 
 =cut
 
-# HACK(jja) Ideally, this block would get run automatically, after the App has
-# been iniitalised, and after the options have been parsed, but before any
-# commands get executed.
+# ROOT and PRAAT hold the paths to the preferences directory and the CPrAN root
+# respectively. Being in this enclosure, acces to them is limited to the
+# accessors below.
+# NOTE(jja) Should this be made into a class, and this into proper attributes?
 {
   use Path::Class;
   use Config;
@@ -30,7 +31,6 @@ B<CPrAN> - A package manager for Praat
     if ($Config{osname} eq 'darwin') {
       # Mac
       $PRAAT = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat', 'Prefs')->stringify;
-      $ROOT  = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
@@ -47,35 +47,52 @@ B<CPrAN> - A package manager for Praat
     }
     $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
   }
+
+  sub root  { return $ROOT   }
+  sub praat { return $PRAAT  }
+
+  sub set_root  { $ROOT  = shift }
+  sub set_praat { $PRAAT = shift }
+}
+
+# TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
+# access is limited to the accessors below.
+{
   my $TOKEN  = 'WMe3t_ANxd3yyTLyc7WA';
   my $APIURL = 'https://gitlab.com/api/v3/';
   my $GROUP  = '133578';
 
-  sub root      { return $ROOT   }
-  sub praat     { return $PRAAT  }
   sub api_token { return $TOKEN  }
   sub api_url   { return $APIURL }
   sub api_group { return $GROUP  }
 
-  sub set_global {
-    my $self = shift;
-    my $opt = $self->{app}->{global_options};
+  sub set_api_token { $TOKEN  = shift }
+  sub set_api_url   { $APIURL = shift }
+  sub set_api_group { $GROUP  = shift }
+}
 
-    $ROOT   = $opt->{'cpran'}     if $opt->{'cpran'};
-    $PRAAT  = $opt->{'praat'}     if $opt->{'praat'};
-    $TOKEN  = $opt->{'api-token'} if $opt->{'api-token'};
-    $APIURL = $opt->{'api-url'}   if $opt->{'api-url'};
-    $GROUP  = $opt->{'api-group'} if $opt->{'api-group'};
+# By redefining this subroutine, we lightly modify the behaviour of the App::Cmd
+# app. In this case, we process the global options, and pass _some_ of those to
+# the invoked commands together with their local options.
+sub execute_command {
+  my ($self, $cmd, $opt, @args) = @_;
 
-    croak "E: Cannot read from CPrAN root at " . CPrAN::root()
-      unless (-r CPrAN::root());
-    croak "E: Cannot write to CPrAN root at " . CPrAN::root()
-      unless (-w CPrAN::root());
-    croak "E: Cannot read from preferences directory at " . CPrAN::praat()
-      unless (-r CPrAN::praat());
-    croak "E: Cannot write to preferences directory at " . CPrAN::praat()
-      unless (-w CPrAN::praat());
+  set_globals($self->global_options);
+  make_root();
+
+  # A verbose level of 1 prints default messages to STDOUT. --quiet
+  # sets verbosity to 0, amotting all output. Higher values of verbose
+  # will increase verbosity.
+  if ($self->global_options->{quiet}) {
+    $opt->{verbose} = 0;
   }
+  else {
+    $opt->{verbose} = ++$self->global_options->{verbose};
+  }
+
+  $opt->{debug} = $self->global_options->{debug};
+
+  $cmd->execute($opt, \@args);
 }
 
 =head1 DESCRIPTION
@@ -90,6 +107,43 @@ the example given in the SYNOPSIS.
 B<CPrAN> commands (inhabiting the B<CPrAN::Command> namespace) can call the
 methods described below to perform general B<CPrAN>-related actions.
 
+=head1 OPTIONS
+
+=over
+
+=item B<--praat>=PATH
+
+The path to use as the preferences directory for Praat. See the FILES section
+for information on the platform-dependant default values used.
+
+=item B<--cpran>=PATH
+
+The path to use as the CPrAN root directory. See the FILES section
+for information on the platform-dependant default values used.
+
+=item B<--api-token>=TOKEN
+=item B<--api-group>=GROUP_ID
+=item B<--api-url>=URL
+
+These options set the credentials to talk to the GitLab API to obtain the
+plugin archives and descriptors. As such, it is implementation-dependant, and is
+currently tied to GitLab.
+
+=item B<--verbose>, B<--v>
+
+Increase the verbosity of the output. This option can be called multiple times
+to make the program even more talkative.
+
+=item B<--quiet>, B<--q>
+
+Opposed to B<--verbose>, this option I<suppresses> all output. If both options
+are set simultaneously, this one takes precedence.
+
+=item B<--debug>, B<--D>
+
+Enables the output of debug information. Like B<--verbose>, this option can be
+used multiple times to increase the number of debug messages that are printed.
+
 =cut
 
 sub global_opt_spec {
@@ -99,13 +153,55 @@ sub global_opt_spec {
     [ "api-token=s" => "set private token for GitLab API access" ],
     [ "api-url=s"   => "set url of GitLab API" ],
     [ "api-group=s" => "set the id for the GitLab CPrAN group" ],
-    [ "quiet"       => "quietly say no to everything" ],
+    [ "verbose|v+"  => "quietly say no to everything" ],
+    [ "quiet|q"     => "quietly say no to everything" ],
+    [ "debug|D+"    => "print debug messages" ],
   );
 }
+
+=back
 
 =head1 METHODS
 
 =cut
+
+=item set_globals()
+
+Processes global variables to change shared variables. This probably should be
+re-worked to more closely match the way App::Cmd expects to be used.
+
+=cut
+
+sub set_globals {
+  my ($opt) = @_;
+
+  set_praat($opt->{praat}) if (defined $opt->{praat});
+  set_root($opt->{cpran}) if (defined $opt->{cpran});
+
+  set_api_token($opt->{'api-token'}) if (defined $opt->{'api-token'});
+  set_api_group($opt->{'api-group'}) if (defined $opt->{'api-group'});
+  set_api_url($opt->{'api-url'}) if (defined $opt->{'api-url'});
+
+  check_permissions();
+}
+
+=item check_permissions()
+
+CPrAN needs read and write access to the path set as root, and to Praat's
+# preferences directory. This subroutine makes sure this is the case, or croaks.
+
+=cut
+
+sub check_permissions {
+  croak "E: Cannot read from CPrAN root at " . CPrAN::root()
+    unless (-r CPrAN::root());
+  croak "E: Cannot write to CPrAN root at " . CPrAN::root()
+    unless (-w CPrAN::root());
+  croak "E: Cannot read from preferences directory at " . CPrAN::praat()
+    unless (-r CPrAN::praat());
+  croak "E: Cannot write to preferences directory at " . CPrAN::praat()
+    unless (-w CPrAN::praat());
+}
 
 =item make_root()
 
@@ -114,9 +210,8 @@ Makes the B<CPrAN> root directory.
 =cut
 
 sub make_root {
-  File::Path::make_path( CPrAN::root() );
+  File::Path::make_path( CPrAN::root() ) unless (-e CPrAN::root());
 }
-make_root();
 
 =over
 

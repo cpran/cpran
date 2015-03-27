@@ -40,8 +40,6 @@ will be downloaded. This second case is the recommended use.
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
-
-  CPrAN::set_global( $opt );
 }
 
 =head1 EXAMPLES
@@ -125,7 +123,6 @@ Increase verbosity of output.
 
 sub opt_spec {
   return (
-    [ "verbose|v+" => "increase verbosity" ],
   );
 }
 

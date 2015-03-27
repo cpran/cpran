@@ -47,8 +47,6 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("Must provide a search term") unless @{$args};
-
-  CPrAN::set_global( $self );
 }
 
 =head1 EXAMPLES
@@ -120,7 +118,6 @@ sub opt_spec {
     # [ "name|n"        => "search in plugin name" ],
     # [ "description|d" => "search in description" ],
     [ "installed|i"   => "only consider installed plugins" ],
-    [ "debug"         => "show debug messages" ],
   );
 }
 

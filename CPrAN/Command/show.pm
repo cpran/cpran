@@ -47,8 +47,6 @@ sub validate_args {
   foreach (@{$args}) {
     croak "Empty argument" unless $_;
   }
-
-  CPrAN::set_global( $opt );
 }
 
 =head1 EXAMPLES

@@ -51,8 +51,6 @@ sub validate_args {
   }
   warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
     if ($prefix_warning);
-
-  CPrAN::set_global( $opt );
 }
 
 =head1 EXAMPLES
@@ -155,9 +153,6 @@ sub opt_spec {
   return (
     [ "yes|y"    => "do not ask for confirmation" ],
     [ "force"    => "attempt to work around errors" ],
-    [ "debug"    => "print debugging messages" ],
-    [ "verbose"  => "increase verbosity" ],
-    [ "quiet"    => "produce no output" ],
     [ "cautious" => "be extra-careful while removing files" ],
   );
 }

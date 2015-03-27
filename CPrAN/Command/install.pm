@@ -65,8 +65,6 @@ sub validate_args {
       name    => $name,
     };
   }
-
-  CPrAN::set_global( $opt );
 }
 
 =head1 EXAMPLES
@@ -238,7 +236,6 @@ sub opt_spec {
   return (
     [ "yes|y"   => "do not ask for confirmation" ],
     [ "force" => "print debugging messages" ],
-    [ "debug"   => "force installation of plugin" ],
   );
 }
 
