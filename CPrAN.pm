@@ -153,7 +153,7 @@ sub global_opt_spec {
     [ "api-token=s" => "set private token for GitLab API access" ],
     [ "api-url=s"   => "set url of GitLab API" ],
     [ "api-group=s" => "set the id for the GitLab CPrAN group" ],
-    [ "verbose|v+"  => "quietly say no to everything" ],
+    [ "verbose|v+"  => "increase verbosity" ],
     [ "quiet|q"     => "quietly say no to everything" ],
     [ "debug|D+"    => "print debug messages" ],
   );
