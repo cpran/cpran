@@ -397,7 +397,7 @@ sub install {
   if (-e $root->stringify && $opt->{force}) {
     print "Removing $root\n";
     use File::Path qw(remove_tree);
-    remove_tree( $root->stringify, { verbose => 1, safe => 0, error => \my $e } );
+    remove_tree( $root->stringify, { verbose => $opt->{verbose} - 1, safe => 0, error => \my $e } );
     if (@{$e}) {
       foreach (@{$e}) {
         my ($file, $message) = %{$_};

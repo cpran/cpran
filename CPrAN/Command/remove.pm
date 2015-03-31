@@ -108,7 +108,7 @@ sub execute {
       foreach (0..$#files) {
         print "Removing $names[$_]... " unless ($opt->{quiet});
         # TODO(jja) Improve error checking
-        my $ret = $files[$_]->rmtree($opt->{verbose}, $opt->{cautious});
+        my $ret = $files[$_]->rmtree($opt->{verbose} - 1, $opt->{cautious});
         if ($ret) {
           print "done\n" unless ($opt->{quiet});
         }
