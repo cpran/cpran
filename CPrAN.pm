@@ -92,6 +92,7 @@ sub execute_command {
 
   $opt->{debug} = $self->global_options->{debug};
 
+  $cmd->validate_args($opt, \@args);
   $cmd->execute($opt, \@args);
 }
 
@@ -192,11 +193,19 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 
 =cut
 
+# TODO(jja) If this is a fresh install, CPrAN root will not exist, so will not 
+# readable/writable. What needs to be checked is whether the root could be
+# created.
 sub check_permissions {
-  croak "E: Cannot read from CPrAN root at " . CPrAN::root()
-    unless (-r CPrAN::root());
-  croak "E: Cannot write to CPrAN root at " . CPrAN::root()
-    unless (-w CPrAN::root());
+  if (-e CPrAN::root()) {
+    croak "E: Cannot read from CPrAN root at " . CPrAN::root()
+      unless (-r CPrAN::root());
+    croak "E: Cannot write to CPrAN root at " . CPrAN::root()
+      unless (-w CPrAN::root());
+  }
+  else {
+    warn "W: CPrAN root not found.\nW: If this is a fresh install, try running cpran update\n";
+  }
   croak "E: Cannot read from preferences directory at " . CPrAN::praat()
     unless (-r CPrAN::praat());
   croak "E: Cannot write to preferences directory at " . CPrAN::praat()
@@ -336,9 +345,11 @@ of plugins whose descriptors have been saved by C<cpran update>
 sub known {
   use Path::Class;
 
-  return map {
+  my @children = map {
     $_->basename;
   } dir( CPrAN::root() )->children;
+  warn "W: List of CPrAN plugins was empty. Have you run cpran update already?\n" unless @children;
+  return @children;
 }
 
 =item dependencies()
