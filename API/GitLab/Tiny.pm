@@ -211,13 +211,14 @@ sub _serialize {
   );
 
   require YAML::XS;
+  require Try::Tiny;
 
   my $obj;
-  eval {
+  try {
     $obj = YAML::XS::Load( $content );
-  };
-  if ($@) {
-    confess "Could not parse: $@\n";
+  }
+  catch {
+    confess "Could not parse: $_\n";
   }
 
   return $obj;
