@@ -392,8 +392,8 @@ sub dependencies {
       # version's dependencies
       $plugin_id = CPrAN::get_plugin_id( $plugin->{name} );
 
-      use GitLab::API::v3;
-      my $api = GitLab::API::v3->new(
+      use API::GitLab::Tiny;
+      my $api = API::GitLab::Tiny->new(
         url   => CPrAN::api_url(),
         token => CPrAN::api_token(),
       );
@@ -408,15 +408,15 @@ sub dependencies {
 
       # # HACK(jja) This should work, but the Perl GitLab API seems to currently be
       # # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
-      # $descriptor = decode_base64(
-      #   $api->file($plugin_id, {
-      #     file_path => 'cpran.yaml',
-      #     sha => $sha,
-      #   })->{content}
-      # );
-      use LWP::Simple;
-      my $get = 'https://gitlab.com/cpran/plugin_' . $plugin->{name} . '/raw/' . $sha . '/cpran.yaml';
-      $descriptor = get($get);
+      $descriptor = decode_base64(
+        $api->file($plugin_id, {
+          file_path => 'cpran.yaml',
+          sha => $sha,
+        })->{content}
+      );
+#       use LWP::Simple;
+#       my $get = 'https://gitlab.com/cpran/plugin_' . $plugin->{name} . '/raw/' . $sha . '/cpran.yaml';
+#       $descriptor = get($get);
     }
 
     # We are only interested in CPrAN dependencies
@@ -573,8 +573,8 @@ Fetches the GitLab id for the project specified by name
 sub get_plugin_id {
   my $name = shift;
 
-  use GitLab::API::v3;
-  my $api = GitLab::API::v3->new(
+  use API::GitLab::Tiny;
+  my $api = API::GitLab::Tiny->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );

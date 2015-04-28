@@ -278,9 +278,9 @@ disk.
 sub get_archive {
   my ($opt, $name, $version) = @_;
 
-  use GitLab::API::v3;
+  use API::GitLab::Tiny;
 
-  my $api = GitLab::API::v3->new(
+  my $api = API::GitLab::Tiny->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
@@ -301,57 +301,23 @@ sub get_archive {
   }
 
   my %params = ( sha => $tag->{commit}->{id} );
-  # # HACK(jja) This should work, but the Perl GitLab API seems to currently be
-  # # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
-  # my $archive = $api->archive(
-  #   $project->{id},
-  #   \%params
-  # );
+  my $archive = $api->archive(
+    $project->{id},
+    \%params
+  );
 
-  # HACK(jja) This is a workaround while the Perl GitLab API is fixed
-  use LWP::UserAgent;
-  my $lwp = LWP::UserAgent->new();
-  #print Dumper($lwp);
-
-  my $get_url = CPrAN::api_url() . '/projects/' . $project->{id} . '/repository/archive?private_token=' . CPrAN::api_token() . '&sha=' . $params{sha};
-  # NOTE(jja) Or maybe a zip file?
-  # my $get_url = 'https://gitlab.com/cpran/plugin_' . $name . '/repository/archive.zip?ref=' . $tag->{name};
-
+  # TODO(jja) Improve error checking. Does this work on Windows?
   use File::Temp;
   my $tmp = File::Temp->new(
     dir => '.',
     template => $name . '-XXXXX',
-    suffix => '.tar.gz',
+    suffix => '.zip',
     unlink => 0,
   );
 
-
-  # BUG(jja) Error 500: A non-blocking socket operation could not be completed
-  # On Linux this succeeds without a hitch. On Windows, it's hit and miss,
-  # sometimes going through without problem, other times failing even 40 times
-  # in a row. Why is this happening?
-  # From http://search.cpan.org/dist/libwww-perl/lwpcook.pod
-  my $req = HTTP::Request->new(GET => $get_url);
-  my $tries = 0;
-  my $res;
-  do {
-    $tries++;
-    print "." if ($tries > 1 && !$opt->{quiet});
-    $res = $lwp->request($req, $tmp->filename);
-    # HACK(jja) Magic number: number of tries
-  } until ($tries >= 40 || $res->is_success);
-  if ($res->is_success) {
-  print "\n" unless $opt->{quiet};
+  my $fh = Path::Class::file( $tmp->filename )->openw();
+  $fh->print($archive);
   return $tmp->filename;
-  }
-  else {
-    use Path::Class;
-    my $file = file($tmp->filename);
-    $file->remove();
-    print "\nGiving up after $tries tries. Take a break and try again?\n"
-    unless $opt->{quiet};
-    croak $res->status_line;
-  }
 }
 
 =item B<install()>

@@ -83,51 +83,56 @@ sub execute {
   use File::Slurp;
   use YAML::XS;
 
-  unless ($opt->{quiet}) {
-    print "The following plugins will be UPGRADED:\n";
-    print '  ', join(' ', map { $_ } @names), "\n";
-    print "Do you want to continue? [y/N] ";
-  }
-  if (CPrAN::yesno( $opt, 'n' )) {
-    foreach my $name (@names) {
-      my $desc  = file(CPrAN::praat(), 'plugin_' . $name, 'cpran.yaml');
+  if (@names) {
+    unless ($opt->{quiet}) {
+      print "The following plugins will be UPGRADED:\n";
+      print '  ', join(' ', map { $_ } @names), "\n";
+      print "Do you want to continue? [y/N] ";
+    }
+    if (CPrAN::yesno( $opt, 'n' )) {
+      foreach my $name (@names) {
+        my $desc  = file(CPrAN::praat(), 'plugin_' . $name, 'cpran.yaml');
 
-      my $content = read_file($desc->stringify);
-      my $yaml = Load( $content );
+        my $content = read_file($desc->stringify);
+        my $yaml = Load( $content );
 
-      my $name = $yaml->{Plugin};
-      my $local = $yaml->{Version};
+        my $name = $yaml->{Plugin};
+        my $local = $yaml->{Version};
 
-      $desc = file(CPrAN::root(), $name);
-      my $remote = '';
-      if (-e $desc->stringify) {
-        $content = read_file($desc->stringify);
-        $yaml = Load( $content );
-        $remote = $yaml->{Version};
+        $desc = file(CPrAN::root(), $name);
+        my $remote = '';
+        if (-e $desc->stringify) {
+          $content = read_file($desc->stringify);
+          $yaml = Load( $content );
+          $remote = $yaml->{Version};
+        }
+
+        my $app = CPrAN->new();
+
+        # We copy the current options, in case custom paths have been passed
+        my %params = %{$opt};
+        $params{quiet} = 1;
+        $params{yes}   = 1;
+
+        if (CPrAN::compare_version( $local, $remote ) < 0) {
+          print "Upgrading $name from v$local to v$remote... ";
+
+          $app->execute_command('CPrAN::Command::remove',  \%params, $name);
+          $app->execute_command('CPrAN::Command::install', \%params, $name);
+
+          print "done\n";
+        }
+        else {
+          print "$name is already at its latest version\n";
+        }
       }
-
-      my $app = CPrAN->new();
-
-      # We copy the current options, in case custom paths have been passed
-      my %params = %{$opt};
-      $params{quiet} = 1;
-      $params{yes}   = 1;
-
-      if (CPrAN::compare_version( $local, $remote ) < 0) {
-        print "Upgrading $name from v$local to v$remote... ";
-
-        $app->execute_command('CPrAN::Command::remove',  \%params, $name);
-        $app->execute_command('CPrAN::Command::install', \%params, $name);
-
-        print "done\n";
-      }
-      else {
-        print "$name is already at its latest version\n";
-      }
+    }
+    else {
+      print "Abort.\n" unless ($opt->{quiet});
     }
   }
   else {
-    print "Abort.\n" unless ($opt->{quiet});
+    print "All plugins up to date.\n";
   }
 }
 

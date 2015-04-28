@@ -55,12 +55,12 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use GitLab::API::v3;
+  use API::GitLab::Tiny;
   use YAML::XS;
   use MIME::Base64;
   use Path::Class;
 
-  my $api = GitLab::API::v3->new(
+  my $api = API::GitLab::Tiny->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
