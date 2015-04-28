@@ -3,12 +3,9 @@ package API::GitLab::Tiny;
 use strict;
 use warnings;
 
-use LWP::Simple;
+# use Params::Validate;
 use Data::Dumper;
-use YAML::XS;
-use MIME::Base64;
-use URI;
-use URI::QueryParam;
+use Carp;
 
 sub new {
   my $class = shift;
@@ -16,120 +13,159 @@ sub new {
 
   exists ($args{token}) or die;
   my $self = {};
-  $self->{url}   = $args{api} // 'https://gitlab.com/api/v3/';
-  $self->{token} = $args{token};
+  $self->{url}      = $args{url} // 'https://gitlab.com/api/v3/';
+  $self->{token}    = $args{token};
+  $self->{debug}    = $args{debug} // 0;
+  $self->{encoding} = $args{encoding} // 'utf-8';
   bless $self, $class;
 }
 
 sub projects {
   my ($self, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+
+  my $url = $self->_build_url( ['projects'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub tags {
-  my ($self, $project_id, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/tags');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my ($self, $id, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'tags'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub tree {
-  my ($self, $project_id, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/tree');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my ($self, $id, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'tree'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub blob {
-  my ($self, $project_id, $sha, $params) = @_;
-  exists $params->{filepath} or die "No filepath provided";
+  use Encode qw(encode decode);
+  my ($self, $id, $sha, $params) = @_;
+  $self->_require(['filepath'], $params);
 
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/blobs/' . $sha);
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return LWP::Simple::get($url);
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'blobs', $sha], $params);
+  return encode($self->{encoding}, $self->_get($url), Encode::FB_CROAK);
 }
 
 sub raw_blob {
-  my ($self, $project_id, $sha, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/raw_blobs/' . $sha);
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return LWP::Simple::get($url);
+  use Encode qw(encode decode);
+  my ($self, $id, $sha, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'raw_blobs', $sha], $params);
+  return encode($self->{encoding}, $self->_get($url), Encode::FB_CROAK);
 }
 
 sub file {
-  my ($self, $project_id, $params) = @_;
-  exists $params->{'file_path'} or die "No file_path provided";
-  exists $params->{'ref'} or die "No ref provided";
+  my ($self, $id, $params) = @_;
+  $self->_require(['file_path', 'ref'], $params);
 
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/files');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'files'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub commits {
-  my ($self, $project_id, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/commits');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my ($self, $id, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'commits'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub commit {
-  my ($self, $project_id, $params) = @_;
-  exists $params->{'sha'} or die "No ref provided";
+  my ($self, $id, $sha, $params) = @_;
 
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/commits/' . $params->{sha});
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'commits', $sha], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub commit_diff {
-  my ($self, $project_id, $sha, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/commits/' . $sha . '/diff');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my ($self, $id, $sha, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'commits', $sha, 'diff'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub commit_comments {
-  my ($self, $project_id, $sha, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/commits/' . $sha . '/comments');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url) );
+  my ($self, $id, $sha, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'commits', $sha, 'comments'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub archive {
-  my ($self, $project_id, $params) = @_;
-  my $url = URI->new($self->{url} . '/projects/' . $project_id . '/repository/archive');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return LWP::Simple::get($url);
+  my ($self, $id, $params) = @_;
+
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'archive'], $params);
+  return $self->_get($url);
 }
 
 sub groups {
   my ($self, $params) = @_;
-  my $url = URI->new($self->{url} . '/groups');
-  $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url));
+
+  my $url = $self->_build_url( ['groups'], $params);
+  return $self->_serialize( $self->_get($url) );
 }
 
 sub group {
-  my ($self, $group_id, $params) = @_;
-  my $url = URI->new($self->{url} . '/groups/' . $group_id);
+  my ($self, $id, $params) = @_;
+
+  my $url = $self->_build_url( ['groups', $id], $params);
+  return $self->_serialize( $self->_get($url) );
+}
+
+sub _build_url {
+  use URI;
+  use URI::QueryParam;
+
+  my ($self, $members, $params) = @_;
+
+  $params->{private_token} = $self->{token};
+
+  my $url = URI->new($self->{url});
+  $url = URI->new_abs(join('/', @{$members}), $url);
   $url->query_param_append($_, $params->{$_}) foreach (keys %{$params});
-  $url->query_param_append('private_token', $self->{token});
-  return YAML::XS::Load( LWP::Simple::get($url));
+
+  print STDERR "GET " . $url . "\n" if $self->{debug};
+  return $url;
+}
+
+sub _serialize {
+  require YAML::XS;
+
+  my ($self, $content) = @_;
+  my $obj;
+  eval {
+    $obj = YAML::XS::Load( $content );
+  };
+  if ($@) {
+    croak "Could not parse: $@\n";
+  }
+
+  return $obj;
+}
+
+sub _get {
+  require LWP::UserAgent;
+  my ($self, $url) = @_;
+
+  my $ua = LWP::UserAgent->new;
+
+  my $response = $ua->get($url);
+  if ($response->is_success) {
+    return $response->decoded_content;
+  }
+  else {
+    croak $response->status_line;
+  }
+}
+
+sub _require {
+  my ($self, $need, $have) = @_;
+  foreach (@{$need}) {
+    exists $have->{$_} or croak "No " . $_ . "provided";
+  }
 }
 
 1;
