@@ -66,7 +66,7 @@ Now, on to the installation.
     install them. Depending on your system, it might take some time, but it
     should be a fairly automatic process.
 
-        cpan App::Cmd Archive::Tar Carp Data::Dumper Encode File::Copy File::Path File::Slurp File::Temp GitLab::API::v3 Graph LWP::UserAgent LWP::Simple MIME::Base64 Path::Class Text::Table
+        cpan App::Cmd File::Slurp Graph Params::Validate LWP::UserAgent Path::Class Text::Table URI YAML::XS
 
 3.  Install the CPrAN plugin
 

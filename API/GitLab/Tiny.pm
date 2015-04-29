@@ -1881,15 +1881,12 @@ sub _serialize {
   );
 
   require YAML::XS;
-  require Try::Tiny;
 
   my $obj;
-#   try {
+  eval {
     $obj = YAML::XS::Load( $content );
-#   }
-#   catch {
-#     confess "Could not parse: $_\n";
-#   }
+  };
+  confess "Could not parse" if $@;
 
   return $obj;
 }
