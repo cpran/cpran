@@ -86,13 +86,13 @@ Returns the serialised downloaded descriptor.
 
 # TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
 sub fetch_descriptor {
-  use API::GitLab::Tiny;
+  use GitLab::API::Tiny::v3;
   use YAML::XS;
   use Path::Class;
 
   my ($self, $opt, $plugin, $dir) = @_;
 
-  my $api = API::GitLab::Tiny->new(
+  my $api = GitLab::API::Tiny::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
@@ -127,11 +127,11 @@ can find in the CPrAN group.
 =cut
 
 sub list_projects {
-  use API::GitLab::Tiny;
+  use GitLab::API::Tiny::v3;
 
   my ($self, $opt, $args) = @_;
 
-  my $api = API::GitLab::Tiny->new(
+  my $api = GitLab::API::Tiny::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
