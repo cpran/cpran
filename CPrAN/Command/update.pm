@@ -51,62 +51,100 @@ sub validate_args {
 
 =cut
 
-# TODO(jja) Break execute into smaller chunks
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use API::GitLab::Tiny;
-  use YAML::XS;
-  use MIME::Base64;
   use Path::Class;
 
-  my $api = API::GitLab::Tiny->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
-
-  my $projects;
-  if (@{$args}) {
-    my @p;
-    foreach (@{$args}) {
-      my $p = $api->projects( { search => 'plugin_' . $_ } );
-      push @p, @{$p};
-    }
-    $projects = \@p;
-  }
-  else {
-    $projects = $api->group( CPrAN::api_group() )->{projects};
-  }
+  my $projects = list_projects($self, $opt, $args);
 
   my $dir = Path::Class::dir( CPrAN::root() );
 
   my $descriptors;
   foreach my $plugin (@{$projects}) {
     my $name = substr($plugin->{name}, 7);
-    my $file = $dir->file($name);
-
     print "Fetching $name... " if $opt->{verbose};
-
-    my $descriptor = decode_base64(
-      $api->file($plugin->{id}, {
-        file_path => 'cpran.yaml',
-        ref => 'master',
-      })->{content}
-    );
-    eval { YAML::XS::Load( $descriptor ) };
-    if ($@) {
-      print "error: skipping\n" if $opt->{verbose};
-      print "$@" if ($opt->{verbose} > 1);
-      $file->remove();
-
-    } else {
-      my $fh = $file->openw();
-      $fh->print($descriptor);
-      print "done\n" if $opt->{verbose};
-      $descriptors .= $descriptor;
-    }
+    $descriptors .= fetch_descriptor($self, $opt, $plugin, $dir);
   }
   return $descriptors;
+}
+
+=head1 METHODS
+
+=over
+
+=cut
+
+=item B<fetch_descriptor()>
+
+Fetches the descriptor of a plugin and writes it into an appropriately named
+file in the specified directory.
+
+Returns the serialised downloaded descriptor.
+
+=cut
+
+# TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
+sub fetch_descriptor {
+  use API::GitLab::Tiny;
+  use YAML::XS;
+  use Path::Class;
+
+  my ($self, $opt, $plugin, $dir) = @_;
+
+  my $api = API::GitLab::Tiny->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+  my $file = $dir->file(substr($plugin->{name}, 7));
+
+  my $commit_id = shift($api->commits( $plugin->{id} ))->{id};
+  my $descriptor = $api->blob(
+    $plugin->{id},
+    $commit_id,
+    { filepath => 'cpran.yaml' }
+  );
+  eval { YAML::XS::Load( $descriptor ) };
+  if ($@) {
+    print "error: skipping\n" if $opt->{verbose};
+    print "$@" if ($opt->{verbose} > 1);
+    $file->remove();
+
+  } else {
+    my $fh = $file->openw();
+    $fh->print($descriptor);
+    print "done\n" if $opt->{verbose};
+  }
+  return $descriptor;
+}
+
+=item B<list_projects()>
+
+Provided with a list of plugin search terms, it returns a list of serialised
+plugin objects. If the provided list is empty, it returns all the plugins it
+can find in the CPrAN group.
+
+=cut
+
+sub list_projects {
+  use API::GitLab::Tiny;
+
+  my ($self, $opt, $args) = @_;
+
+  my $api = API::GitLab::Tiny->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  if (@{$args}) {
+    my @projects = map {
+      @{$api->projects( { search => 'plugin_' . $_ } )};
+    } @{$args};
+    return \@projects;
+  }
+  else {
+    return $api->group( CPrAN::api_group() )->{projects};
+  }
 }
 
 =head1 OPTIONS
