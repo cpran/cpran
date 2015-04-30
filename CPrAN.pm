@@ -58,7 +58,7 @@ B<CPrAN> - A package manager for Praat
 # TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
 # access is limited to the accessors below.
 {
-  my $TOKEN  = 'WMe3t_ANxd3yyTLyc7WA';
+  my $TOKEN  = 'Myz-wxxGLnV_syejdkWx';
   my $APIURL = 'https://gitlab.com/api/v3/';
   my $GROUP  = '133578';
 
