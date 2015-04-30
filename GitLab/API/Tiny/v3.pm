@@ -151,7 +151,7 @@ Sends a C<PUT> request to C</users/:user_id>.
 
 =cut
 
-sub create_user {
+sub edit_user {
   my $self = shift;
 
   my ($id, $params) = validate_pos( @_,
@@ -277,14 +277,14 @@ Sends a C<POST> request to C</user/keys>.
 
 =cut
 
-sub delete_user {
+sub create_current_user_ssh_key {
   my $self = shift;
 
   my ($params) = validate_pos( @_,
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['users', 'keys'], $params);
+  my $url = $self->_build_url( ['user', 'keys'], $params);
   $self->_post($url);
 }
 
@@ -657,7 +657,7 @@ Sends a C<PUT> request to C</projects/:project_id/members/:user_id>.
 
 =cut
 
-sub add_project_member {
+sub edit_project_member {
   my $self = shift;
 
   my ($pid, $uid, $params) = validate_pos( @_,
@@ -826,7 +826,7 @@ Sends a C<POST> request to C</projects/:project_id/fork/:forked_from_id>.
 sub set_project_fork {
   my $self = shift;
 
-  my ($pid, $sid, $params) = validate_pos( @_,
+  my ($pid, $fid, $params) = validate_pos( @_,
     { type => SCALAR },
     { type => SCALAR },
     { type => HASHREF, optional => 1 }
@@ -966,7 +966,7 @@ Sends a C<PUT> request to C</projects/:project_id/snippets/:snippet_id>.
 
 =cut
 
-sub create_snippet {
+sub edit_snippet {
   my $self = shift;
 
   my ($pid, $sid, $params) = validate_pos( @_,
@@ -975,7 +975,7 @@ sub create_snippet {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'snippets', $sid], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'snippets', $sid], $params);
   $self->_put($url);
 }
 
@@ -999,7 +999,7 @@ sub delete_snippet {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'snippets', $sid], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'snippets', $sid], $params);
   $self->_delete($url);
 }
 
@@ -1023,7 +1023,7 @@ sub raw_snippet {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'snippets', $sid, 'raw'], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'snippets', $sid, 'raw'], $params);
   return $self->_serialize( $self->_get($url) );
 }
 
@@ -1188,7 +1188,7 @@ Sends a C<GET> request to C</projects/:project_id/repository/compare> and return
 
 =cut
 
-sub create_tag {
+sub compare {
   my $self = shift;
 
   my ($id, $params) = validate_pos( @_,
@@ -1440,7 +1440,7 @@ sub add_commit_comment {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'repository', 'commit', $cid, 'comments'], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'repository', 'commit', $cid, 'comments'], $params);
   $self->_post($url);
 }
 
@@ -1514,7 +1514,7 @@ sub protect_branch {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'repository', 'branches', $branch, 'protect'], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'repository', 'branches', $branch, 'protect'], $params);
   $self->_put($url);
 }
 
@@ -1538,7 +1538,7 @@ sub unprotect_branch {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'repository', 'branches', $branch, 'unprotect'], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'repository', 'branches', $branch, 'unprotect'], $params);
   $self->_put($url);
 }
 
@@ -1556,12 +1556,12 @@ Sends a C<POST> request to C</projects/:project_id/repository/branches> and retu
 sub create_branch {
   my $self = shift;
 
-  my ($pid, $params) = validate_pos( @_,
+  my ($id, $params) = validate_pos( @_,
     { type => SCALAR },
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'repository', 'branches', $branch, 'unprotect'], $params);
+  my $url = $self->_build_url( ['projects', $id, 'repository', 'branches'], $params);
   $self->_put($url);
 }
 
@@ -1579,7 +1579,7 @@ Sends a C<DELETE> request to C</projects/:project_id/repository/branches/:branch
 sub delete_branch {
   my $self = shift;
 
-  my ($pid, $branch, $params) = validate_pos( @_,
+  my ($id, $branch, $params) = validate_pos( @_,
     { type => SCALAR },
     { type => SCALAR },
     { type => HASHREF, optional => 1 }
@@ -1683,7 +1683,7 @@ sub edit_merge_request {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'merge_requests', $mid], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'merge_requests', $mid], $params);
   $self->_put($url);
 }
 
@@ -1708,7 +1708,7 @@ sub accept_merge_request {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'merge_requests', $mid, 'merge'], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'merge_requests', $mid, 'merge'], $params);
   $self->_put($url);
 }
 
@@ -1733,7 +1733,7 @@ sub add_merge_request_comment {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'merge_requests', $mid, 'comments'], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'merge_requests', $mid, 'comments'], $params);
   $self->_post($url);
 }
 
@@ -1877,7 +1877,7 @@ sub edit_issue {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'issues', $iid], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'issues', $iid], $params);
   $self->_put($url);
 }
 
@@ -2070,7 +2070,7 @@ sub edit_milestone {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, 'milestones', $mid], $params);
+  my $url = $self->_build_url( ['projects', $pid, 'milestones', $mid], $params);
   $self->_put($url);
 }
 
@@ -2155,7 +2155,7 @@ sub create_note {
     { type => HASHREF, optional => 1 }
   );
 
-  my $url = $self->_build_url( ['projects', $id, $type, $mid, 'notes'], $params);
+  my $url = $self->_build_url( ['projects', $pid, $type, $mid, 'notes'], $params);
   $self->_post($url);
 }
 
@@ -2661,7 +2661,7 @@ sub _put {
 
   my ($url, $form) = validate_pos( @_,
     { type => SCALAR | SCALARREF },
-    { type => HASHREF | ARRAYREF | ARRAY } # Does HTTP::Request::Common accept anything else?
+    { type => HASHREF | ARRAYREF } # Does HTTP::Request::Common accept anything else?
   );
 
   require LWP::UserAgent;
@@ -2681,7 +2681,7 @@ sub _post {
 
   my ($url, $form) = validate_pos( @_,
     { type => SCALAR | SCALARREF },
-    { type => HASHREF | ARRAYREF | ARRAY } # Does HTTP::Request::Common accept anything else?
+    { type => HASHREF | ARRAYREF } # Does HTTP::Request::Common accept anything else?
   );
 
   require LWP::UserAgent;
