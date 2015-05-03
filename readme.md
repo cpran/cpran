@@ -62,9 +62,17 @@ Now, on to the installation.
 
 2.  Install the necessary CPAN modules.
 
-    You should be able to just use this (acceptedly intimidating) line to
-    install them. Depending on your system, it might take some time, but it
-    should be a fairly automatic process.
+    CPAN modules can be installed at the user-level or system level. If you
+    want to install them at the user level, it may be necessary to first install
+    the `local::lib` module to set up a user-level module library. On Linux
+    systems you can do that like this (where `~/mylib` is the file path of the
+    desired location for your user-level library):
+
+        cpan --local-lib=~/mylib local::lib && eval $(perl -I ~/mylib/lib/perl5/ -Mlocal::lib)
+
+    You should then be able to just use this (acceptedly intimidating) line to
+    install the necessary dependencies. Depending on your system, it might take
+    some time, but it should be a fairly automatic process.
 
         cpan App::Cmd File::Slurp Graph Params::Validate LWP::UserAgent Path::Class Text::Table URI YAML::XS
 
