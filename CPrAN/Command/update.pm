@@ -86,35 +86,36 @@ Returns the serialised downloaded descriptor.
 
 # TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
 sub fetch_descriptor {
-  use GitLab::API::Tiny::v3;
+  use WWW::GitLab::v3;
   use YAML::XS;
   use Path::Class;
+  use Encode qw(encode decode);
+  use Data::Dumper;
+  use Try::Tiny;
 
   my ($self, $opt, $plugin, $dir) = @_;
 
-  my $api = GitLab::API::Tiny::v3->new(
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
   my $file = $dir->file(substr($plugin->{name}, 7));
 
-  my $commit_id = shift($api->commits( $plugin->{id} ))->{id};
-  my $descriptor = $api->blob(
+  my $commit_id = $api->commits( $plugin->{id} )->[0]->{id};
+  my $descriptor = encode('utf-8', $api->blob(
     $plugin->{id},
     $commit_id,
     { filepath => 'cpran.yaml' }
-  );
-  eval { YAML::XS::Load( $descriptor ) };
-  if ($@) {
+  ), Encode::FB_CROAK );
+  try { YAML::XS::Load( $descriptor) }
+  catch {
     print "error: skipping\n" if $opt->{verbose};
-    print "$@" if ($opt->{verbose} > 1);
     $file->remove();
-
-  } else {
-    my $fh = $file->openw();
-    $fh->print($descriptor);
-    print "done\n" if $opt->{verbose};
-  }
+    return undef;
+  };
+  my $fh = $file->openw();
+  $fh->print($descriptor);
+  print "done\n" if $opt->{verbose};
   return $descriptor;
 }
 
@@ -127,11 +128,11 @@ can find in the CPrAN group.
 =cut
 
 sub list_projects {
-  use GitLab::API::Tiny::v3;
+  use WWW::GitLab::v3;
 
   my ($self, $opt, $args) = @_;
 
-  my $api = GitLab::API::Tiny::v3->new(
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );

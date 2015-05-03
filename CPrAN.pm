@@ -392,8 +392,8 @@ sub dependencies {
       # version's dependencies
       $plugin_id = CPrAN::get_plugin_id( $plugin->{name} );
 
-      use GitLab::API::Tiny::v3;
-      my $api = GitLab::API::Tiny::v3->new(
+      use WWW::GitLab::v3;
+      my $api = WWW::GitLab::v3->new(
         url   => CPrAN::api_url(),
         token => CPrAN::api_token(),
       );
@@ -573,8 +573,8 @@ Fetches the GitLab id for the project specified by name
 sub get_plugin_id {
   my $name = shift;
 
-  use GitLab::API::Tiny::v3;
-  my $api = GitLab::API::Tiny::v3->new(
+  use WWW::GitLab::v3;
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
