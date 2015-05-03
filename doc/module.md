@@ -19,128 +19,165 @@ the example given in the SYNOPSIS.
 **CPrAN** commands (inhabiting the **CPrAN::Command** namespace) can call the
 methods described below to perform general **CPrAN**-related actions.
 
+# OPTIONS
+
+- **--praat**=PATH
+
+    The path to use as the preferences directory for Praat. See the FILES section
+    for information on the platform-dependant default values used.
+
+- **--cpran**=PATH
+
+    The path to use as the CPrAN root directory. See the FILES section
+    for information on the platform-dependant default values used.
+
+- **--api-token**=TOKEN
+- **--api-group**=GROUP\_ID
+- **--api-url**=URL
+
+    These options set the credentials to talk to the GitLab API to obtain the
+    plugin archives and descriptors. As such, it is implementation-dependant, and is
+    currently tied to GitLab.
+
+- **--verbose**, **--v**
+
+    Increase the verbosity of the output. This option can be called multiple times
+    to make the program even more talkative.
+
+- **--quiet**, **--q**
+
+    Opposed to **--verbose**, this option _suppresses_ all output. If both options
+    are set simultaneously, this one takes precedence.
+
+- **--debug**, **--D**
+
+    Enables the output of debug information. Like **--verbose**, this option can be
+    used multiple times to increase the number of debug messages that are printed.
+
 # METHODS
+
+- set\_globals()
+
+    Processes global variables to change shared variables. This probably should be
+    re-worked to more closely match the way App::Cmd expects to be used.
+
+- check\_permissions()
+
+    CPrAN needs read and write access to the path set as root, and to Praat's
+    \# preferences directory. This subroutine makes sure this is the case, or croaks.
 
 - make\_root()
 
     Makes the **CPrAN** root directory.
 
-    - is\_cpran()
+- is\_cpran()
 
-        Takes an object of type Path::Class and checks whether it is a **CPrAN** Praat
-        plugin. See _is\_plugin()_ for the criteria they need to fulfill ot be a plugin.
+    Takes an object of type Path::Class and checks whether it is a **CPrAN** Praat
+    plugin. See _is\_plugin()_ for the criteria they need to fulfill ot be a plugin.
 
-        In order to be considered a **CPrAN** plugin, a valid plugin must additionally
-        have a _plugin descriptor_ written in valid YAML.
+    In order to be considered a **CPrAN** plugin, a valid plugin must additionally
+    have a _plugin descriptor_ written in valid YAML.
 
-        This method does not currently make any sanity checks on the structure of the
-        plugin descriptor (which should follow the example bundled in _example.yaml_),
-        but future versions might.
+    This method does not currently make any sanity checks on the structure of the
+    plugin descriptor (which should follow the example bundled in _example.yaml_),
+    but future versions might.
 
-    - is\_plugin()
+- is\_plugin()
 
-        Takes an object of type Path::Class and checks whether it is a Praat plugin. All
-        directories that reside under Praat's preferences directory, and whose name
-        begins with the _plugin\__ identifier are considered valid plugins.
+    Takes an object of type Path::Class and checks whether it is a Praat plugin. All
+    directories that reside under Praat's preferences directory, and whose name
+    begins with the _plugin\__ identifier are considered valid plugins.
 
-            use Path::Class;
-            is_plugin( file('foo', 'bar') );           # False
-            is_plugin( dir('foo', 'bar') );            # False
-            is_plugin( dir($prefdir, 'bar') );         # False
-            is_plugin( dir($prefdir, 'plugin_bar') );  # True
+        use Path::Class;
+        is_plugin( file('foo', 'bar') );           # False
+        is_plugin( dir('foo', 'bar') );            # False
+        is_plugin( dir($prefdir, 'bar') );         # False
+        is_plugin( dir($prefdir, 'plugin_bar') );  # True
 
-    - installed()
+- installed()
 
-        Returns a list of all installed Praat plugins. See _is\_plugin()_ for the
-        criteria they need to fulfill.
+    Returns a list of all installed Praat plugins. See _is\_plugin()_ for the
+    criteria they need to fulfill.
 
-            my @installed = installed();
-            print "$_\n" foreach (@installed);
+        my @installed = installed();
+        print "$_\n" foreach (@installed);
 
-    - known()
+- known()
 
-        Returns a list of all plugins known by **CPrAN**. In practice, this is the list
-        of plugins whose descriptors have been saved by `cpran update`
+    Returns a list of all plugins known by **CPrAN**. In practice, this is the list
+    of plugins whose descriptors have been saved by `cpran update`
 
-            my @known = known();
-            print "$_\n" foreach (@known);
+        my @known = known();
+        print "$_\n" foreach (@known);
 
-    - dependencies()
+- dependencies()
 
-        Query the desired plugins for dependencies.
+    Query the desired plugins for dependencies.
 
-        Takes either the name of a single plugin, or a list of names, and returns
-        an array of hashes properly formatted for processing with order\_dependencies()
+    Takes either the name of a single plugin, or a list of names, and returns
+    an array of hashes properly formatted for processing with order\_dependencies()
 
-    - order\_dependencies()
+- order\_dependencies()
 
-        Order required packages, so that those that are depended upon come up first than
-        those that depend on them.
+    Order required packages, so that those that are depended upon come up first than
+    those that depend on them.
 
-        The argument is an array of hashes, each of which needs a "name" key that
-        identifies the item, and a "requires" holding the reference to an array with
-        the names of the items that are required. See dependencies() for a method to
-        generate such an array.
+    The argument is an array of hashes, each of which needs a "name" key that
+    identifies the item, and a "requires" holding the reference to an array with
+    the names of the items that are required. See dependencies() for a method to
+    generate such an array.
 
-        Closely modeled after http://stackoverflow.com/a/12166653/807650
+    Closely modeled after http://stackoverflow.com/a/12166653/807650
 
-    - yesno()
+- yesno()
 
-        Gets either a _yes_ or a _no_ answer from STDIN. As arguments, it first
-        receives a reference to the options hash, followed by the default answer (ie,
-        the answer that will be entered if the user simply presses enter).
+    Gets either a _yes_ or a _no_ answer from STDIN. As arguments, it first
+    receives a reference to the options hash, followed by the default answer (ie,
+    the answer that will be entered if the user simply presses enter).
 
-            my $opt = ( yes => 1 );            # Will automatically say 'yes'
-            print "Yes or no? [y/N] ";
-            if (yesno($opt, 'n')) { print "You said yes\n" }
-            else { print "You said no\n" }
+        my $opt = ( yes => 1 );            # Will automatically say 'yes'
+        print "Yes or no? [y/N] ";
+        if (yesno($opt, 'n')) { print "You said yes\n" }
+        else { print "You said no\n" }
 
-        By default, responses matching /^y(es)?$/i are considered to be _yes_
-        responses.
+    By default, responses matching /^y(es)?$/i are considered to be _yes_
+    responses.
 
-    - compare\_versions()
+- compare\_versions()
 
-        Compares two semantic version numbers that match /^\\d+\\.\\d+\\.\\d$/. Returns 1 if
-        the first is larger (=newer), -1 if the second is larger, and 0 if they are the
-        same;
+    Compares two semantic version numbers that match /^\\d+\\.\\d+\\.\\d$/. Returns 1 if
+    the first is larger (=newer), -1 if the second is larger, and 0 if they are the
+    same;
 
-    - get\_latest\_version()
+- get\_latest\_version()
 
-        Gets the latest known version for a plugin specified by name.
+    Gets the latest known version for a plugin specified by name.
 
-    - get\_plugin\_id()
+- get\_plugin\_id()
 
-        Fetches the GitLab id for the project specified by name
+    Fetches the GitLab id for the project specified by name
 
 # AUTHOR
 
-José Joaquín Atria <jjatria@gmail.com>
+JosÃ© JoaquÃ­n Atria <jjatria@gmail.com>
 
 # LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015 JosÃ© JoaquÃ­n Atria
 
 This module is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
 
 # SEE ALSO
 
-App::Cmd, YAML::XS, CPrAN::Command::remove, CPrAN::Command::search,
-CPrAN::Command::update>, CPrAN::Command::upgrade, CPrAN::Command::show,
-CPrAN::Command::install
+[App::Cmd](https://metacpan.org/pod/App::Cmd), [YAML::XS](https://metacpan.org/pod/YAML::XS),
+[CPrAN::Command::install](install),
+[CPrAN::Command::search](search),
+[CPrAN::Command::show](show),
+[CPrAN::Command::update](update),
+[CPrAN::Command::upgrade](upgrade),
+[CPrAN::Command::remove](remove)
 
 # VERSION
 
 0.0.2
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 110:
-
-    '=item' outside of any '=over'
-
-- Around line 486:
-
-    You forgot a '=back' before '=head1'

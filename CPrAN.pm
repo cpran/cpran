@@ -123,7 +123,9 @@ The path to use as the CPrAN root directory. See the FILES section
 for information on the platform-dependant default values used.
 
 =item B<--api-token>=TOKEN
+
 =item B<--api-group>=GROUP_ID
+
 =item B<--api-url>=URL
 
 These options set the credentials to talk to the GitLab API to obtain the
@@ -163,6 +165,8 @@ sub global_opt_spec {
 =back
 
 =head1 METHODS
+
+=over
 
 =cut
 
@@ -221,8 +225,6 @@ Makes the B<CPrAN> root directory.
 sub make_root {
   File::Path::make_path( CPrAN::root() ) unless (-e CPrAN::root());
 }
-
-=over
 
 =item is_cpran()
 

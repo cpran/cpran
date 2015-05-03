@@ -11,9 +11,9 @@ use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
-=encoding utf8
-
 =head1 NAME
+
+=encoding utf8
 
 B<list> - List all known CPrAN plugins
 
@@ -65,8 +65,6 @@ sub opt_spec {
     # [ "installed|i"   => "only consider installed plugins" ],
   );
 }
-
-=back
 
 =head1 AUTHOR
 

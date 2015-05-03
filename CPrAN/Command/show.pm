@@ -11,9 +11,9 @@ use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
-=encoding utf8
-
 =head1 NAME
+
+=encoding utf8
 
 B<show> - Shows details of CPrAN plugins
 

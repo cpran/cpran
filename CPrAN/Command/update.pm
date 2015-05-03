@@ -9,9 +9,9 @@ use warnings;
 use Data::Dumper;
 use Carp;
 
-=encoding utf8
-
 =head1 NAME
+
+=encoding utf8
 
 B<update> - Update the catalog of CPrAN plugins
 
@@ -147,6 +147,8 @@ sub list_projects {
   }
 }
 
+=back
+
 =head1 OPTIONS
 
 =over
@@ -163,12 +165,6 @@ sub opt_spec {
   return (
   );
 }
-
-=head1 METHODS
-
-=over
-
-=back
 
 =head1 AUTHOR
 

@@ -9,9 +9,9 @@ use warnings;
 use Data::Dumper;
 use Carp;
 
-=encoding utf8
-
 =head1 NAME
+
+=encoding utf8
 
 B<upgrade> - Upgrades installed CPrAN plugins to their latest versions
 

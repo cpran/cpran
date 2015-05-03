@@ -8,10 +8,11 @@ use warnings;
 
 use Data::Dumper;
 use Carp;
-
-=encoding utf8
+binmode STDOUT, ':utf8';
 
 =head1 NAME
+
+=encoding utf8
 
 B<remove> - Remove installed CPrAN plugins
 

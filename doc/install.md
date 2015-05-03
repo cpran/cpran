@@ -88,5 +88,9 @@ the same terms as Perl itself.
 
 # SEE ALSO
 
-CPrAN, CPrAN::Command::remove, CPrAN::Command::search,
-CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
+[CPrAN](cpran),
+[CPrAN::Command::search](search),
+[CPrAN::Command::show](show),
+[CPrAN::Command::update](update),
+[CPrAN::Command::upgrade](upgrade),
+[CPrAN::Command::remove](remove)

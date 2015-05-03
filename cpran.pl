@@ -48,11 +48,16 @@ and try to find it. Or you can just use it to browse, to find unknown plugins
 that might do what you need.
 
 B<search> will return a list of all plugin names that match the provided regular
-expression. Currently, it only attempts to match it in the plugin's name.
+expression. Currently, it only attempts to match it in the plugin's name, but 
+future versions will allow matches against other fields as well.
 
 By using the B<--installed> option you can perform this search on your installed
 plugins, which will additionally show you the local and remote versions, so you
 can visually check if plugins any need upgrading.
+
+B<search .*> will show the entire list of plugins (beware that this might be a
+long list!). Alternatively, you can use the B<list> command, which is simply an
+alias for this query.
 
 See L<CPrAN::Command::search|search> for the full documentation.
 

@@ -4,11 +4,11 @@
 
 # SYNOPSIS
 
-cpran \[global options\] command \[options\] \[arguments\]
+cpran <command> \[global options\] \[options\] \[arguments\]
 
 # DESCRIPTION
 
-**cpran** is the main script for an App::Cmd application to search, install,
+**cpran** is the main script for an [App::Cmd](https://metacpan.org/pod/App::Cmd) application to search, install,
 remove and update Praat plugins.
 
 ## Commands
@@ -26,7 +26,7 @@ remove and update Praat plugins.
     run it with the **--verbose** option enabled, to keep track on what it is doing.
 
     The list is currently implemented as individual files in the .cpran directory,
-    which is under the CPrAN root. See CPrAN::Command::update for the full
+    which is under the CPrAN root. See [CPrAN::Command::update](update) for the full
     documentation.
 
 - **search**
@@ -39,13 +39,18 @@ remove and update Praat plugins.
     that might do what you need.
 
     **search** will return a list of all plugin names that match the provided regular
-    expression. Currently, it only attempts to match it in the plugin's name.
+    expression. Currently, it only attempts to match it in the plugin's name, but 
+    future versions will allow matches against other fields as well.
 
     By using the **--installed** option you can perform this search on your installed
     plugins, which will additionally show you the local and remote versions, so you
     can visually check if plugins any need upgrading.
 
-    See CPrAN::Command::search for the full documentation.
+    **search .\*** will show the entire list of plugins (beware that this might be a
+    long list!). Alternatively, you can use the **list** command, which is simply an
+    alias for this query.
+
+    See [CPrAN::Command::search](search) for the full documentation.
 
 - **show**
 
@@ -59,7 +64,7 @@ remove and update Praat plugins.
     can also use the **--installed** option to read the descriptors of installed
     plugins.
 
-    See CPrAN::Command::show for the full documentation.
+    See [CPrAN::Command::show](show) for the full documentation.
 
 - **install**
 
@@ -75,7 +80,7 @@ remove and update Praat plugins.
     with the **--force** option. This is useful if your local version somehow becomes
     corrupted (eg, if you've accidentally deleted files from within it).
 
-    See CPrAN::Command::install for the full documentation.
+    See [CPrAN::Command::install](install) for the full documentation.
 
 - **upgrade**
 
@@ -87,7 +92,7 @@ remove and update Praat plugins.
     to upgrade that individual plugin, or you can call it with no arguments, to
     upgrade all plugins that are out of date.
 
-    See CPrAN::Command::upgrade for the full documentation.
+    See [CPrAN::Command::upgrade](upgrade) for the full documentation.
 
 - **remove**
 
@@ -100,31 +105,39 @@ remove and update Praat plugins.
 
 ## Options
 
-- **--praat=PATH**
+- **--praat**=PATH
 
-    Set the path to Praat preferences directory. See the FILES section for the
-    platform-dependant default values if this is not set.
+    The path to use as the preferences directory for Praat. See the FILES section
+    for information on the platform-dependant default values used.
 
-- **--cpran=PATH**
+- **--cpran**=PATH
 
-    Set the path to the CPrAN root. See the FILES section for more information on
-    what is stored in the root.
+    The path to use as the CPrAN root directory. See the FILES section
+    for information on the platform-dependant default values used.
 
-    This option is useful if using **CPrAN** with an on-site collection of plugins.
+- **--api-token**=TOKEN
+- **--api-group**=GROUP\_ID
+- **--api-url**=URL
 
-- **--api-token=TOKEN**
+    These options set the credentials to talk to the GitLab API to obtain the
+    plugin archives and descriptors. As such, it is implementation-dependant, and is
+    currently tied to GitLab. These options are particularly useful if using CPrAN
+    as an in-house plugin distribution system.
 
-    Set the private token for access to the GitLab API.
+- **--verbose**, **--v**
 
-- **--api-url=URL**
+    Increase the verbosity of the output. This option can be called multiple times
+    to make the program even more talkative.
 
-    Set the URL of the GitLab API. This option is useful if using **CPrAN** with an
-    on-site collection of plugins.
+- **--quiet**, **--q**
 
-- **--api-group=ID**
+    Opposed to **--verbose**, this option _suppresses_ all output. If both options
+    are set simultaneously, this one takes precedence.
 
-    Set the id for the GitLab CPrAN group. This option is useful if using **CPrAN**
-    with an on-site collection of plugins.
+- **--debug**, **--D**
+
+    Enables the output of debug information. Like **--verbose**, this option can be
+    used multiple times to increase the number of debug messages that are printed.
 
 # EXAMPLES
 
@@ -220,50 +233,33 @@ the list that known() looks in, and the list from where the **show** command get
 its data.
 
 The descriptors are saved in a **CPrAN** root folder whose path is stored
-internally and accessible through CPrAN::root(). By default, it will be a directory named
-`.cpran` in the root of the **CPrAN** plugin (CPrAN::praat() . '/plugin\_cpran'). In
-that directory, the descriptors are renamed with the name of the plugin they
-represent.
+internally and accessible through CPrAN::root(). By default, it will be a
+directory named `.cpran` in the root of the **CPrAN** plugin (CPrAN::praat() .
+'/plugin\_cpran'). In that directory, the descriptors are renamed with the name
+of the plugin they represent.
 
 This list is updated with the **update** command.
 
 # AUTHOR
 
-José Joaquín Atria <jjatria@gmail.com>
+JosÃ© JoaquÃ­n Atria <jjatria@gmail.com>
 
 # LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015 JosÃ© JoaquÃ­n Atria
 
 This program is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
 
 # SEE ALSO
 
-CPrAN, CPrAN::Command::remove, CPrAN::Command::search,
-CPrAN::Command::update, CPrAN::Command::upgrade, CPrAN::Command::show,
-CPrAN::Command::install
-
-## Packages used
-
-- App::Cmd
-- Archive::Tar
-- Carp
-- Config
-- Data::Dumper
-- Encode
-- File::Copy
-- File::Path
-- File::Slurp
-- File::Temp
-- GitLab::API::v3
-- Graph
-- LWP::Simple
-- LWP::UserAgent
-- MIME::Base64
-- Path::Class
-- Text::Table
-- YAML::XS
+[CPrAN](cpran),
+[CPrAN::Command::install](install),
+[CPrAN::Command::search](search),
+[CPrAN::Command::show](show),
+[CPrAN::Command::update](update),
+[CPrAN::Command::upgrade](upgrade),
+[CPrAN::Command::remove](remove)
 
 # VERSION
 
