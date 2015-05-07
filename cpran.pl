@@ -112,6 +112,38 @@ B<remove>.
 
 See CPrAN::Command::remove for the full documentation.
 
+=item B<test>
+
+    cpran test [options] [names]
+
+By default, part of the installation process involves testing the downloaded
+plugin to make sure that things are working as expected.
+
+Both the testing and the aggregation of the test results is done by B<test>.
+
+The command can be run manually on any downloaded plugin. When given the name of
+a plugin, regardless of whether it is a CPrAN plugin or not, it will look in
+that plugin's directory for a test directory.
+
+By default and convention, the test directory is named C<t> and resides at the
+root of the plugin. Within this directory, all files that have a C<.t>extension
+will be regarded as tests. Tests are all run by Praat, and they are expected to
+conform to the L<http://testanything.org/|Test Anything Protocol> for correct
+evaluation. You might want to look at the
+L<https://gitlab.com/cpran/plugin_testsimple|testsimple> plugin to make it 
+easier to write tests.
+
+See L<CPrAN::Command::test|test> for the full documentation.
+
+=item B<remove>
+
+    cpran remove [options] [names]
+
+If you are not going to be using a plugin anymore, you can remove it with
+B<remove>.
+
+See CPrAN::Command::remove for the full documentation.
+
 =back
 
 =head2 Options
@@ -276,14 +308,11 @@ the same terms as Perl itself.
 
 L<CPrAN|cpran>,
 L<CPrAN::Command::install|install>,
-L<CPrAN::Command::search|search>,
+L<CPrAN::Command::remove|remove>
 L<CPrAN::Command::show|show>,
+L<CPrAN::Command::search|search>,
+L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>,
-L<CPrAN::Command::remove|remove>
-
-=head1 VERSION
-
-0.0.2
 
 =cut

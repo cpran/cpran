@@ -604,20 +604,21 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<App::Cmd>, L<YAML::XS>,
+L<CPrAN|cpran>,
 L<CPrAN::Command::install|install>,
-L<CPrAN::Command::search|search>,
+L<CPrAN::Command::remove|remove>
 L<CPrAN::Command::show|show>,
+L<CPrAN::Command::search|search>,
+L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>,
-L<CPrAN::Command::remove|remove>
 
 =head1 VERSION
 
-0.0.2
+0.1.0
 
 =cut
 
-our $VERSION = '0.0.2';
+our $VERSION = '0.1.0';
 
 1;
