@@ -77,7 +77,7 @@ B<CPrAN> - A package manager for Praat
 sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
 
-  set_globals($self->global_options);
+  set_globals($self, $cmd, $opt, @args);
   make_root();
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
@@ -178,16 +178,17 @@ re-worked to more closely match the way App::Cmd expects to be used.
 =cut
 
 sub set_globals {
-  my ($opt) = @_;
+  my ($self, $cmd, $opt, @args) = @_;
+  my $gopt = $self->global_options;
 
-  set_praat($opt->{praat}) if (defined $opt->{praat});
-  set_root($opt->{cpran}) if (defined $opt->{cpran});
+  set_praat($gopt->{praat}) if (defined $gopt->{praat});
+  set_root($gopt->{cpran}) if (defined $gopt->{cpran});
 
-  set_api_token($opt->{'api-token'}) if (defined $opt->{'api-token'});
-  set_api_group($opt->{'api-group'}) if (defined $opt->{'api-group'});
-  set_api_url($opt->{'api-url'}) if (defined $opt->{'api-url'});
+  set_api_token($gopt->{'api-token'}) if (defined $gopt->{'api-token'});
+  set_api_group($gopt->{'api-group'}) if (defined $gopt->{'api-group'});
+  set_api_url($gopt->{'api-url'}) if (defined $gopt->{'api-url'});
 
-  check_permissions();
+  check_permissions($self, $cmd, $opt, @args);
 }
 
 =item check_permissions()
@@ -201,6 +202,8 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 # readable/writable. What needs to be checked is whether the root could be
 # created.
 sub check_permissions {
+  my ($self, $cmd, $opt, @args) = @_;
+
   if (-e CPrAN::root()) {
     croak "E: Cannot read from CPrAN root at " . CPrAN::root()
       unless (-r CPrAN::root());
@@ -208,7 +211,7 @@ sub check_permissions {
       unless (-w CPrAN::root());
   }
   else {
-    warn "W: CPrAN root not found.\nW: If this is a fresh install, try running cpran update\n";
+    warn "W: CPrAN root not found.\nW: If this is a fresh install, try running cpran update\n" unless ($cmd =~ /update/);
   }
   croak "E: Cannot read from preferences directory at " . CPrAN::praat()
     unless (-r CPrAN::praat());
