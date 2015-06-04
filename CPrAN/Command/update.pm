@@ -98,7 +98,7 @@ sub fetch_descriptor {
   );
   my $file = $dir->file(substr($plugin->{name}, 7));
 
-  my $commit_id = shift($api->commits( $plugin->{id} ))->{id};
+  my $commit_id = shift(@{$api->commits( $plugin->{id} )})->{id};
   my $descriptor = $api->blob(
     $plugin->{id},
     $commit_id,
