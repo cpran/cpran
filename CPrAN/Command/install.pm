@@ -316,6 +316,7 @@ sub get_archive {
   );
 
   my $fh = Path::Class::file( $tmp->filename )->openw();
+  binmode($fh);
   $fh->print($archive);
   return $tmp->filename;
 }
@@ -343,7 +344,7 @@ sub install {
   # We then construct a new target name and extract directly into that location,
   # avoiding moving files, which is tricky.
   my $next = Archive::Tar->iter( $archive->stringify, 1, { filter => qr/.*/ } );
-
+  
   # TODO(jja) Improve handling of existing target directories
   # If we are forcing the re-install of a plugin, the previously existing
   # directory needs to be removed. Maybe this could be better handled? Because
