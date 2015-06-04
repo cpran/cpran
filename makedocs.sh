@@ -7,14 +7,16 @@ function convert {
   file "$tmpfile" | egrep -q "(ASCII|ISO-8859)";
   if [ $? -eq 0 ]; then
     # echo "Converting \"$1\" to UTF-8";
-    iconv -f ISO-8859-14 -t UTF-8 "$tmpfile" -o "doc/$(basename "$1" | sed -re 's/(pm|pl)$/md/')";
+    iconv -f ISO-8859-14 -t UTF-8 "$tmpfile" -o "doc/$(
+      basename "$1" | sed -re 's/(pm|pl)$/md/'
+    )";
   else
     # echo "Skipping \"$1\"";
     mv "$tmpfile" "doc/$(basename "$1" | sed -re 's/(pm|pl)$/md/')";
   fi
 }
 
-find CPrAN/Command/ -name "*pm" | while read line; do convert "$line"; done
+find CPrAN/Command/ -name "*pm" -exec convert {} \;
 convert "CPrAN.pm"
 convert "cpran.pl"
 mv "doc/CPrAN.md" "doc/module.md"
