@@ -76,6 +76,10 @@ sub execute {
   foreach my $plugin (@{$args}) {
     # Make a list of tests
     my $test_dir = dir( CPrAN::praat(), 'plugin_' . $plugin, 't' );
+    unless ( -e $test_dir ) {
+      warn "No tests for $plugin. Skipping\n" if $opt->{verbose};
+      next;
+    }
     opendir (DIR, $test_dir) or Carp::croak "$test_dir: " . $!;
     my @tests;
     while (my $file = readdir(DIR)) {
@@ -84,9 +88,15 @@ sub execute {
     @tests = sort @tests;
 
     # Run the tests
+    my $praat;
+    for ($^O) {
+      if    (/darwin/)  { $praat = 'Praat'    } # Untested
+      elsif (/MSWin32/) { $praat = 'praatcon' }
+      else              { $praat = 'praat'    }
+    }
     my $harness = TAP::Harness->new({
       failures  => 1,
-      exec => [ 'praat' ],
+      exec => [ $praat ],
     });
     my $aggregator = $harness->runtests(@tests);
 
