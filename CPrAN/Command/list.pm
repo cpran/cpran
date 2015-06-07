@@ -6,7 +6,6 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
