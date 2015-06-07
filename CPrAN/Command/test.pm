@@ -56,7 +56,6 @@ sub description {
   return "Run tests for a single plugin";
 }
 
-=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
