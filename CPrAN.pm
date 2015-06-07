@@ -615,10 +615,6 @@ L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>,
 
-=head1 VERSION
-
-0.1.0
-
 =cut
 
 our $VERSION = '0.1.0';

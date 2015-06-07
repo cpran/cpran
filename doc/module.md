@@ -143,7 +143,7 @@ methods described below to perform general **CPrAN**-related actions.
     By default, responses matching /^y(es)?$/i are considered to be _yes_
     responses.
 
-- compare\_versions()
+- compare\_version()
 
     Compares two semantic version numbers that match /^\\d+\\.\\d+\\.\\d$/. Returns 1 if
     the first is larger (=newer), -1 if the second is larger, and 0 if they are the
@@ -170,14 +170,11 @@ the same terms as Perl itself.
 
 # SEE ALSO
 
-[App::Cmd](https://metacpan.org/pod/App::Cmd), [YAML::XS](https://metacpan.org/pod/YAML::XS),
+[CPrAN](cpran),
 [CPrAN::Command::install](install),
-[CPrAN::Command::search](search),
+[CPrAN::Command::remove](remove)
 [CPrAN::Command::show](show),
+[CPrAN::Command::search](search),
+[CPrAN::Command::test](test),
 [CPrAN::Command::update](update),
 [CPrAN::Command::upgrade](upgrade),
-[CPrAN::Command::remove](remove)
-
-# VERSION
-
-0.0.2

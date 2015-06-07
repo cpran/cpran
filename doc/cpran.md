@@ -103,6 +103,38 @@ remove and update Praat plugins.
 
     See CPrAN::Command::remove for the full documentation.
 
+- **test**
+
+        cpran test [options] [names]
+
+    By default, part of the installation process involves testing the downloaded
+    plugin to make sure that things are working as expected.
+
+    Both the testing and the aggregation of the test results is done by **test**.
+
+    The command can be run manually on any downloaded plugin. When given the name of
+    a plugin, regardless of whether it is a CPrAN plugin or not, it will look in
+    that plugin's directory for a test directory.
+
+    By default and convention, the test directory is named `t` and resides at the
+    root of the plugin. Within this directory, all files that have a `.t`extension
+    will be regarded as tests. Tests are all run by Praat, and they are expected to
+    conform to the [Test Anything Protocol](http://testanything.org/) for correct
+    evaluation. You might want to look at the
+    [https://gitlab.com/cpran/plugin\_testsimple|testsimple](https://gitlab.com/cpran/plugin_testsimple|testsimple) plugin to make it 
+    easier to write tests.
+
+    See [CPrAN::Command::test](test) for the full documentation.
+
+- **remove**
+
+        cpran remove [options] [names]
+
+    If you are not going to be using a plugin anymore, you can remove it with
+    **remove**.
+
+    See CPrAN::Command::remove for the full documentation.
+
 ## Options
 
 - **--praat**=PATH
@@ -255,12 +287,9 @@ the same terms as Perl itself.
 
 [CPrAN](cpran),
 [CPrAN::Command::install](install),
-[CPrAN::Command::search](search),
+[CPrAN::Command::remove](remove)
 [CPrAN::Command::show](show),
+[CPrAN::Command::search](search),
+[CPrAN::Command::test](test),
 [CPrAN::Command::update](update),
 [CPrAN::Command::upgrade](upgrade),
-[CPrAN::Command::remove](remove)
-
-# VERSION
-
-0.0.2

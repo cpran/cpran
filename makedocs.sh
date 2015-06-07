@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function convert {
+function myconvert {
   tmpfile=$(mktemp)
   pod2markdown "$1" |
     sed -re 's%(\[CPrAN[^]]*]\()https://metacpan\.org/pod/%\1%g' > "$tmpfile";
@@ -16,7 +16,7 @@ function convert {
   fi
 }
 
-find CPrAN/Command/ -name "*pm" -exec convert {} \;
-convert "CPrAN.pm"
-convert "cpran.pl"
+find CPrAN/Command/ -name "*pm" | while read line; do myconvert "$line"; done
+myconvert "CPrAN.pm"
+myconvert "cpran.pl"
 mv "doc/CPrAN.md" "doc/module.md"

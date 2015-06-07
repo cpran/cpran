@@ -1,21 +1,22 @@
 # NAME
 
-**list** - List all known CPrAN plugins
+**test** - Run tests for the specified plugin
 
 # SYNOPSIS
 
-cpran list \[options\]
+cpran test \[options\] plugin
 
 # DESCRIPTION
 
-List plugins available through the CPrAN catalog.
-
-**list** will show a list of all plugins available to CPrAN.
+Run tests for the specified plugins. When called on its own it will simply
+report the results of the test suites associated with the given plugins.
+When called from within CPrAN (eg. as part of the installation process), it
+will only report success if all tests for all given plugins were successful.
 
 # EXAMPLES
 
-    # Show all available plugins
-    cpran list
+    # Run tests for the specified plugin
+    cpran test plugin
 
 # AUTHOR
 
@@ -35,6 +36,5 @@ the same terms as Perl itself.
 [CPrAN::Command::remove](remove)
 [CPrAN::Command::show](show),
 [CPrAN::Command::search](search),
-[CPrAN::Command::test](test),
 [CPrAN::Command::update](update),
 [CPrAN::Command::upgrade](upgrade),

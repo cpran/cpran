@@ -41,7 +41,8 @@ the same terms as Perl itself.
 
 [CPrAN](cpran),
 [CPrAN::Command::install](install),
-[CPrAN::Command::search](search),
-[CPrAN::Command::show](show),
-[CPrAN::Command::update](update),
 [CPrAN::Command::remove](remove)
+[CPrAN::Command::show](show),
+[CPrAN::Command::search](search),
+[CPrAN::Command::test](test),
+[CPrAN::Command::update](update),
