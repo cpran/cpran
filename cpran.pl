@@ -128,7 +128,7 @@ that plugin's directory for a test directory.
 By default and convention, the test directory is named C<t> and resides at the
 root of the plugin. Within this directory, all files that have a C<.t>extension
 will be regarded as tests. Tests are all run by Praat, and they are expected to
-conform to the L<http://testanything.org/|Test Anything Protocol> for correct
+conform to the L<Test Anything Protocol|http://testanything.org/> for correct
 evaluation. You might want to look at the
 L<https://gitlab.com/cpran/plugin_testsimple|testsimple> plugin to make it 
 easier to write tests.
