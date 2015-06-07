@@ -159,6 +159,7 @@ sub global_opt_spec {
     [ "verbose|v+"  => "increase verbosity" ],
     [ "quiet|q"     => "quietly say no to everything" ],
     [ "debug|D+"    => "print debug messages" ],
+    [ "outfile|o=s" => "redirect output to file" ],
   );
 }
 
@@ -188,7 +189,7 @@ sub set_globals {
   set_api_group($gopt->{'api-group'}) if (defined $gopt->{'api-group'});
   set_api_url($gopt->{'api-url'}) if (defined $gopt->{'api-url'});
 
-  check_permissions($self, $cmd, $opt, @args);
+  check_permissions($self, $cmd, $opt, @args) unless ($cmd =~ /(version|help)/);
 }
 
 =item check_permissions()
@@ -350,11 +351,9 @@ of plugins whose descriptors have been saved by C<cpran update>
 sub known {
   use Path::Class;
 
-  my @children = map {
+  return map {
     $_->basename;
   } dir( CPrAN::root() )->children;
-  warn "W: List of CPrAN plugins was empty. Have you run cpran update already?\n" unless @children;
-  return @children;
 }
 
 =item dependencies()
@@ -520,7 +519,7 @@ sub yesno {
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
 }
 
-=item compare_versions()
+=item compare_version()
 
 Compares two semantic version numbers that match /^\d+\.\d+\.\d$/. Returns 1 if
 the first is larger (=newer), -1 if the second is larger, and 0 if they are the
