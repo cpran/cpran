@@ -6,7 +6,9 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Data::Dumper;
+use Path::Class;
+use File::Slurp;
+use YAML::XS;
 use Carp;
 
 =head1 NAME
@@ -40,9 +42,6 @@ is not currently implemented.
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
-
-  # TODO(jja) If no arguments are provided, all plugins are updated. If names
-  # are provided, only update those that are specified.
 }
 
 =head1 EXAMPLES
@@ -58,6 +57,9 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  my @args = CPrAN::installed();
+  $args = \@args unless @{$args};
+
   # Get a hash of installed plugins (ie, plugins in the preferences directory)
   my %installed;
   $installed{$_} = 1 foreach (CPrAN::installed());
@@ -70,18 +72,33 @@ sub execute {
   # @names will hold the names of the plugins passed as arguments that are
   #   a) valid CPrAN plugin names; and
   #   b) already installed
+  #   c) not at the latest version
   my @names;
   foreach (@{$args}) {
     if (exists $installed{$_}) {
-      if (exists $known{$_}) { push @names, $_ }
+      if (exists $known{$_}) {
+
+        my ($cmd) = $self->app->prepare_command('show');
+        my $local = $self->app->execute_command(
+          $cmd, { quiet => 1, installed => 1 }, $_
+        );
+        $local = Load($local);
+
+        my $remote = $self->app->execute_command(
+          $cmd, { quiet => 1 }, $_
+        );
+        $remote = Load($remote);
+
+        use Data::Printer;
+
+        if (CPrAN::compare_version( $remote->{Version}, $local->{Version} )) {
+          push @names, $_;
+        }
+      }
       else { warn "W: no plugin named $_\n" }
     }
     else { warn "W: $_ is not installed\n" }
   }
-
-  use Path::Class;
-  use File::Slurp;
-  use YAML::XS;
 
   if (@names) {
     unless ($opt->{quiet}) {
