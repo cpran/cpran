@@ -82,20 +82,16 @@ sub execute {
         my $local = $self->app->execute_command(
           $cmd, { quiet => 1, installed => 1 }, $_
         );
-        $local = Load($local);
 
         my $remote = $self->app->execute_command(
           $cmd, { quiet => 1 }, $_
         );
-        $remote = Load($remote);
 
-        use Data::Printer;
-
-        if (CPrAN::compare_version( $remote->{Version}, $local->{Version} )) {
+        if (CPrAN::compare_version( $remote->{version}, $local->{version} )) {
           push @names, $_;
         }
       }
-      else { warn "W: no plugin named $_\n" }
+      else { warn "W: $_ is not a CPrAN plugin\n" if $opt->{debug} }
     }
     else { warn "W: $_ is not installed\n" }
   }
@@ -113,15 +109,15 @@ sub execute {
         my $content = read_file($desc->stringify);
         my $yaml = Load( $content );
 
-        my $name = $yaml->{Plugin};
-        my $local = $yaml->{Version};
+        my $name = $yaml->{plugin};
+        my $local = $yaml->{version};
 
         $desc = file(CPrAN::root(), $name);
         my $remote = '';
         if (-e $desc->stringify) {
           $content = read_file($desc->stringify);
           $yaml = Load( $content );
-          $remote = $yaml->{Version};
+          $remote = $yaml->{version};
         }
 
         my $app = CPrAN->new();

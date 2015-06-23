@@ -71,24 +71,32 @@ sub execute {
   else {
     @names = @names, CPrAN::known();
     my %names;
-    map { $names{$_} = 1 } @names;
+    $names{$_} = 1 foreach @names;
     @names = keys %names;
     print "D: " . scalar @names . " known plugins\n" if $opt->{debug};
   }
-  my $output = Text::Table->new(
+  $self->{output} = Text::Table->new(
     "Name", "Local", "Remote", "Description"
   );
   @names = sort { "\L$a" cmp "\L$b" } @names;
 
   my @found;
-  map {
-    if (/$args->[0]/) {
-      $output->add(make_row($opt, $_));
+  foreach (@names) {
+    my ($cmd) = $self->app->prepare_command('show');
+    my $descriptor = { plugin => $_ };
+    eval {
+      $descriptor = $self->app->execute_command(
+        $cmd, { quiet => 1, installed => $opt->{installed} }, $_
+      )
+    };
+
+    if ($self->_match($opt, $descriptor, $args->[0])) {
+      $self->_add_output_row($opt, $_);
       push @found, $_;
     }
-  } @names;
+  };
 
-  if (@found) { print $output }
+  if (@found) { print $self->{output} }
   else { print "No matches found\n" }
 
   return @found;
@@ -124,7 +132,43 @@ sub opt_spec {
 
 =cut
 
-=item B<make_row()>
+=item B<_match()>
+
+Performs the search agains the specified fields of the plugin.
+
+=cut
+
+sub _match {
+  my ($self, $opt, $descriptor, $search) = @_;
+  my $match = 0;
+
+  $match = 1 if ($descriptor->{plugin} =~ /$search/i);
+  if (defined $descriptor->{description}) {
+    if (defined $descriptor->{description}->{long}) {
+      $match = 1 if ($descriptor->{description}->{long} =~ /$search/i);
+    }
+    if (defined $descriptor->{description}->{short}) {
+      $match = 1 if ($descriptor->{description}->{short} =~ /$search/i);
+    }
+  }
+  return $match;
+}
+
+=item B<_add_output_row()>
+
+Generates and adds a line for the output table. This subroutine internally calls
+C<_make_output_row()> and attaches it to the table.
+
+=cut
+
+sub _add_output_row {
+  my ($self, $opt, $name) = @_;
+  carp "No output table found" unless defined $self->{output};
+  my @row = $self->_make_output_row($opt, $name);
+  $self->{output}->add(@row);
+}
+
+=item B<_make_output_row()>
 
 Generates the appropriate line for a single plugin specified by name. Takes the
 name as an argument, and returns a list suitable to be plugged into a
@@ -135,8 +179,8 @@ returned list will have both the local and the remote versions.
 
 =cut
 
-sub make_row {
-  my ($opt, $name) = @_;
+sub _make_output_row {
+  my ($self, $opt, $name) = @_;
 
   use YAML::XS;
   use File::Slurp;

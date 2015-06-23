@@ -117,18 +117,16 @@ sub execute {
 
       if (exists $installed{$plugin->{name}}) {
 
-        use YAML::XS;
-
         my ($cmd) = $self->app->prepare_command('show');
-        my $descriptor = $self->app->execute_command(
+        my $local = $self->app->execute_command(
           $cmd, { quiet => 1, installed => 1 }, $plugin->{name}
         );
 
         my $newer = 0;
-        if ($descriptor) {
-          my $yaml = Load($descriptor);
-          my $local = $yaml->{Version};
-          $newer = CPrAN::compare_version( $local, $plugin->{version} );
+        if ($local) {
+          $newer = CPrAN::compare_version(
+            $local->{version}, $plugin->{version}
+          );
         }
 
         if ($newer) {
