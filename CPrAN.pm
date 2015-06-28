@@ -83,7 +83,7 @@ sub execute_command {
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, amotting all output. Higher values of verbose
   # will increase verbosity.
-  if ($self->global_options->{quiet}) {
+  if (defined $self->global_options->{quiet}) {
     $opt->{verbose} = 0;
   }
   else {
@@ -249,6 +249,10 @@ sub is_cpran {
 
   croak "Argument is not a Path::Class object"
     unless (ref($arg) =~ /^Path::Class/);
+
+  my $name = $arg->stringify;
+  $name =~ s%.*plugin_(.*)/?$%$1%;
+  return 1 if grep(/^$name$/, CPrAN::known());
 
   use YAML::XS;
   use File::Slurp;
@@ -418,9 +422,6 @@ sub dependencies {
           sha => $sha,
         })->{content}
       );
-#       use LWP::Simple;
-#       my $get = 'https://gitlab.com/cpran/plugin_' . $plugin->{name} . '/raw/' . $sha . '/cpran.yaml';
-#       $descriptor = get($get);
     }
 
     # We are only interested in CPrAN dependencies

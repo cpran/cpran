@@ -69,7 +69,7 @@ sub execute {
     print "D: " . scalar @names . " installed plugins\n" if ($opt->{debug});
   }
   else {
-    @names = @names, CPrAN::known();
+    @names = (@names, CPrAN::known());
     my %names;
     map { $names{$_} = 1 } @names;
     @names = keys %names;
