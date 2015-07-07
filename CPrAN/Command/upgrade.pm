@@ -89,8 +89,6 @@ sub execute {
         );
         $remote = Load($remote);
 
-        use Data::Printer;
-
         if (CPrAN::compare_version( $remote->{Version}, $local->{Version} )) {
           push @names, $_;
         }
