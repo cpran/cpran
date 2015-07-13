@@ -195,7 +195,7 @@ sub execute {
           }
         }
         else {
-          print "$plugin->{name} installed successfully." unless ($opt->{quiet});
+          print "$plugin->{name} installed successfully.\n" unless ($opt->{quiet});
         }
 
         if ($plugin->{name} eq 'cpran') {
