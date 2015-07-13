@@ -255,7 +255,8 @@ sub is_cpran {
 
   return 0 unless is_plugin($opt, $arg);
 
-  my @contents = $arg->children();
+  eval { my @contents = $arg->children() };
+  croak "Cannot read from directory" if $@;
 
   my $descriptor = 0;
   map {
