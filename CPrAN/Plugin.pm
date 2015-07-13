@@ -5,6 +5,28 @@ use Path::Class;
 use YAML::XS;
 binmode STDOUT, ':utf8';
 
+=head1 NAME
+
+=encoding utf8
+
+B<CPrAN::Plugin> - Plugin class for CPrAN
+
+=head1 SYNOPSIS
+
+my $plugin = CPrAN::Plugin->new( $name );
+
+$plugin->is_installed  ; checks for local copy
+$plugin->is_cpran      ; checks for presence of descriptor
+$plugin->update        ; updates object's internal state
+
+=head1 DESCRIPTION
+
+Objects of class C<CPrAN::Plugin> represent plugins / packages for Praat,
+distributable via CPrAN, its package manager. The class can represent any Praat
+plugins, regardless of whether they are on CPrAN or not.
+
+=cut
+
 sub new {
   my ($class, $name) = @_;
 
@@ -21,16 +43,6 @@ sub new {
     unless ($self->{cpran} || $self->{installed});
 
   return $self;
-}
-
-sub is_cpran {
-  my ($self) = @_;
-  return $self->{cpran};
-}
-
-sub is_installed {
-  my ($self) = @_;
-  return $self->{installed};
 }
 
 sub _init {
@@ -51,6 +63,41 @@ sub _init {
   );
 }
 
+=head1 METHODS
+
+=over
+
+=cut
+
+=item B<is_cpran()>
+
+Checks if plugin has a descriptor that CPrAN can use.
+
+=cut
+
+sub is_cpran {
+  my ($self) = @_;
+  return $self->{cpran};
+}
+
+=item B<is_installed()>
+
+Checks if the plugin is installed or not.
+
+=cut
+
+sub is_installed {
+  my ($self) = @_;
+  return $self->{installed};
+}
+
+=item B<update()>
+
+Updates the internal state of the plugin, to reflect any changes in disk that
+took place after the object's creation.
+
+=cut
+
 sub update {
   my ($self) = @_;
   $self->_init;
@@ -58,7 +105,7 @@ sub update {
 
 =item remote_id()
 
-Fetches the GitLab id for the plugin
+Fetches the CPrAN remote id for the plugin.
 
 =cut
 
@@ -79,32 +126,16 @@ sub remote_id {
   return undef;
 }
 
+=item is_latest()
 
-# =item get_latest_version()
-# 
-# Gets the latest known version for a plugin specified by name.
-# 
-# =cut
-# 
-# sub get_latest_version {
-#   my $name = shift;
-# 
-#   my $app = CPrAN->new();
-#   my $descriptor = $app->execute_command(
-#     'CPrAN::Command::show',
-#     { quiet => 1 },
-#     $name
-#   );
-#   return $descriptor->{version};
-# }
+Compares the version on the locally installed copy of the plugin (if any) and
+the one reported by the remote descriptor on record by the client (if any).
 
-# =item compare_version()
-# 
-# Compares two semantic version numbers that match /^\d+\.\d+\.\d$/. Returns 1 if
-# the first is larger (=newer), -1 if the second is larger, and 0 if they are the
-# same;
-# 
-# =cut
+Returns true if installed version is the most recent the client knows about,
+false if there is a newer version, and undefined if there is no remote version
+to query.
+
+=cut
 
 sub is_latest {
   my ($self) = @_;
@@ -126,8 +157,14 @@ sub is_latest {
   elsif ($remote[1] < $local[1]) { return 1 }
   elsif ($remote[2] > $local[2]) { return 0 }
   elsif ($remote[2] < $local[2]) { return 1 }
-  else { die "Unreachable condition reached. Inconceivable!" }
+  else { returndie "Unreachable condition reached. Inconceivable!" }
 }
+
+=item test()
+
+Runs tests for the plugin (if any). Returns the result of those tests.
+
+=cut
 
 sub test {
   use Test::Harness;
@@ -173,6 +210,13 @@ sub test {
   if ($aggregator->all_passed) { return 1 } else { return 0 }
 }
 
+=item print(I<FIELD>)
+
+Prints the contents of the plugin descriptors, either local or remote. These
+must be asked for by name. Any other names are an error.
+
+=cut
+
 sub print {
   use Encode qw(encode decode);
   my ($self, $name) = @_;
@@ -209,5 +253,31 @@ sub _force_lc_hash {
     delete($hashref->{$key}) unless $key eq lc($key);
   }
 }
+
+=back
+
+=head1 AUTHOR
+
+José Joaquín Atria <jjatria@gmail.com>
+
+=head1 LICENSE
+
+Copyright 2015 José Joaquín Atria
+
+This module is free software; you may redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<CPrAN|cpran>,
+L<CPrAN::Command::install|install>,
+L<CPrAN::Command::remove|remove>
+L<CPrAN::Command::show|show>,
+L<CPrAN::Command::search|search>,
+L<CPrAN::Command::test|test>,
+L<CPrAN::Command::update|update>,
+L<CPrAN::Command::upgrade|upgrade>,
+
+=cut
 
 1;

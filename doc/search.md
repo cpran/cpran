@@ -37,7 +37,16 @@ installed plugins, both the local and the remote versions will be displayed.
 
 # METHODS
 
-- **make\_row()**
+- **\_match()**
+
+    Performs the search agains the specified fields of the plugin.
+
+- **\_add\_output\_row()**
+
+    Generates and adds a line for the output table. This subroutine internally calls
+    `_make_output_row()` and attaches it to the table.
+
+- **\_make\_output\_row()**
 
     Generates the appropriate line for a single plugin specified by name. Takes the
     name as an argument, and returns a list suitable to be plugged into a
@@ -60,8 +69,10 @@ the same terms as Perl itself.
 # SEE ALSO
 
 [CPrAN](cpran),
+[CPrAN::Plugin](plugin),
 [CPrAN::Command::install](install),
+[CPrAN::Command::remove](remove),
 [CPrAN::Command::show](show),
+[CPrAN::Command::test](test),
 [CPrAN::Command::update](update),
-[CPrAN::Command::upgrade](upgrade),
-[CPrAN::Command::remove](remove)
+[CPrAN::Command::upgrade](upgrade)

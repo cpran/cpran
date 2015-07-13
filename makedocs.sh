@@ -16,7 +16,11 @@ function myconvert {
   fi
 }
 
-find CPrAN/Command/ -name "*pm" | while read line; do myconvert "$line"; done
+find CPrAN/ -name "*pm" | while read line; do myconvert "$line"; done
 myconvert "CPrAN.pm"
 myconvert "cpran.pl"
+find CPrAN/ -name "*md" | while read line; do
+  mv "$line" "$(echo "$line" | sed -re 's/(.*)/\L\1/')";
+done
+
 mv "doc/CPrAN.md" "doc/module.md"

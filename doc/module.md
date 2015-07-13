@@ -143,20 +143,6 @@ methods described below to perform general **CPrAN**-related actions.
     By default, responses matching /^y(es)?$/i are considered to be _yes_
     responses.
 
-- compare\_version()
-
-    Compares two semantic version numbers that match /^\\d+\\.\\d+\\.\\d$/. Returns 1 if
-    the first is larger (=newer), -1 if the second is larger, and 0 if they are the
-    same;
-
-- get\_latest\_version()
-
-    Gets the latest known version for a plugin specified by name.
-
-- get\_plugin\_id()
-
-    Fetches the GitLab id for the project specified by name
-
 # AUTHOR
 
 José Joaquín Atria <jjatria@gmail.com>
