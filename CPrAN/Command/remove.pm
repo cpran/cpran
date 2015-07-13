@@ -6,7 +6,6 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Carp;
 binmode STDOUT, ':utf8';
 
@@ -104,15 +103,12 @@ sub execute {
     }
     if (CPrAN::yesno( $opt, 'n' )) {
       foreach my $plugin (@todo) {
-        print "Removing $plugin->{names}... " unless ($opt->{quiet});
+        print "Removing $plugin->{name}...\n" unless ($opt->{quiet});
 
         # TODO(jja) Improve error checking
         my $ret = dir($plugin->{root})->rmtree($opt->{verbose} - 1, $opt->{cautious});
-        if ($ret) {
-          print "done\n" unless ($opt->{quiet});
-        }
-        else {
-          print "error!\n" unless ($opt->{quiet});
+        unless ($ret) {
+          warn "Could not completely remove $plugin->{root}\n" unless ($opt->{quiet});
         }
       }
     }

@@ -2,7 +2,6 @@ package CPrAN;
 
 use App::Cmd::Setup -app;
 use File::Path;
-use Data::Dumper;
 use Carp;
 
 =encoding utf8
@@ -373,76 +372,42 @@ an array of hashes properly formatted for processing with order_dependencies()
 sub dependencies {
   my ($opt, $args) = @_;
 
-  use Path::Class;
-  use File::Slurp;
-
-  my @dependencies;
+  use GitLab::API::Tiny::v3;
+  use CPrAN::Plugin;
 
   # If the argument is a scalar, convert it to a list with it as its single item
-  $args = [ { name => $args, version => '' } ] if (!ref $args);
+  $args = [ $args ] if (ref $args ne 'ARRAY');
 
+  my $api = GitLab::API::Tiny::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  my @dependencies;
   foreach my $plugin (@{$args}) {
-
-    if ($plugin->{version} eq '') {
-      $plugin->{version} = CPrAN::get_latest_version( $plugin->{name} );
+    unless (ref $plugin eq 'CPrAN::Plugin') {
+      $plugin = CPrAN::Plugin->new( $plugin );
     }
 
-    my $app = CPrAN->new();
-    my $descriptor = $app->execute_command(
-      'CPrAN::Command::show',
-      { quiet => 1 },
-      $plugin->{name}
-    );
-    if ($descriptor->{version} ne $plugin->{version}) {
-      # Requested version is not the newest on record
-      # We fetch that version's descriptor from server to check for that
-      # version's dependencies
-      $plugin_id = CPrAN::get_plugin_id( $plugin->{name} );
+    if (defined $plugin->{remote}->{depends}->{plugins}) {
+      my %raw = %{$plugin->{remote}->{depends}->{plugins}};
 
-      use GitLab::API::Tiny::v3;
-      my $api = GitLab::API::Tiny::v3->new(
-        url   => CPrAN::api_url(),
-        token => CPrAN::api_token(),
-      );
-      my $tags = $api->tags($plugin_id);
-      my $sha;
-      foreach (@{$tags}) {
-        if ($_->{name} eq "v$plugin->{version}") {
-          $sha = $_->{commit}->{id};
-        }
+      my $depends = {};
+      foreach my $kley (keys %{$plugin->{remote}->{depends}->{plugins}}) {
+        push @dependencies, {
+          name     => $plugin->{name},
+          requires => [ keys %raw   ],
+          version  => [ values %raw ],
+        };
       }
-      croak "Could not find $plugin->{name} (v$plugin->{version})" unless $sha;
-
-      $descriptor = decode_base64(
-        $api->file($plugin_id, {
-          file_path => 'cpran.yaml',
-          sha => $sha,
-        })->{content}
-      );
-      use YAML::XS;
-      $descriptor = Load($descriptor);
-    }
-
-    # We are only interested in CPrAN dependencies
-    if (exists $descriptor->{depends}->{plugins}) {
-      my %raw_deps = %{$descriptor->{depends}->{plugins}};
-      my @deps = keys %raw_deps;
-      my @vers = map { $raw_deps{$_} } @deps;
-      my %deps = (
-        name     => $descriptor->{plugin},
-        requires => \@deps,
-        version  => \@vers,
-      );
-
-      push @dependencies, \%deps;
       # Recursively query dependencies for all dependencies
-      foreach (@{$deps{requires}}) {
+      foreach (keys %raw) {
         @dependencies = (@dependencies, dependencies($opt, $_));
       }
     }
     else {
       push @dependencies, {
-        name => $descriptor->{plugin},
+        name => $plugin->{name},
         requires => [],
         version => [],
       };
@@ -517,75 +482,6 @@ sub yesno {
   chomp $input;
   $input = $default if ($input eq "");
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
-}
-
-=item compare_version()
-
-Compares two semantic version numbers that match /^\d+\.\d+\.\d$/. Returns 1 if
-the first is larger (=newer), -1 if the second is larger, and 0 if they are the
-same;
-
-=cut
-
-sub compare_version {
-  my ($a, $b) = @_;
-
-  croak "Incorrectly formatted version number: $a, $b"
-    if ($a !~ /^\d+\.\d+\.\d+$/ || $b !~ /^\d+\.\d+\.\d+$/);
-
-  return 0 if ($a eq $b);
-
-  my @a = split /\./, $a;
-  my @b = split /\./, $b;
-
-  if    ($a[0] > $b[0]) { return  1 }
-  elsif ($a[0] < $b[0]) { return -1 }
-  elsif ($a[1] > $b[1]) { return  1 }
-  elsif ($a[1] < $b[1]) { return -1 }
-  elsif ($a[2] > $b[2]) { return  1 }
-  elsif ($a[2] < $b[2]) { return -1 }
-  else { croak "What happened?" }
-}
-
-=item get_latest_version()
-
-Gets the latest known version for a plugin specified by name.
-
-=cut
-
-sub get_latest_version {
-  my $name = shift;
-
-  my $app = CPrAN->new();
-  my $descriptor = $app->execute_command(
-    'CPrAN::Command::show',
-    { quiet => 1 },
-    $name
-  );
-  return $descriptor->{version};
-}
-
-=item get_plugin_id()
-
-Fetches the GitLab id for the project specified by name
-
-=cut
-
-sub get_plugin_id {
-  my $name = shift;
-
-  use GitLab::API::Tiny::v3;
-  my $api = GitLab::API::Tiny::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
-
-  my $project = $api->projects( { search => 'plugin_' . $name } );
-
-  foreach (@{$project}) {
-    return $_->{id} if ($_->{name} eq 'plugin_' . $name);
-  }
-  return '';
 }
 
 =back

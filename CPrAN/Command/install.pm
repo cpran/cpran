@@ -6,7 +6,6 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Carp;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
@@ -55,16 +54,18 @@ sub validate_args {
   # but a (clumsy) way for Praat to recognize plugin directories.
   $args = strip_prefix($args);
 
-  foreach (@{$args}) {
-    my @parts = split /-/, $_;
-    push @parts, '' unless /-\d+\.\d+\.\d+$/;
-    my $version = pop @parts;
-    my $name = join '-', @parts;
-    $_ = {
-      version => $version,
-      name    => $name,
-    };
-  }
+  # TODO(jja) This is to enable specific version requests. This feature is yet
+  #           to be implemented.
+#   foreach (@{$args}) {
+#     my @parts = split /-/, $_;
+#     push @parts, '' unless /-\d+\.\d+\.\d+$/;
+#     my $version = pop @parts;
+#     my $name = join '-', @parts;
+#     $_ = {
+#       version => $version,
+#       name    => $name,
+#     };
+#   }
 }
 
 =head1 EXAMPLES
@@ -84,80 +85,51 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  # Get a hash of installed plugins (ie, plugins in the preferences directory)
-  my %installed;
-  $installed{$_} = 1 foreach (CPrAN::installed());
-
-  # Get a hash of known plugins (ie, plugins in the CPrAN list)
-  my %known;
-  $known{$_} = 1 foreach (CPrAN::known());
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') {
+      $_;
+    }
+    else {
+      CPrAN::Plugin->new( $_ );
+    }
+  } @{$args};
 
   # Plugins that are already installed cannot be installed again (unless the
   # user orders a forced-reinstall).
-  # @plugins will hold the names and versions of the plugins passed as arguments
-  # that are
-  #   a) valid CPrAN plugin names; and
+  # @todo will hold the plugins passed as arguments that are
+  #   a) valid CPrAN plugins; and
   #   b) not already installed (unless the user forces re-installation); or
-  #   c) newer than those installed (unless the user forces downgrade)
-  my @plugins;
-  foreach my $plugin (@{$args}) {
+  #   c) newer than those installed (unless the user forces downgrade) (NYI)
+  my @todo;
+  foreach my $plugin (@plugins) {
     # BUG(jja) What to do here?
     use Config;
     if ($plugin->{name} eq 'cpran' && $Config{osname} eq 'MSWin32') {
       warn "Cannot currently use CPrAN to install CPrAN in Windows\n";
     }
 
-    # User requested an unversioned plugin, default to the newest on record
-    if ($plugin->{version} eq '') {
-      $plugin->{version} = CPrAN::get_latest_version( $plugin->{name} );
-    }
-
-    if (exists $known{$plugin->{name}}) {
+    if (defined $plugin->{remote}) {
       my $install = 0;
 
-      if (exists $installed{$plugin->{name}}) {
-
-        my ($cmd) = $self->app->prepare_command('show');
-        my $local = $self->app->execute_command(
-          $cmd, { quiet => 1, installed => 1 }, $plugin->{name}
-        );
-
-        my $newer = 0;
-        if ($local) {
-          $newer = CPrAN::compare_version(
-            $local->{version}, $plugin->{version}
-          );
-        }
-
-        if ($newer) {
-          # Plugin is installed, but we are upgrading
-          $install = 1;
-        }
+      if ($plugin->is_installed) {
+        if ($opt->{force}) { $install = 1 }
         else {
-          if ($opt->{force}) {
-            # Plugin is installed, but user forced re-install or downgrade
-            $install = 1;
-          }
-          else {
-            warn "W: $plugin->{name} is already installed. Use --force to reinstall\n";
-          }
+          warn "W: $plugin->{name} is already installed. Use --force to ignore this warning\n";
         }
       }
-      else {
-        # Plugin is not installed
-        $install = 1;
-      }
-      push @plugins, $plugin if $install;
+      else { $install = 1 }
+
+      push @todo, $plugin if $install;
     }
     else {
-      warn "W: no known plugin named $plugin->{name}\n"
+      warn "W: $plugin->{name} is not in CPrAN database. Have you run update?\n"
     }
   }
 
   # Get a source dependency tree for the plugins that are to be installed.
   # The dependencies() subroutine calls itself recursively to include the
   # dependencies of the dependencies, and so on.
-  my @deps = CPrAN::dependencies( $opt, \@plugins );
+  my @deps = CPrAN::dependencies( $opt, \@todo );
 
   # The source tree is then ordered to get a schedule of plugin installation.
   # In the resulting list, plugins with no dependencies come first, and those
@@ -169,9 +141,10 @@ sub execute {
   # TODO(jja) What does --force mean in this context?
   # See https://gitlab.com/cpran/plugin_cpran/issues/3
   my @schedule;
-  foreach (@ordered) {
-    push @schedule, $_
-      unless (exists $installed{$_->{name}} && !$opt->{force});
+  foreach my $plugin (@ordered) {
+    my $plugin = CPrAN::Plugin->new( $plugin->{name} );
+    push @schedule, $plugin
+      unless ($plugin->is_installed && !$opt->{force});
   }
 
   # Output and user query modeled after apt's
@@ -182,18 +155,50 @@ sub execute {
       print "Do you want to continue? [y/N] ";
     }
     if (CPrAN::yesno( $opt, 'n' )) {
-      PLUGIN: foreach (@schedule) {
+      foreach my $plugin (@schedule) {
 
         # Now that we know what plugins to install and in what order, we get
         # them and install them
-        my $archive = get_archive( $opt, $_->{name}, '' );
+        my $archive = get_archive( $opt, $plugin->{name}, '' );
 
-        print "Extracting... " unless ($opt->{quiet});
+        print "Extracting...\n" unless ($opt->{quiet});
         install( $opt, $archive );
 
-        print "done\n" unless ($opt->{quiet});
+        print "Testing $plugin->{name}...\n" unless ($opt->{quiet});
+        $plugin->update;
 
-        if ($_->{name} eq 'cpran') {
+        my $success = $plugin->test;
+        if ($Config{osname} eq 'MSWin32') {
+          unless ($opt->{quiet}) {
+            warn "Tests do not currently work on Windows. Ignoring tests!\n";
+            warn "See https://gitlab.com/cpran/plugin_cpran/issues/16 for more information.\n";
+          }
+          $success = 1;
+        }
+
+        unless ($success) {
+          if ($opt->{force}) {
+            warn "Tests failed. Forcing installation.\n" unless ($opt->{quiet});
+          }
+          else {
+            unless ($opt->{quiet}) {
+              warn "Tests failed. Aborting installation of $plugin->{name}.\n";
+              warn "Use --force to ignore this warning\n";
+            }
+
+            my $app = CPrAN->new();
+            my %params = %{$opt};
+            $params{yes} = 1;
+            $params{force} = 1;
+
+            $app->execute_command('CPrAN::Command::remove', \%params, $plugin->{name});
+          }
+        }
+        else {
+          print "$plugin->{name} installed successfully." unless ($opt->{quiet});
+        }
+
+        if ($plugin->{name} eq 'cpran') {
           # CPrAN is installing itself!
           # HACK(jja) currently, a reinstall deletes the original directory
           # which in the case of CPrAN will likely destroy the CPrAN root.
@@ -259,10 +264,9 @@ sub rebuild_list {
   my %params = %{$opt};
   $params{verbose} = 0;
 
-  print "Rebuilding plugin list... " unless ($opt->{quiet});
+  print "Rebuilding plugin list...\n" unless ($opt->{quiet});
   my ($cmd) = $self->app->prepare_command('update');
   $self->app->execute_command( $cmd, \%params, () );
-  print "done\n" unless ($opt->{quiet});
 }
 
 =item B<get_archive()>
@@ -283,7 +287,7 @@ sub get_archive {
     token => CPrAN::api_token(),
   );
 
-  print "Downloading archive for $name " unless ($opt->{quiet});
+  print "Downloading archive for $name\n" unless ($opt->{quiet});
 
   my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
   my $tag;
@@ -342,7 +346,7 @@ sub install {
   # We then construct a new target name and extract directly into that location,
   # avoiding moving files, which is tricky.
   my $next = Archive::Tar->iter( $archive->stringify, 1, { filter => qr/.*/ } );
-  
+
   # TODO(jja) Improve handling of existing target directories
   # If we are forcing the re-install of a plugin, the previously existing
   # directory needs to be removed. Maybe this could be better handled? Because
@@ -353,6 +357,7 @@ sub install {
   # already exists
   my $root = $next->();
   unless ($root) {
+    use Data::Dumper;
     warn "Something went wrong\n";
     print Dumper($next);
     exit;

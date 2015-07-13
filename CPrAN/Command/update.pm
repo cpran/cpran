@@ -6,7 +6,6 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Carp;
 
 =head1 NAME
@@ -59,7 +58,7 @@ sub execute {
   my $descriptors;
   foreach my $source (@{$projects}) {
     if ($source->{name} =~ /^plugin_(\w+)$/) {
-      print "Fetching $1... " if $opt->{verbose};
+      print "Fetching $1...\n" if $opt->{verbose};
       $descriptors .= fetch_descriptor($self, $opt, $source);
     }
   }
@@ -115,7 +114,6 @@ sub fetch_descriptor {
     my $target = file( CPrAN::root(), $name );
     my $fh = $target->openw();
     $fh->print($descriptor);
-    print "done\n" if $opt->{verbose};
   }
   return $descriptor;
 }

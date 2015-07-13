@@ -1,28 +1,21 @@
 package CPrAN::Plugin;
 
+use Carp;
 use Path::Class;
 use YAML::XS;
+binmode STDOUT, ':utf8';
 
 sub new {
   my ($class, $name) = @_;
+
+  croak "Already a reference" if ref $name;
 
   my $self = bless {
     name  => $name,
     cpran => 0,
   }, $class;
 
-  my $root = dir(CPrAN::praat(), 'plugin_' . $name);
-  if ( -e $root ) {
-    $self->{root} = $root;
-    $self->{installed} = 1;
-  }
-
-  $self->{'local'} = $self->_read(
-    file($root, 'cpran.yaml')
-  );
-  $self->{'remote'} = $self->_read(
-    file(CPrAN::root(), $name)
-  );
+  $self->_init();
 
   die "Plugin is uninstalled and unknown. Inconceivable"
     unless ($self->{cpran} || $self->{installed});
@@ -39,6 +32,79 @@ sub is_installed {
   my ($self) = @_;
   return $self->{installed};
 }
+
+sub _init {
+  my ($self) = @_;
+
+  my $root = dir(CPrAN::praat(), 'plugin_' . $self->{name});
+
+  if ( -e $root ) {
+    $self->{root} = $root->stringify;
+    $self->{installed} = 1;
+  }
+
+  $self->{'local'} = $self->_read(
+    file($root, 'cpran.yaml')
+  );
+  $self->{'remote'} = $self->_read(
+    file(CPrAN::root(), $self->{name})
+  );
+}
+
+sub update {
+  my ($self) = @_;
+  $self->_init;
+}
+
+=item remote_id()
+
+Fetches the GitLab id for the plugin
+
+=cut
+
+sub remote_id {
+  my $self = shift;
+
+  return undef unless defined $self->{remote};
+
+  use GitLab::API::Tiny::v3;
+  my $api = GitLab::API::Tiny::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
+    return $_->{id} if ($_->{name} eq 'plugin_' . $self->{name});
+  }
+  return undef;
+}
+
+
+# =item get_latest_version()
+# 
+# Gets the latest known version for a plugin specified by name.
+# 
+# =cut
+# 
+# sub get_latest_version {
+#   my $name = shift;
+# 
+#   my $app = CPrAN->new();
+#   my $descriptor = $app->execute_command(
+#     'CPrAN::Command::show',
+#     { quiet => 1 },
+#     $name
+#   );
+#   return $descriptor->{version};
+# }
+
+# =item compare_version()
+# 
+# Compares two semantic version numbers that match /^\d+\.\d+\.\d$/. Returns 1 if
+# the first is larger (=newer), -1 if the second is larger, and 0 if they are the
+# same;
+# 
+# =cut
 
 sub is_latest {
   my ($self) = @_;
@@ -116,7 +182,6 @@ sub print {
   die "No descriptor found"
     unless defined $self->{$name};
 
-  use Data::Printer;
   print decode('utf8',
     file($self->{$name}->{descriptor})->slurp
   );
@@ -124,6 +189,7 @@ sub print {
 
 sub _read {
   my ($self, $file) = @_;
+
   if (-e $file) {
     my $yaml = Load( scalar $file->slurp );
     _force_lc_hash($yaml);

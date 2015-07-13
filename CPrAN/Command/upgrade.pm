@@ -106,7 +106,7 @@ sub execute {
         $params{quiet} = 1;
         $params{yes}   = 1;
 
-        print "Upgrading $plugin->{name} from v$plugin->{local}->{version} to v$plugin->{remote}->{version}... ";
+        print "Upgrading $plugin->{name} from v$plugin->{local}->{version} to v$plugin->{remote}->{version}...\n";
 
         # NOTE(jja) Current upgrade process involves removal and then
         #           re-installation of appropriate plugin. This destroys local
@@ -114,8 +114,6 @@ sub execute {
         #           say, a git repository. Maybe this can be smarter?
         $app->execute_command('CPrAN::Command::remove',  \%params, $plugin->{name});
         $app->execute_command('CPrAN::Command::install', \%params, $plugin->{name});
-
-        print "done\n";
       }
     }
     else {
