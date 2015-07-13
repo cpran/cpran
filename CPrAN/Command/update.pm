@@ -88,6 +88,10 @@ sub fetch_descriptor {
   use Path::Class;
 
   my ($self, $opt, $source) = @_;
+  my $name;
+
+  if ($source->{name} =~ /^plugin_(\w+)$/) { $name = $1 }
+  else { die "Project is not a plugin" }
 
   my $api = GitLab::API::Tiny::v3->new(
     url   => CPrAN::api_url(),
@@ -107,7 +111,8 @@ sub fetch_descriptor {
     warn "E: Could not parse YAML descriptor" if $opt->{verbose};
     warn "$@" if ($opt->{verbose} > 1);
   } else {
-    my $target = file( CPrAN::root(), $source->{name} );
+    
+    my $target = file( CPrAN::root(), $name );
     my $fh = $target->openw();
     $fh->print($descriptor);
     print "done\n" if $opt->{verbose};
