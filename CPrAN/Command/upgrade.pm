@@ -55,70 +55,49 @@ sub validate_args {
 
 # TODO(jja) Break execute into smaller chunks
 sub execute {
+  use CPrAN::Plugin;
+
   my ($self, $opt, $args) = @_;
 
-  my @args = CPrAN::installed();
-  $args = \@args unless @{$args};
-
-  # Get a hash of installed plugins (ie, plugins in the preferences directory)
-  my %installed;
-  $installed{$_} = 1 foreach (CPrAN::installed());
-
-  # Get a hash of known plugins (ie, plugins in the CPrAN list)
-  my %known;
-  $known{$_} = 1 foreach (CPrAN::known());
+  $args = [ CPrAN::installed() ] unless (@{$args});
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') {
+      $_;
+    }
+    else {
+      CPrAN::Plugin->new( $_ );
+    }
+  } @{$args};
 
   # Plugins that are not installed cannot be upgraded.
-  # @names will hold the names of the plugins passed as arguments that are
+  # @todo will hold the names of the plugins passed as arguments that are
   #   a) valid CPrAN plugin names; and
   #   b) already installed
   #   c) not at the latest version
-  my @names;
-  foreach (@{$args}) {
-    if (exists $installed{$_}) {
-      if (exists $known{$_}) {
-
-        my ($cmd) = $self->app->prepare_command('show');
-        my $local = $self->app->execute_command(
-          $cmd, { quiet => 1, installed => 1 }, $_
-        );
-
-        my $remote = $self->app->execute_command(
-          $cmd, { quiet => 1 }, $_
-        );
-
-        if (CPrAN::compare_version( $remote->{Version}, $local->{Version} )) {
-          push @names, $_;
+  my @todo;
+  foreach my $plugin (@plugins) {
+    if ($plugin->is_installed) {
+      if ($plugin->is_cpran) {
+        if ($plugin->is_latest) { 
+          print "$plugin->{name} is already at its latest version\n";
+        }
+        else {
+          push @todo, $plugin;
         }
       }
-      else { warn "W: $_ is not a CPrAN plugin\n" if $opt->{debug} }
+      else { warn "W: $plugin->{name} is not a CPrAN plugin\n" if $opt->{debug} }
     }
-    else { warn "W: $_ is not installed\n" }
+    else { warn "W: $plugin->{name} is not installed\n" }
   }
 
-  if (@names) {
+  if (@todo) {
     unless ($opt->{quiet}) {
       print "The following plugins will be UPGRADED:\n";
-      print '  ', join(' ', map { $_ } @names), "\n";
+      print '  ', join(' ', map { $_->{name} } @todo), "\n";
       print "Do you want to continue? [y/N] ";
     }
     if (CPrAN::yesno( $opt, 'n' )) {
-      foreach my $name (@names) {
-        my $desc  = file(CPrAN::praat(), 'plugin_' . $name, 'cpran.yaml');
-
-        my $content = read_file($desc->stringify);
-        my $yaml = Load( $content );
-
-        my $name = $yaml->{plugin};
-        my $local = $yaml->{version};
-
-        $desc = file(CPrAN::root(), $name);
-        my $remote = '';
-        if (-e $desc->stringify) {
-          $content = read_file($desc->stringify);
-          $yaml = Load( $content );
-          $remote = $yaml->{version};
-        }
+      foreach my $plugin (@todo) {
 
         my $app = CPrAN->new();
 
@@ -127,17 +106,16 @@ sub execute {
         $params{quiet} = 1;
         $params{yes}   = 1;
 
-        if (CPrAN::compare_version( $local, $remote ) < 0) {
-          print "Upgrading $name from v$local to v$remote... ";
+        print "Upgrading $plugin->{name} from v$plugin->{local}->{version} to v$plugin->{remote}->{version}... ";
 
-          $app->execute_command('CPrAN::Command::remove',  \%params, $name);
-          $app->execute_command('CPrAN::Command::install', \%params, $name);
+        # NOTE(jja) Current upgrade process involves removal and then
+        #           re-installation of appropriate plugin. This destroys local
+        #           changes, which could be catastrophic if local version is,
+        #           say, a git repository. Maybe this can be smarter?
+        $app->execute_command('CPrAN::Command::remove',  \%params, $plugin->{name});
+        $app->execute_command('CPrAN::Command::install', \%params, $plugin->{name});
 
-          print "done\n";
-        }
-        else {
-          print "$name is already at its latest version\n";
-        }
+        print "done\n";
       }
     }
     else {

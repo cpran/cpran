@@ -40,6 +40,29 @@ sub is_installed {
   return $self->{installed};
 }
 
+sub is_latest {
+  my ($self) = @_;
+
+  return undef unless (defined $self->{remote});
+  return 0 if (!defined $self->{local});
+  return 1 if ($self->{remote}->{version} == $self->{local}->{version});
+
+  die "Incorrectly formatted version number: $a, $b"
+    if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
+        $self->{local}->{version}  !~ /^\d+\.\d+\.\d+$/);
+
+  my @remote = split /\./, $self->{remote};
+  my @local  = split /\./, $self->{local};
+
+  if    ($remote[0] > $local[0]) { return 0 }
+  elsif ($remote[0] < $local[0]) { return 1 }
+  elsif ($remote[1] > $local[1]) { return 0 }
+  elsif ($remote[1] < $local[1]) { return 1 }
+  elsif ($remote[2] > $local[2]) { return 0 }
+  elsif ($remote[2] < $local[2]) { return 1 }
+  else { die "Unreachable condition reached. Inconceivable!" }
+}
+
 sub test {
   use Test::Harness;
 
