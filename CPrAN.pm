@@ -259,7 +259,8 @@ sub is_cpran {
 
   return 0 unless is_plugin($opt, $arg);
 
-  my @contents = $arg->children();
+  eval { my @contents = $arg->children() };
+  croak "Cannot read from directory" if $@;
 
   my $descriptor = 0;
   map {
@@ -374,7 +375,6 @@ sub dependencies {
 
   use Path::Class;
   use File::Slurp;
-  use YAML::XS;
 
   my @dependencies;
 
@@ -393,8 +393,7 @@ sub dependencies {
       { quiet => 1 },
       $plugin->{name}
     );
-    my $yaml = YAML::XS::Load( $descriptor );
-    if ($yaml->{Version} ne $plugin->{version}) {
+    if ($descriptor->{version} ne $plugin->{version}) {
       # Requested version is not the newest on record
       # We fetch that version's descriptor from server to check for that
       # version's dependencies
@@ -414,23 +413,23 @@ sub dependencies {
       }
       croak "Could not find $plugin->{name} (v$plugin->{version})" unless $sha;
 
-      # # HACK(jja) This should work, but the Perl GitLab API seems to currently be
-      # # broken. See https://github.com/bluefeet/GitLab-API-v3/issues/5
       $descriptor = decode_base64(
         $api->file($plugin_id, {
           file_path => 'cpran.yaml',
           sha => $sha,
         })->{content}
       );
+      use YAML::XS;
+      $descriptor = Load($descriptor);
     }
 
     # We are only interested in CPrAN dependencies
-    if (exists $yaml->{Depends}->{Plugins}) {
-      my %raw_deps = %{$yaml->{Depends}->{Plugins}};
+    if (exists $descriptor->{depends}->{plugins}) {
+      my %raw_deps = %{$descriptor->{depends}->{plugins}};
       my @deps = keys %raw_deps;
       my @vers = map { $raw_deps{$_} } @deps;
       my %deps = (
-        name     => $yaml->{Plugin},
+        name     => $descriptor->{plugin},
         requires => \@deps,
         version  => \@vers,
       );
@@ -443,7 +442,7 @@ sub dependencies {
     }
     else {
       push @dependencies, {
-        name => $yaml->{Plugin},
+        name => $descriptor->{plugin},
         requires => [],
         version => [],
       };
@@ -557,16 +556,13 @@ Gets the latest known version for a plugin specified by name.
 sub get_latest_version {
   my $name = shift;
 
-  use YAML::XS;
-
   my $app = CPrAN->new();
   my $descriptor = $app->execute_command(
     'CPrAN::Command::show',
     { quiet => 1 },
     $name
   );
-  my $yaml = Load($descriptor);
-  return $yaml->{Version};
+  return $descriptor->{version};
 }
 
 =item get_plugin_id()

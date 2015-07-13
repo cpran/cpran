@@ -107,7 +107,11 @@ sub execute {
       return undef;
     }
   }
-  return $stream;
+  use YAML::XS;
+  my $descriptor = Load($stream);
+
+  _force_lc_hash($descriptor);
+  return $descriptor;
 }
 
 =head1 OPTIONS
@@ -131,6 +135,17 @@ sub opt_spec {
 =head1 METHODS
 
 =over
+
+=cut
+
+sub _force_lc_hash {
+  my $hashref = shift;
+  foreach my $key (keys %{$hashref} ) {
+    $hashref->{lc($key)} = $hashref->{$key};
+    _force_lc_hash($hashref->{lc($key)}) if ref $hashref->{$key} eq 'HASH';
+    delete($hashref->{$key}) unless $key eq lc($key);
+  }
+}
 
 =back
 

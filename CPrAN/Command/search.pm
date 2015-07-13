@@ -47,6 +47,13 @@ sub validate_args {
   my ($self, $opt, $args) = @_;
 
   $self->usage_error("Must provide a search term") unless @{$args};
+
+  # Search by default in all fields
+  # If any fields are specified, then search in those
+  if (!(defined $opt->{name} || defined $opt->{description})) {
+    $opt->{name} = 1;
+    $opt->{description} = 1;
+  }
 }
 
 =head1 EXAMPLES
@@ -61,34 +68,36 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use Path::Class;
+  use CPrAN::Plugin;
   use Text::Table;
 
+  my @plugins;
   my @names = CPrAN::installed();
-  if ($opt->{installed}) {
+  if (defined $opt->{installed}) {
     print "D: " . scalar @names . " installed plugins\n" if ($opt->{debug});
   }
   else {
     @names = (@names, CPrAN::known());
     my %names;
-    map { $names{$_} = 1 } @names;
-    @names = keys %names;
-    print "D: " . scalar @names . " known plugins\n" if $opt->{debug};
+    $names{$_} = 1 foreach @names;
+    @plugins = map { CPrAN::Plugin->new($_) } keys %names;
+    print "D: " . scalar @plugins . " known plugins\n" if $opt->{debug};
   }
-  my $output = Text::Table->new(
+
+  $self->{output} = Text::Table->new(
     "Name", "Local", "Remote", "Description"
   );
-  @names = sort { "\L$a" cmp "\L$b" } @names;
+  @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
 
   my @found;
-  map {
-    if (/$args->[0]/) {
-      $output->add(make_row($opt, $_));
-      push @found, $_;
+  foreach my $plugin (@plugins) {
+    if ($self->_match($opt, $plugin, $args)) {
+      $self->_add_output_row($opt, $plugin);
+      push @found, $plugin;
     }
-  } @names;
+  };
 
-  if (@found) { print $output }
+  if (@found) { print $self->{output} }
   else { print "No matches found\n" }
 
   return @found;
@@ -112,8 +121,8 @@ Print debug messages.
 
 sub opt_spec {
   return (
-    # [ "name|n"        => "search in plugin name" ],
-    # [ "description|d" => "search in description" ],
+    [ "name|n"        => "search in plugin name" ],
+    [ "description|d" => "search in description" ],
     [ "installed|i"   => "only consider installed plugins" ],
   );
 }
@@ -124,7 +133,49 @@ sub opt_spec {
 
 =cut
 
-=item B<make_row()>
+=item B<_match()>
+
+Performs the search agains the specified fields of the plugin.
+
+=cut
+
+sub _match {
+  my ($self, $opt, $plugin, $arg) = @_;
+
+  my $search = '(' . join('|', @{$arg}) . ')';
+
+  if (defined $opt->{name}) {
+    return 1 if ($plugin->{name} =~ /$search/i);
+  }
+
+  if (defined $opt->{description} && $plugin->{cpran}) {
+    if (defined $plugin->{'remote'}) {
+      return 1 if ($plugin->{'remote'}->{Description}->{Long} =~ /$search/i);
+      return 1 if ($plugin->{'remote'}->{Description}->{Short} =~ /$search/i);
+    }
+    if (defined $plugin->{'local'}) {
+      return 1 if ($plugin->{'local'}->{Description}->{Long} =~ /$search/i);
+      return 1 if ($plugin->{'local'}->{Description}->{Short} =~ /$search/i);
+    }
+  }
+  return 0;
+}
+
+=item B<_add_output_row()>
+
+Generates and adds a line for the output table. This subroutine internally calls
+C<_make_output_row()> and attaches it to the table.
+
+=cut
+
+sub _add_output_row {
+  my ($self, $opt, $plugin) = @_;
+  carp "No output table found" unless defined $self->{output};
+  my @row = $self->_make_output_row($opt, $plugin);
+  $self->{output}->add(@row);
+}
+
+=item B<_make_output_row()>
 
 Generates the appropriate line for a single plugin specified by name. Takes the
 name as an argument, and returns a list suitable to be plugged into a
@@ -135,43 +186,30 @@ returned list will have both the local and the remote versions.
 
 =cut
 
-sub make_row {
-  my ($opt, $name) = @_;
+sub _make_output_row {
+  my ($self, $opt, $plugin) = @_;
 
   use YAML::XS;
   use File::Slurp;
 
-  my $plugin = dir(CPrAN::praat(), 'plugin_' . $name);
-  if (CPrAN::is_cpran( $opt, $plugin )) {
-    my $remote_file = file(CPrAN::root(), $name);
-    my $local_file  = file( $plugin, 'cpran.yaml' );
+  my $description;
+  my $local = my $remote = '';
 
-    my $local_version  = '';
-    my $remote_version = '';
-    my $description    = '[No description]';
-
-    if ( -e $local_file->stringify ) {
-      my $content = read_file($local_file->stringify);
-      my $yaml = Load( $content );
-
-      $local_version = $yaml->{Version};
-      $description   = $yaml->{Description}->{Short};
+  if ($plugin->is_cpran) {
+    if ($plugin->is_installed) {
+      $local = $plugin->{'local'}->{Version};
+      $description = $plugin->{'local'}->{Description}->{Short};
     }
-
-    if ( -e $remote_file->stringify ) {
-      my $content        = read_file($remote_file->stringify);
-      my $yaml           = Load( $content );
-
-      $remote_version = $yaml->{Version};
-      $description   = $yaml->{Description}->{Short};
+    if (defined $plugin->{remote}) {
+      $remote = $plugin->{'remote'}->{Version};
+      $description = $plugin->{'remote'}->{Description}->{Short};
     }
-
-    return ($name, $local_version, $remote_version, $description);
   }
   else {
-    # Not a CPrAN plugin
-    return ($name, '', '', '[Not a CPrAN plugin]');
+    $description = '[Not a CPrAN plugin]';
   }
+
+  return ($plugin->{name}, $local, $remote, $description);
 }
 
 =back
