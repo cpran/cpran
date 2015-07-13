@@ -86,13 +86,20 @@ sub execute {
   );
   @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
 
-  my @found;
-  foreach my $plugin (@plugins) {
-    if ($self->_match($opt, $plugin, $args)) {
-      $self->_add_output_row($opt, $plugin);
-      push @found, $plugin;
+  my $list;
+  $list->{$_->{name}} = $_ foreach @plugins;
+  foreach my $query (@{$args}) {
+    foreach my $name (keys %{$list}) {
+      unless ($self->_match($opt, $list->{$name}, $query)) {
+        delete $list->{$name};
+      }
     }
   };
+
+  my @found = map {
+    $self->_add_output_row($opt, $list->{$_});
+    $list->{$_}
+  } sort keys %{$list};
 
   if (@found) { print $self->{output} }
   else { print "No matches found\n" }
@@ -137,9 +144,7 @@ Performs the search agains the specified fields of the plugin.
 =cut
 
 sub _match {
-  my ($self, $opt, $plugin, $arg) = @_;
-
-  my $search = '(' . join('|', @{$arg}) . ')';
+  my ($self, $opt, $plugin, $search) = @_;
 
   if (defined $opt->{name}) {
     return 1 if ($plugin->{name} =~ /$search/i);

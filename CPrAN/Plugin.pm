@@ -157,7 +157,7 @@ sub is_latest {
   elsif ($remote[1] < $local[1]) { return 1 }
   elsif ($remote[2] > $local[2]) { return 0 }
   elsif ($remote[2] < $local[2]) { return 1 }
-  else { returndie "Unreachable condition reached. Inconceivable!" }
+  else { die "Unreachable condition reached. Inconceivable!" }
 }
 
 =item test()
