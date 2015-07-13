@@ -1,7 +1,6 @@
 package CPrAN::Plugin;
 
 use Path::Class;
-use Data::Printer;
 use YAML::XS;
 
 sub new {
@@ -13,7 +12,10 @@ sub new {
   }, $class;
 
   my $root = dir(CPrAN::praat(), 'plugin_' . $name);
-  $self->{installed} = 1 if ( -e $root );
+  if ( -e $root ) {
+    $self->{root} = $root;
+    $self->{installed} = 1;
+  }
 
   $self->{'local'} = $self->_read(
     file($root, 'cpran.yaml')
@@ -36,6 +38,45 @@ sub is_cpran {
 sub is_installed {
   my ($self) = @_;
   return $self->{installed};
+}
+
+sub test {
+  use Test::Harness;
+
+  my ($self) = @_;
+
+  # TODO(jja) Plugins should be testable even before installation
+  #           That's the whole point!
+  die "$self->{name} is not installed" unless ($self->is_installed);
+
+  my $path = dir($self->{root}, 't');
+  unless ( -e $path ) {
+    warn "No tests for $self->{name}\n" if $opt->{verbose};
+    return undef;
+  }
+
+  opendir (DIR, $path) or Carp::croak "$path: " . $!;
+
+  my @tests;
+  while (my $file = readdir(DIR)) {
+    push @tests, file($path, $file) if ($file =~ /\.t$/);
+  }
+  @tests = sort @tests;
+
+  # Run the tests
+  my $praat;
+  for ($^O) {
+    if    (/darwin/)  { $praat = 'Praat'    } # Untested
+    elsif (/MSWin32/) { $praat = 'praatcon' }
+    else              { $praat = 'praat'    }
+  }
+  my $harness = TAP::Harness->new({
+    failures  => 1,
+    exec => [ $praat ],
+  });
+  my $aggregator = $harness->runtests(@tests);
+
+  if ($aggregator->all_passed) { return 1 } else { return 0 }
 }
 
 sub print {
