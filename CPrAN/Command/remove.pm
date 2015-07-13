@@ -67,54 +67,52 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   use Path::Class;
+  use CPrAN::Plugin;
 
-  my @installed = CPrAN::installed();
-
-  my %installed;
-  $installed{$_} = dir(CPrAN::praat(), 'plugin_' . $_) foreach (@installed);
-
-  my @files;
-  map {
-    if (exists $installed{$_}) {
-      my $plugin = $installed{$_};
-
-      my $is_cpran = CPrAN::is_cpran($opt, $plugin);
-      if ( $is_cpran || $opt->{all}) {
-        warn "W: $_ is not a CPrAN plugin, but processing anyway.\n"
-          unless $is_cpran;
-        push @files, $plugin;
-      }
-      else {
-        warn "W: $_ is not a CPrAN plugin. Use --force to process anyway.\n";
-      }
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') {
+      $_;
     }
     else {
-      warn "W: $_ is not installed; cannot remove.\n";
+      CPrAN::Plugin->new( $_ );
     }
   } @{$args};
 
-  if (@files) {
+  my @todo;
+  foreach my $plugin (@plugins) {
+    if ($plugin->is_installed) {
+      if ($plugin->is_cpran || $opt->{force}) {
+        warn "W: $plugin->{name} is not a CPrAN plugin, but processing anyway.\n"
+          unless $plugin->is_cpran;
+        push @todo, $plugin;
+      }
+      else {
+        warn "W: $plugin->{name} is not a CPrAN plugin. Use --force to process anyway.\n";
+      }
+    }
+    else {
+      warn "W: $plugin->{name} is not installed; cannot remove.\n";
+    }
+  }
+
+  if (@todo) {
     my @names;
     unless ($opt->{quiet}) {
       print "The following plugins will be REMOVED:\n";
-      foreach (@files) {
-        my $name = $_->basename;
-        $name =~ s/^plugin_//;
-        push @names, $name;
-      };
-      print '  ', join(' ', @names), "\n";
+      print '  ', join(' ', map { $_->{name} } @todo ), "\n";
       print "Do you want to continue? [y/N] ";
     }
-    if (CPrAN::yesno($opt, 'n')) {
-      foreach (0..$#files) {
-        print "Removing $names[$_]... " unless ($opt->{quiet});
+    if (CPrAN::yesno( $opt, 'n' )) {
+      foreach my $plugin (@todo) {
+        print "Removing $plugin->{names}... " unless ($opt->{quiet});
+
         # TODO(jja) Improve error checking
-        my $ret = $files[$_]->rmtree($opt->{verbose} - 1, $opt->{cautious});
+        my $ret = dir($plugin->{root})->rmtree($opt->{verbose} - 1, $opt->{cautious});
         if ($ret) {
           print "done\n" unless ($opt->{quiet});
         }
         else {
-          print "error\n" unless ($opt->{quiet});
+          print "error!\n" unless ($opt->{quiet});
         }
       }
     }
