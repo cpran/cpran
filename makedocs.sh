@@ -19,8 +19,11 @@ function myconvert {
 find CPrAN/ -name "*pm" | while read line; do myconvert "$line"; done
 myconvert "CPrAN.pm"
 myconvert "cpran.pl"
-find CPrAN/ -name "*md" | while read line; do
-  mv "$line" "$(echo "$line" | sed -re 's/(.*)/\L\1/')";
-done
 
 mv "doc/CPrAN.md" "doc/module.md"
+find doc/ -name "*md" | while read line; do
+  new=$(echo "$line" | sed -re 's/(.*)/\L\1/');
+  if [ "$line" != "$new" ]; then
+    mv "$line" "$new";
+  fi
+done
