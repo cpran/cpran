@@ -6,9 +6,7 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Carp;
-use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -62,56 +60,33 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-#   print Dumper($args);
+  use CPrAN::Plugin;
+  use YAML::XS;
 
-  use Path::Class;
-  use File::Slurp;
-
-  # Get a hash of installed plugins (ie, plugins in the preferences directory)
-  my %installed;
-  $installed{$_} = 1 foreach (CPrAN::installed());
-
-  # Get a hash of known plugins (ie, plugins in the CPrAN list)
-  my %known;
-  $known{$_} = 1 foreach (CPrAN::known());
-
-  my $stream;
-  my $file = '';
-  foreach (@{$args}) {
+  my @stream;
+  foreach my $name (@{$args}) {
+    my $plugin = CPrAN::Plugin->new( $name );
     if ($opt->{installed}) {
-      if (exists $installed{$_}) {
-        $file = file( CPrAN::praat(), 'plugin_' . $_, 'cpran.yaml' );
+      if ($plugin->is_installed) {
+        push @stream, $plugin->{'local'};
+        $plugin->print('local') unless ($opt->{quiet});
       }
       else {
-        croak "E: $_ is not installed";
+        croak "E: $name is not installed";
       }
     }
     else {
-      # TODO(jja) Why are we not using CPrAN::is_cpran() here?
-      if (exists $known{$_}) {
-        $file = file( CPrAN::root(), $_ );
+      if ($plugin->is_cpran) {
+        push @stream, $plugin->{'remote'};
+        $plugin->print('remote') unless ($opt->{quiet});
       }
       else {
-#         print Dumper($_);
-        croak "E: $_ is not a CPrAN plugin";
+        croak "E: $name is not a CPrAN plugin";
       }
-    }
-    if ($file && -e $file->stringify) {
-      my $content = read_file($file->stringify);
-      my $s = $content;
-      $stream .= $s;
-      print decode('utf8', $s) unless $opt->{quiet};
-    }
-    else {
-      warn "Cannot find $file->stringify\n" unless $opt->{quiet};
-      return undef;
     }
   }
-  use YAML::XS;
-  my $descriptor = Load($stream);
 
-  _force_lc_hash($descriptor);
-  return $descriptor;
+  return \@stream;
 }
 
 =head1 OPTIONS
@@ -137,15 +112,6 @@ sub opt_spec {
 =over
 
 =cut
-
-sub _force_lc_hash {
-  my $hashref = shift;
-  foreach my $key (keys %{$hashref} ) {
-    $hashref->{lc($key)} = $hashref->{$key};
-    _force_lc_hash($hashref->{lc($key)}) if ref $hashref->{$key} eq 'HASH';
-    delete($hashref->{$key}) unless $key eq lc($key);
-  }
-}
 
 =back
 

@@ -150,12 +150,12 @@ sub _match {
 
   if (defined $opt->{description} && $plugin->{cpran}) {
     if (defined $plugin->{'remote'}) {
-      return 1 if ($plugin->{'remote'}->{Description}->{Long} =~ /$search/i);
-      return 1 if ($plugin->{'remote'}->{Description}->{Short} =~ /$search/i);
+      return 1 if ($plugin->{'remote'}->{description}->{long} =~ /$search/i);
+      return 1 if ($plugin->{'remote'}->{description}->{short} =~ /$search/i);
     }
     if (defined $plugin->{'local'}) {
-      return 1 if ($plugin->{'local'}->{Description}->{Long} =~ /$search/i);
-      return 1 if ($plugin->{'local'}->{Description}->{Short} =~ /$search/i);
+      return 1 if ($plugin->{'local'}->{description}->{long} =~ /$search/i);
+      return 1 if ($plugin->{'local'}->{description}->{short} =~ /$search/i);
     }
   }
   return 0;
@@ -197,12 +197,12 @@ sub _make_output_row {
 
   if ($plugin->is_cpran) {
     if ($plugin->is_installed) {
-      $local = $plugin->{'local'}->{Version};
-      $description = $plugin->{'local'}->{Description}->{Short};
+      $local = $plugin->{'local'}->{version};
+      $description = $plugin->{'local'}->{description}->{short};
     }
     if (defined $plugin->{remote}) {
-      $remote = $plugin->{'remote'}->{Version};
-      $description = $plugin->{'remote'}->{Description}->{Short};
+      $remote = $plugin->{'remote'}->{version};
+      $description = $plugin->{'remote'}->{description}->{short};
     }
   }
   else {
