@@ -79,7 +79,7 @@ sub execute {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran) {
         if ($plugin->is_latest) { 
-          print "$plugin->{name} is already at its latest version\n";
+          print "$plugin->{name} is already at its latest version\n" if ($opt->{verbose} > 1);
         }
         else {
           push @todo, $plugin;
@@ -121,7 +121,7 @@ sub execute {
     }
   }
   else {
-    print "All plugins up to date.\n";
+    print "All plugins up to date.\n" unless ($opt->{quiet});
   }
 }
 

@@ -82,14 +82,13 @@ sub execute_command {
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, amotting all output. Higher values of verbose
   # will increase verbosity.
+  $opt->{$_} = $self->global_options->{$_} foreach keys %{$self->global_options};
   if (defined $self->global_options->{quiet}) {
     $opt->{verbose} = 0;
   }
   else {
     $opt->{verbose} = ++$self->global_options->{verbose};
   }
-
-  $opt->{debug} = $self->global_options->{debug};
 
   $cmd->validate_args($opt, \@args);
   $cmd->execute($opt, \@args);
@@ -189,6 +188,7 @@ sub set_globals {
   set_api_url($gopt->{'api-url'}) if (defined $gopt->{'api-url'});
 
   check_permissions($self, $cmd, $opt, @args) unless ($cmd =~ /(version|help)/);
+
 }
 
 =item check_permissions()

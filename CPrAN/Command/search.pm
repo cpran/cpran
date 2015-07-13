@@ -101,8 +101,10 @@ sub execute {
     $list->{$_}
   } sort keys %{$list};
 
-  if (@found) { print $self->{output} }
-  else { print "No matches found\n" }
+  if ($opt->{verbose}) {
+    if (@found) { print $self->{output} }
+    else { print "No matches found\n" }
+  }
 
   return @found;
 }
