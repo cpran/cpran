@@ -191,7 +191,8 @@ sub execute {
             $params{yes} = 1;
             $params{force} = 1;
 
-            $app->execute_command('CPrAN::Command::remove', \%params, $plugin->{name});
+            my $cmd = CPrAN::Command::remove->new({});
+            $app->execute_command($cmd, \%params, $plugin->{name});
           }
         }
         else {

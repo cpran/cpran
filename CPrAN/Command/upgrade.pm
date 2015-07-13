@@ -112,8 +112,8 @@ sub execute {
         #           re-installation of appropriate plugin. This destroys local
         #           changes, which could be catastrophic if local version is,
         #           say, a git repository. Maybe this can be smarter?
-        $app->execute_command('CPrAN::Command::remove',  \%params, $plugin->{name});
-        $app->execute_command('CPrAN::Command::install', \%params, $plugin->{name});
+        $app->execute_command(CPrAN::Command::remove->new({}),  \%params, $plugin->{name});
+        $app->execute_command(CPrAN::Command::install->new({}), \%params, $plugin->{name});
       }
     }
     else {

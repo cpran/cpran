@@ -71,7 +71,7 @@ B<CPrAN> - A package manager for Praat
 }
 
 # By redefining this subroutine, we lightly modify the behaviour of the App::Cmd
-# app. In this case, we process the global options, and pass _some_ of those to
+# app. In this case, we process the global options, and pass them to
 # the invoked commands together with their local options.
 sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
@@ -80,7 +80,7 @@ sub execute_command {
   make_root();
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
-  # sets verbosity to 0, amotting all output. Higher values of verbose
+  # sets verbosity to 0, omitting all output. Higher values of verbose
   # will increase verbosity.
   $opt->{$_} = $self->global_options->{$_} foreach keys %{$self->global_options};
   if (defined $self->global_options->{quiet}) {

@@ -54,7 +54,8 @@ sub execute {
   my %params = %{$opt};
   $params{quiet} = 1;
 
-  return $app->execute_command('CPrAN::Command::search', \%params, '.*');
+  my $cmd = CPrAN::Command::search->new({});
+  return $app->execute_command($cmd, \%params, '.*');
 }
 
 sub opt_spec {
