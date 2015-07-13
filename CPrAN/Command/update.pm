@@ -54,17 +54,14 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use Path::Class;
-
   my $projects = list_projects($self, $opt, $args);
 
-  my $dir = Path::Class::dir( CPrAN::root() );
-
   my $descriptors;
-  foreach my $plugin (@{$projects}) {
-    my $name = substr($plugin->{name}, 7);
-    print "Fetching $name... " if $opt->{verbose};
-    $descriptors .= fetch_descriptor($self, $opt, $plugin, $dir);
+  foreach my $source (@{$projects}) {
+    if ($source->{name} =~ /^plugin_(\w+)$/) {
+      print "Fetching $1... " if $opt->{verbose};
+      $descriptors .= fetch_descriptor($self, $opt, $source);
+    }
   }
   return $descriptors;
 }
@@ -90,28 +87,28 @@ sub fetch_descriptor {
   use YAML::XS;
   use Path::Class;
 
-  my ($self, $opt, $plugin, $dir) = @_;
+  my ($self, $opt, $source) = @_;
 
   my $api = GitLab::API::Tiny::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
-  my $file = $dir->file(substr($plugin->{name}, 7));
 
-  my $commit_id = shift(@{$api->commits( $plugin->{id} )})->{id};
+  my $commit = shift @{$api->commits( $source->{id} )};
+
   my $descriptor = $api->blob(
-    $plugin->{id},
-    $commit_id,
+    $source->{id},
+    $commit->{id},
     { filepath => 'cpran.yaml' }
   );
+
   eval { YAML::XS::Load( $descriptor ) };
   if ($@) {
-    print "error: skipping\n" if $opt->{verbose};
-    print "$@" if ($opt->{verbose} > 1);
-    $file->remove();
-
+    warn "E: Could not parse YAML descriptor" if $opt->{verbose};
+    warn "$@" if ($opt->{verbose} > 1);
   } else {
-    my $fh = $file->openw();
+    my $target = file( CPrAN::root(), $source->{name} );
+    my $fh = $target->openw();
     $fh->print($descriptor);
     print "done\n" if $opt->{verbose};
   }

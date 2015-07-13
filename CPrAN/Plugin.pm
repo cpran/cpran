@@ -46,7 +46,12 @@ sub test {
   my ($self) = @_;
 
   # TODO(jja) Plugins should be testable even before installation
-  #           That's the whole point!
+  #           Perhaps the best way to do this would be to install them and then
+  #           remove them if tests were unsuccessful. The removal would be
+  #           skipped with --force.
+  #           To mark a plugin being tested we could create some temporary lock
+  #           file (maybe a setup.praat that deletes its own plugin?), which is
+  #           removed when all goes well.
   die "$self->{name} is not installed" unless ($self->is_installed);
 
   my $path = dir($self->{root}, 't');
