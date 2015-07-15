@@ -7,7 +7,6 @@ use strict;
 use warnings;
 
 use Carp;
-use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -361,7 +360,8 @@ sub install {
     use Data::Dumper;
     warn "Something went wrong\n";
     print Dumper($next);
-    exit;
+    warn 'Please contact the author at jjatria@gmail.com\n';
+    exit 1;
   }
   $root = $root->full_path;
   $root = dir(CPrAN::praat(), $root);

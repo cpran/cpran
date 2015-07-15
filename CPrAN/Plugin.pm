@@ -1,8 +1,6 @@
 package CPrAN::Plugin;
 
 use Carp;
-use Path::Class;
-use YAML::XS;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -46,6 +44,8 @@ sub new {
 }
 
 sub _init {
+  use Path::Class;
+
   my ($self) = @_;
 
   my $root = dir(CPrAN::praat(), 'plugin_' . $self->{name});
@@ -148,8 +148,8 @@ sub is_latest {
     if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
         $self->{local}->{version}  !~ /^\d+\.\d+\.\d+$/);
 
-  my @remote = split /\./, $self->{remote};
-  my @local  = split /\./, $self->{local};
+  my @remote = split /\./, $self->{remote}->{version};
+  my @local  = split /\./, $self->{local}->{version};
 
   if    ($remote[0] > $local[0]) { return 0 }
   elsif ($remote[0] < $local[0]) { return 1 }
@@ -157,7 +157,10 @@ sub is_latest {
   elsif ($remote[1] < $local[1]) { return 1 }
   elsif ($remote[2] > $local[2]) { return 0 }
   elsif ($remote[2] < $local[2]) { return 1 }
-  else { die "Unreachable condition reached. Inconceivable!" }
+  else {
+    warn "$self->{remote}->{version} <-> $self->{local}->{version}\n";
+    die "Unreachable condition reached. Inconceivable!";
+  }
 }
 
 =item test()
@@ -168,6 +171,7 @@ Runs tests for the plugin (if any). Returns the result of those tests.
 
 sub test {
   use Test::Harness;
+  use Path::Class;
 
   my ($self) = @_;
 
@@ -219,6 +223,8 @@ must be asked for by name. Any other names are an error.
 
 sub print {
   use Encode qw(encode decode);
+  use Path::Class;
+  
   my ($self, $name) = @_;
   die "Not a valid field"
     unless $name =~ /^(local|remote)$/;
@@ -232,6 +238,9 @@ sub print {
 }
 
 sub _read {
+  use YAML::XS;
+  use Path::Class;
+  
   my ($self, $file) = @_;
 
   if (-e $file) {

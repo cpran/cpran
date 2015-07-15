@@ -6,10 +6,8 @@ use CPrAN -command;
 use strict;
 use warnings;
 
-use Path::Class;
-use File::Slurp;
-use YAML::XS;
 use Carp;
+binmode STDOUT, ':utf8';
 
 =head1 NAME
 

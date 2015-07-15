@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+binmode STDOUT, ':utf8';
 
 =encoding utf8
 
@@ -70,6 +71,7 @@ sub execute {
 
   my @plugins;
   my @names = CPrAN::installed();
+  
   if (defined $opt->{installed}) {
     print "D: " . scalar @names . " installed plugins\n" if ($opt->{debug});
   }
@@ -85,21 +87,21 @@ sub execute {
     "Name", "Local", "Remote", "Description"
   );
   @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
-
-  my $list;
-  $list->{$_->{name}} = $_ foreach @plugins;
+  
+  my %list;
+  $list{$_->{name}} = $_ foreach @plugins;
   foreach my $query (@{$args}) {
-    foreach my $name (keys %{$list}) {
-      unless ($self->_match($opt, $list->{$name}, $query)) {
-        delete $list->{$name};
+    foreach my $name (keys %list) {
+      unless ($self->_match($opt, $list{$name}, $query)) {
+        delete $list{$name};
       }
     }
   };
 
   my @found = map {
-    $self->_add_output_row($opt, $list->{$_});
-    $list->{$_}
-  } sort keys %{$list};
+    $self->_add_output_row($opt, $list{$_});
+    $list{$_}
+  } sort keys %list;
 
   if ($opt->{verbose}) {
     if (@found) { print $self->{output} }
@@ -194,7 +196,6 @@ sub _make_output_row {
   my ($self, $opt, $plugin) = @_;
 
   use YAML::XS;
-  use File::Slurp;
 
   my $description;
   my $local = my $remote = '';

@@ -7,7 +7,6 @@ use strict;
 use warnings;
 
 use Carp;
-use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
 =head1 NAME

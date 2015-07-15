@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+binmode STDOUT, ':utf8';
 
 =head1 NAME
 

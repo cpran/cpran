@@ -70,30 +70,6 @@ methods described below to perform general **CPrAN**-related actions.
 
     Makes the **CPrAN** root directory.
 
-- is\_cpran()
-
-    Takes an object of type Path::Class and checks whether it is a **CPrAN** Praat
-    plugin. See _is\_plugin()_ for the criteria they need to fulfill ot be a plugin.
-
-    In order to be considered a **CPrAN** plugin, a valid plugin must additionally
-    have a _plugin descriptor_ written in valid YAML.
-
-    This method does not currently make any sanity checks on the structure of the
-    plugin descriptor (which should follow the example bundled in _example.yaml_),
-    but future versions might.
-
-- is\_plugin()
-
-    Takes an object of type Path::Class and checks whether it is a Praat plugin. All
-    directories that reside under Praat's preferences directory, and whose name
-    begins with the _plugin\__ identifier are considered valid plugins.
-
-        use Path::Class;
-        is_plugin( file('foo', 'bar') );           # False
-        is_plugin( dir('foo', 'bar') );            # False
-        is_plugin( dir($prefdir, 'bar') );         # False
-        is_plugin( dir($prefdir, 'plugin_bar') );  # True
-
 - installed()
 
     Returns a list of all installed Praat plugins. See _is\_plugin()_ for the

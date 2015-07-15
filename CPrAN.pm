@@ -229,92 +229,6 @@ sub make_root {
   File::Path::make_path( CPrAN::root() ) unless (-e CPrAN::root());
 }
 
-=item is_cpran()
-
-Takes an object of type Path::Class and checks whether it is a B<CPrAN> Praat
-plugin. See I<is_plugin()> for the criteria they need to fulfill ot be a plugin.
-
-In order to be considered a B<CPrAN> plugin, a valid plugin must additionally
-have a I<plugin descriptor> written in valid YAML.
-
-This method does not currently make any sanity checks on the structure of the
-plugin descriptor (which should follow the example bundled in I<example.yaml>),
-but future versions might.
-
-=cut
-
-sub is_cpran {
-  my ($opt, $arg) = @_;
-
-  croak "Argument is not a Path::Class object"
-    unless (ref($arg) =~ /^Path::Class/);
-
-  my $name = $arg->stringify;
-  $name =~ s%.*plugin_(.*)/?$%$1%;
-  return 1 if grep(/^$name$/, CPrAN::known());
-
-  use YAML::XS;
-  use File::Slurp;
-
-  return 0 unless is_plugin($opt, $arg);
-
-  eval { my @contents = $arg->children() };
-  croak "Cannot read from directory" if $@;
-
-  my $descriptor = 0;
-  map {
-    $descriptor = 1 if $_->basename eq 'cpran.yaml';
-  } @contents;
-  unless ($descriptor) {
-    print STDERR "D: ", $arg->basename, " does not have a descriptor\n"
-      if $opt->{debug};
-    return 0;
-  }
-
-  return 1;
-}
-
-=item is_plugin()
-
-Takes an object of type Path::Class and checks whether it is a Praat plugin. All
-directories that reside under Praat's preferences directory, and whose name
-begins with the I<plugin_> identifier are considered valid plugins.
-
-    use Path::Class;
-    is_plugin( file('foo', 'bar') );           # False
-    is_plugin( dir('foo', 'bar') );            # False
-    is_plugin( dir($prefdir, 'bar') );         # False
-    is_plugin( dir($prefdir, 'plugin_bar') );  # True
-
-=cut
-
-sub is_plugin {
-  my ($opt, $arg) = @_;
-
-  croak "Argument is not a Path::Class object"
-    unless (ref($arg) =~ /^Path::Class/);
-
-  unless ($arg->is_dir) {
-    print STDERR "D: ", $arg->basename, " is not a directory\n"
-      if $opt->{debug};
-    return 0;
-  }
-
-  unless ($arg->parent eq CPrAN::praat() ) {
-    print STDERR "D: ", $arg->basename, " is not in " . CPrAN::praat() . "\n"
-      if $opt->{debug};
-    return 0;
-  }
-
-  unless ($arg->basename =~ /^plugin_/) {
-    print STDERR "D: ", $arg->basename, " is not properly named\n"
-      if $opt->{debug};
-    return 0;
-  }
-
-  return 1;
-}
-
 =item installed()
 
 Returns a list of all installed Praat plugins. See I<is_plugin()> for the
@@ -327,19 +241,14 @@ criteria they need to fulfill.
 
 sub installed {
   use Path::Class;
-
-  my @all_files = dir( CPrAN::praat() )->children;
-
-  my @installed;
-  foreach (@all_files) {
-    my $name = $_->basename;
-    $name =~ s/^plugin_//;
-    if (CPrAN::is_plugin( $opt, $_ )) {
-      push @installed, $name;
-    }
-  }
-
-  return @installed;
+  
+  my @files = grep {
+    ($_->is_dir && $_->basename =~ /^plugin_\w+/)
+  } dir( CPrAN::praat() )->children;
+  
+  return map {
+    $1 if $_->basename =~ /^plugin_(\w+)/;
+  } @files;
 }
 
 =item known()
@@ -354,10 +263,7 @@ of plugins whose descriptors have been saved by C<cpran update>
 
 sub known {
   use Path::Class;
-
-  return map {
-    $_->basename;
-  } dir( CPrAN::root() )->children;
+  return map { $_->basename } dir( CPrAN::root() )->children;
 }
 
 =item dependencies()
@@ -511,6 +417,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.1.4';
+our $VERSION = '0.2.0';
 
 1;

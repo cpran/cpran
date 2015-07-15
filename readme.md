@@ -74,7 +74,7 @@ Now, on to the installation.
     install the necessary dependencies. Depending on your system, it might take
     some time, but it should be a fairly automatic process.
 
-        cpan App::Cmd File::Slurp Graph Params::Validate LWP::UserAgent Path::Class Text::Table URI YAML::XS
+        cpan App::Cmd Graph Params::Validate LWP::UserAgent Path::Class Text::Table URI YAML::XS
 
 3.  Install the CPrAN plugin
 
