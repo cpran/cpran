@@ -31,8 +31,7 @@ CPrAN keeps a list of the available plugins, with information about each one,
 including what its latest verion is and who is in charge of maintaining it.
 
 As its name implies, the B<update> command takes care of keeping this list up to
-date, so it should probably be the first command to run. It might be useful to
-run it with the B<--verbose> option enabled, to keep track on what it is doing.
+date, and as such it should probably be the first command to run.
 
 The list is currently implemented as individual files in the .cpran directory,
 which is under the CPrAN root. See L<CPrAN::Command::update|update> for the full
@@ -40,7 +39,7 @@ documentation.
 
 =item B<search>
 
-    cpran search [options] [regex]
+    cpran search [options] [regex [regex...]]
 
 B<search> makes it possible to look for plugins in the plugin list. If you are
 not sure about the name of a plugin, you can use B<search> to explore the list
@@ -48,12 +47,13 @@ and try to find it. Or you can just use it to browse, to find unknown plugins
 that might do what you need.
 
 B<search> will return a list of all plugin names that match the provided regular
-expression. Currently, it only attempts to match it in the plugin's name, but 
-future versions will allow matches against other fields as well.
+expression. By default, the query is performed against the plugin's name and short
+and long descriptions. You can specify these with the C<--name> option, to limit
+the search to names, or the C<--description> option, to only consider descriptions.
 
-By using the B<--installed> option you can perform this search on your installed
-plugins, which will additionally show you the local and remote versions, so you
-can visually check if plugins any need upgrading.
+More than one regex query can be provided by separating them with spaces. In this
+case, results from the search will include those plugins for which all queries
+apply. If you want to use a query that contains a space, you'll have to quote it.
 
 B<search .*> will show the entire list of plugins (beware that this might be a
 long list!). Alternatively, you can use the B<list> command, which is simply an
@@ -126,11 +126,11 @@ a plugin, regardless of whether it is a CPrAN plugin or not, it will look in
 that plugin's directory for a test directory.
 
 By default and convention, the test directory is named C<t> and resides at the
-root of the plugin. Within this directory, all files that have a C<.t>extension
+root of the plugin. Within this directory, all files that have a C<.t> extension
 will be regarded as tests. Tests are all run by Praat, and they are expected to
 conform to the L<Test Anything Protocol|http://testanything.org/> for correct
 evaluation. You might want to look at the
-L<https://gitlab.com/cpran/plugin_testsimple|testsimple> plugin to make it 
+L<testsimple|https://gitlab.com/cpran/plugin_testsimple> plugin to make it 
 easier to write tests.
 
 See L<CPrAN::Command::test|test> for the full documentation.
@@ -237,9 +237,6 @@ C<C:\Documents and Settings\username\Praat>
 
 Where C<username> is, of course, the name of the active user.
 
-Functions like installed() and is_plugin() look in this directory to get their
-information.
-
 =head2 Plugin descriptors
 
 B<CPrAN> plugins are identified as such by the presence of a I<plugin
@@ -307,12 +304,13 @@ the same terms as Perl itself.
 =head1 SEE ALSO
 
 L<CPrAN|cpran>,
+L<CPrAN::Plugin|plugin>,
 L<CPrAN::Command::install|install>,
-L<CPrAN::Command::remove|remove>
-L<CPrAN::Command::show|show>,
+L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
+L<CPrAN::Command::show|show>,
 L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
-L<CPrAN::Command::upgrade|upgrade>,
+L<CPrAN::Command::upgrade|upgrade>
 
 =cut

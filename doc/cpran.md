@@ -22,8 +22,7 @@ remove and update Praat plugins.
     including what its latest verion is and who is in charge of maintaining it.
 
     As its name implies, the **update** command takes care of keeping this list up to
-    date, so it should probably be the first command to run. It might be useful to
-    run it with the **--verbose** option enabled, to keep track on what it is doing.
+    date, and as such it should probably be the first command to run.
 
     The list is currently implemented as individual files in the .cpran directory,
     which is under the CPrAN root. See [CPrAN::Command::update](update) for the full
@@ -31,7 +30,7 @@ remove and update Praat plugins.
 
 - **search**
 
-        cpran search [options] [regex]
+        cpran search [options] [regex [regex...]]
 
     **search** makes it possible to look for plugins in the plugin list. If you are
     not sure about the name of a plugin, you can use **search** to explore the list
@@ -39,12 +38,13 @@ remove and update Praat plugins.
     that might do what you need.
 
     **search** will return a list of all plugin names that match the provided regular
-    expression. Currently, it only attempts to match it in the plugin's name, but 
-    future versions will allow matches against other fields as well.
+    expression. By default, the query is performed against the plugin's name and short
+    and long descriptions. You can specify these with the `--name` option, to limit
+    the search to names, or the `--description` option, to only consider descriptions.
 
-    By using the **--installed** option you can perform this search on your installed
-    plugins, which will additionally show you the local and remote versions, so you
-    can visually check if plugins any need upgrading.
+    More than one regex query can be provided by separating them with spaces. In this
+    case, results from the search will include those plugins for which all queries
+    apply. If you want to use a query that contains a space, you'll have to quote it.
 
     **search .\*** will show the entire list of plugins (beware that this might be a
     long list!). Alternatively, you can use the **list** command, which is simply an
@@ -117,11 +117,11 @@ remove and update Praat plugins.
     that plugin's directory for a test directory.
 
     By default and convention, the test directory is named `t` and resides at the
-    root of the plugin. Within this directory, all files that have a `.t`extension
+    root of the plugin. Within this directory, all files that have a `.t` extension
     will be regarded as tests. Tests are all run by Praat, and they are expected to
     conform to the [Test Anything Protocol](http://testanything.org/) for correct
     evaluation. You might want to look at the
-    [https://gitlab.com/cpran/plugin\_testsimple|testsimple](https://gitlab.com/cpran/plugin_testsimple|testsimple) plugin to make it 
+    [testsimple](https://gitlab.com/cpran/plugin_testsimple) plugin to make it 
     easier to write tests.
 
     See [CPrAN::Command::test](test) for the full documentation.
@@ -216,9 +216,6 @@ Below are the default locations for the main supported platforms:
 
 Where `username` is, of course, the name of the active user.
 
-Functions like installed() and is\_plugin() look in this directory to get their
-information.
-
 ## Plugin descriptors
 
 **CPrAN** plugins are identified as such by the presence of a _plugin
@@ -286,10 +283,11 @@ the same terms as Perl itself.
 # SEE ALSO
 
 [CPrAN](cpran),
+[CPrAN::Plugin](plugin),
 [CPrAN::Command::install](install),
-[CPrAN::Command::remove](remove)
-[CPrAN::Command::show](show),
+[CPrAN::Command::remove](remove),
 [CPrAN::Command::search](search),
+[CPrAN::Command::show](show),
 [CPrAN::Command::test](test),
 [CPrAN::Command::update](update),
-[CPrAN::Command::upgrade](upgrade),
+[CPrAN::Command::upgrade](upgrade)
