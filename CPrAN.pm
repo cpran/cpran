@@ -29,7 +29,7 @@ B<CPrAN> - A package manager for Praat
     my $user = getlogin || getpwuid($<) || "???";
     if ($Config{osname} eq 'darwin') {
       # Mac
-      $PRAAT = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat', 'Prefs')->stringify;
+      $PRAAT = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat Prefs')->stringify;
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
