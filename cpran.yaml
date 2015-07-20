@@ -1,7 +1,7 @@
 ---
 Plugin: cpran
 Homepage: https://gitlab.com/cpran/plugin_cpran
-Version: 0.1.4
+Version: 0.1.5
 Maintainer: José Joaquín Atria <jjatria@gmail.com>
 Depends:
   praat: 5.0.0+
