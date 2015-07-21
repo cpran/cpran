@@ -94,11 +94,10 @@ sub execute {
   } @{$args};
 
   # Plugins that are already installed cannot be installed again (unless the
-  # user orders a forced-reinstall).
+  # user orders a reinstall).
   # @todo will hold the plugins passed as arguments that are
   #   a) valid CPrAN plugins; and
-  #   b) not already installed (unless the user forces re-installation); or
-  #   c) newer than those installed (unless the user forces downgrade) (NYI)
+  #   b) not already installed (unless the user asks for re-installation)
   my @todo;
   foreach my $plugin (@plugins) {
     # BUG(jja) What to do here?
@@ -111,9 +110,9 @@ sub execute {
       my $install = 0;
 
       if ($plugin->is_installed) {
-        if ($opt->{force}) { $install = 1 }
+        if ($opt->{reinstall}) { $install = 1 }
         else {
-          warn "W: $plugin->{name} is already installed. Use --force to ignore this warning\n";
+          warn "W: $plugin->{name} is already installed. Use --reinstall to ignore this warning\n";
         }
       }
       else { $install = 1 }
@@ -135,15 +134,11 @@ sub execute {
   # that depend on them come later.
   my @ordered = CPrAN::order_dependencies( @deps );
 
-  # Scheduled plugins that are already installed need to be removed from the
-  # schedule
-  # TODO(jja) What does --force mean in this context?
-  # See https://gitlab.com/cpran/plugin_cpran/issues/3
+  # Scheduled plugins that are already installed are descheduled
   my @schedule;
   foreach my $plugin (@ordered) {
     my $plugin = CPrAN::Plugin->new( $plugin->{name} );
-    push @schedule, $plugin
-      unless ($plugin->is_installed && !$opt->{force});
+    push @schedule, $plugin unless $plugin->is_installed;
   }
 
   # Output and user query modeled after apt's
@@ -177,7 +172,7 @@ sub execute {
 
         unless ($success) {
           if ($opt->{force}) {
-            warn "Tests failed. Forcing installation.\n" unless ($opt->{quiet});
+            warn "Tests failed, but continuing anyway because of --force\n" unless ($opt->{quiet});
           }
           else {
             unless ($opt->{quiet}) {
@@ -219,13 +214,17 @@ sub execute {
 
 =item B<--yes, -y>
 
-Assumes yes for all questions.
+Assume yes for all questions.
 
 =item B<--force>
 
-Tries to work around problems. For example, if an installed plugin is requested
-for installation, it re-installs it instead of refusing. When tests are enabled,
-B<--force> should allow for installation regardless of test outcomes.
+Ignore the result of tests.
+
+=item B<--reinstall>
+
+By default, an installed plugin will be ignored with a warning. If this option
+is enabled, all requested plugins will be marked for installation, even if
+already installed.
 
 =item B<--debug>
 
@@ -237,8 +236,10 @@ Print debug messages.
 
 sub opt_spec {
   return (
-    [ "yes|y"   => "do not ask for confirmation" ],
-    [ "force" => "print debugging messages" ],
+    [ "yes|y"     => "assume yes for all questions" ],
+    [ "force"     => "ignore failing tests"         ],
+    [ "reinstall" => "re-install requested plugins" ],
+    [ "debug"     => "print debug messages"         ],
   );
 }
 
