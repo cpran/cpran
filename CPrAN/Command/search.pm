@@ -67,7 +67,7 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   use CPrAN::Plugin;
-  use Text::Table;
+  use Text::FormatTable;
 
   my @plugins;
   my @names = CPrAN::installed();
@@ -83,7 +83,8 @@ sub execute {
     print "D: " . scalar @plugins . " known plugins\n" if $opt->{debug};
   }
 
-  $self->{output} = Text::Table->new(
+  $self->{output} = Text::FormatTable->new('l l l l');
+  $self->{output}->head(
     "Name", "Local", "Remote", "Description"
   );
   @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
@@ -104,7 +105,10 @@ sub execute {
   } sort keys %list;
 
   if ($opt->{verbose}) {
-    if (@found) { print $self->{output} }
+    if (@found) {
+      my $width = (defined $opt->{nowrap}) ? 1000 : 79;
+      print $self->{output}->render($width);
+    }
     else { print "No matches found\n" }
   }
 
@@ -115,11 +119,24 @@ sub execute {
 
 =over
 
-=item B<--installed>
+=item B<--name>, B<-n>
+
+Perform search on plugin names. Default is to include names and descriptions.
+
+=item B<--description>, B<-d>
+
+Perform search on plugin descriptions, both short and long. Default is to
+include names and descriptions.
+
+=item B<--installed>, B<-i>
 
 Search the local (installed) CPrAN catalog.
 
-=item B<--debug>
+=item B<--nowrap>
+
+Disables the line wrapping for the results table. This option is off by default.
+
+=item B<--debug>, B<-D>
 
 Print debug messages.
 
@@ -130,8 +147,9 @@ Print debug messages.
 sub opt_spec {
   return (
     [ "name|n"        => "search in plugin name" ],
-    [ "description|d" => "search in description" ],
-    [ "installed|i"   => "only consider installed plugins" ],
+    [ "description|d" => "search in plugin description" ],
+    [ "installed|i"   => "search on installed plugins" ],
+    [ "nowrap"        => "do not wrap lines of result table" ],
   );
 }
 
@@ -178,7 +196,7 @@ sub _add_output_row {
   my ($self, $opt, $plugin) = @_;
   carp "No output table found" unless defined $self->{output};
   my @row = $self->_make_output_row($opt, $plugin);
-  $self->{output}->add(@row);
+  $self->{output}->row(@row);
 }
 
 =item B<_make_output_row()>

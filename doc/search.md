@@ -27,11 +27,24 @@ installed plugins, both the local and the remote versions will be displayed.
 
 # OPTIONS
 
-- **--installed**
+- **--name**, **-n**
+
+    Perform search on plugin names. Default is to include names and descriptions.
+
+- **--description**, **-d**
+
+    Perform search on plugin descriptions, both short and long. Default is to
+    include names and descriptions.
+
+- **--installed**, **-i**
 
     Search the local (installed) CPrAN catalog.
 
-- **--debug**
+- **--nowrap**
+
+    Disables the line wrapping for the results table. This option is off by default.
+
+- **--debug**, **-D**
 
     Print debug messages.
 

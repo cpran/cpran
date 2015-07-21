@@ -216,17 +216,17 @@ sub execute {
 
 Assume yes for all questions.
 
-=item B<--force>
+=item B<--force>, B<-F>
 
 Ignore the result of tests.
 
-=item B<--reinstall>
+=item B<--reinstall>, B<-r>
 
 By default, an installed plugin will be ignored with a warning. If this option
 is enabled, all requested plugins will be marked for installation, even if
 already installed.
 
-=item B<--debug>
+=item B<--debug>, B<-D>
 
 Print debug messages.
 
@@ -236,10 +236,9 @@ Print debug messages.
 
 sub opt_spec {
   return (
-    [ "yes|y"     => "assume yes for all questions" ],
-    [ "force"     => "ignore failing tests"         ],
-    [ "reinstall" => "re-install requested plugins" ],
-    [ "debug"     => "print debug messages"         ],
+    [ "yes|y"       => "assume yes for all questions" ],
+    [ "force|F"     => "ignore failing tests"         ],
+    [ "reinstall|r" => "re-install requested plugins" ],
   );
 }
 

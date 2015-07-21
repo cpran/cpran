@@ -26,7 +26,7 @@ Upgrades the specified CPrAN plugins to their latest known versions.
 =cut
 
 sub description {
-  return "Updates the catalog of CPrAN plugins";
+  return "Upgrade installed plugins to their latest versions";
 }
 
 =pod

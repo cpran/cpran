@@ -35,15 +35,19 @@ will likely be of the form `name-1.0.0`.
 
 - **--yes, -y**
 
-    Assumes yes for all questions.
+    Assume yes for all questions.
 
-- **--force**
+- **--force**, **-F**
 
-    Tries to work around problems. For example, if an installed plugin is requested
-    for installation, it re-installs it instead of refusing. When tests are enabled,
-    **--force** should allow for installation regardless of test outcomes.
+    Ignore the result of tests.
 
-- **--debug**
+- **--reinstall**, **-r**
+
+    By default, an installed plugin will be ignored with a warning. If this option
+    is enabled, all requested plugins will be marked for installation, even if
+    already installed.
+
+- **--debug**, **-D**
 
     Print debug messages.
 
