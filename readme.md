@@ -4,6 +4,8 @@ CPrAN
 A plugin manager for Praat
 --------------------------
 
+**Just getting here? See [the wiki][wiki] for more information!**
+
 ### Current implementation
 
 > The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
@@ -61,6 +63,9 @@ Now, on to the installation.
 
     * If you are on Mac, please see [here][macperl].
 
+    > Note: also consider using [perlbrew][] or [plenv][] (or [berrybrew][] if on Windows),
+    > which make it easy to set up user-specific perl installations.
+
 [macperl]: http://learn.perl.org/installing/osx.html
 [winperl]: http://learn.perl.org/installing/windows.html
 
@@ -71,22 +76,27 @@ Now, on to the installation.
         * Params::Validate
         * LWP::UserAgent
         * Path::Class
-        * Text::Table
+        * Text::FormatTable
         * URI
         * YAML::XS
 
     You should be able to install the packages using the CPAN client with a line like this:
 
-        cpan App::Cmd Graph LWP::UserAgent Path::Class Text::Table URI YAML::XS
+        cpan App::Cmd Graph Params::Validate LWP::UserAgent Path::Class Text::FormatTable URI YAML::XS
         
-    You may also want to look at [`cpanminus`][], which may make things easier.
-    
-[cpanminus]: https://github.com/miyagawa/cpanminus    
+    > Note: to avoid having to install packages at the system level (ie, with administrator
+    > rights), consider using [plenv][] or [perlbrew][] (or [berrybrew][] if you are on
+    > Windows). These are perl version managers that allow you to have multiple user-specific
+    > perl installations.
+    >
+    > If you prefer a _purer_ version, see [here][faqlibrary] for information on how to
+    > install packages as a normal user using regular CPAN, and [here][cpanmlibrary] for
+    > the same using [`cpanminus`][cpanminus].
 
-    > Note: by default, packages will be installed at the system level.
-    > See [here][faqlibrary] for information on how to install them as a normal user using
-    > CPAN, and [here][cpanmlibrary] for how to do the same with `cpanminus`.
-    
+[cpanminus]: https://github.com/miyagawa/cpanminus    
+[perlbrew]: https://perlbrew.pl
+[plenv]: http://weblog.bulknews.net/post/58079418600/plenv-alternative-for-perlbrew    
+[berrybrew]: http://perltricks.com/article/119/2014/10/10/Hello-berrybrew--the-Strawberry-Perl-version-manager
 [faqlibrary]: http://learn.perl.org/faq/perlfaq8.html#How-do-I-keep-my-own-module-library-directory
 [cpanmlibrary]: https://github.com/miyagawa/cpanminus#where-does-this-install-modules-to-do-i-need-root-access
 
@@ -101,13 +111,13 @@ Now, on to the installation.
 
 [preferences directory]: http://www.fon.hum.uva.nl/praat/manual/preferences_directory.html    
     
-    For a manual installation, download the contents of [this repository][zip]
-    and extract them to your preferences directory. It should be able to run
-    from anywhere in your computer, but it's probably better if you save it there,
-    as you would with any other plugin.
+    For a manual installation, download [this archive][zip] and extract its contents
+    to your preferences directory. It should be able to run from anywhere in your
+    computer, but it's probably better if you save it there, as you would with any
+    other plugin.
 
-[zip]: https://gitlab.com/cpran/plugin_cpran/repository/archive.zip?ref=master    
-    
+[zip]: https://gitlab.com/cpran/plugin_cpran/repository/archive.zip?ref=master
+
     > Note: At the very least, try to save it so that it has direct access to the
     > preferences directory. It seems reading and writing over filesystem
     > boundaries is difficult in some platforms.
@@ -127,30 +137,58 @@ Now, on to the installation.
     `perl cpran.pl help <command>`, where `<command>` is the name of the command
     you want help with.
 
-    If you are using `bash`, you can make accesing the client a bit easier by
-    making an alias for the script. You'll have to use the `-I` option to specify
-    the module path, like so:
+5.  **Making things easier**
+
+    You should now be able to use CPrAN, but it will only work if you are in the
+    CPrAN root folder (and you'll have to type a lot too!). You can make it easier
+    to use by making a wrapper for the client script.
+
+    If you are using `bash` (in Linux or Mac, or on Windows if using Cygwin), you
+    can make an alias for the client like so (of course, replacing `/path/to/cpran`
+    with the actual path):
 
         alias cpran='perl -I /path/to/cpran /path/to/cpran/cpran.pl'
 
-    After that, you should be able to do `cpran --version` instead. Please see
-    [here][permalias] for how to make that alias permanent.
+    Please see [here][permalias] for information on how to make that alias
+    permanent.
 
 [permalias]: http://unix.stackexchange.com/a/183497
-    
-    > Note: even though this only works on `bash` at the moment the documentation
-    > will still use this shortened version throughout for simplicity. Future
-    > versions are be expected to make this automatic.
 
-    Check the contents of this wiki for more detailed information about all
-    available commands. The [client page](cpran) is probably a good place to
-    start. Note that these pages are automatically generated from the
+    If you are on Windows and not using Cygwin, copy the following line:
+
+        perl -I /path/to/cpran /path/to/cpran/cpran.pl %*
+
+    and save it as a file named `cpran.bat` somewhere in your `PATH`.
+
+    > Note: You can the contents of your `PATH` by typing `echo %PATH%` into
+    > a command line. If you want to add a new directory (eg, `C:\Users\yourname\bin`),
+    > you can do it by typing
+    >
+    >     set PATH=%PATH%;C:\Users\yourname\bin
+    >
+    > or
+    >
+    >     setx PATH "%PATH%;C:\Users\yourname\bin"
+    >
+    > to make the changes permanent (only do this if you know what you are doing!).
+
+    After that, you should be able to simply do `cpran --version`. 
+
+    > Note: even though this is optional, the documentation will use this
+    > shortened version throughout for simplicity. Future versions are
+    > expected to make this automatic.
+
+5.  **Profit**
+
+    Check the contents of [the wiki][wiki] for more detailed information about
+    all available commands. The [client page][cpran] is probably a good place to
+    start. Note that those pages are automatically generated from the
     documentation in the source of each command, so you can also check them
     offline with `perldoc <filename>`.
 
-5.  Make sure to get back with reports of any problems or successes you might
+    Make sure to [report any problems][issues] or successes you might
     have on your setup!
 
-
-[mainpod]: https://gitlab.com/cpran/plugin_cpran/blob/master/doc/cpran.md
 [wiki]: https://gitlab.com/cpran/plugin_cpran/wikis/home
+[cpran]: https://gitlab.com/cpran/plugin_cpran/wikis/cpran
+[issues]: https://gitlab.com/cpran/plugin_cpran/issues
