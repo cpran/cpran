@@ -28,7 +28,7 @@ remove and update Praat plugins.
     cpran update [options] [names]
 
 CPrAN keeps a list of the available plugins, with information about each one,
-including what its latest verion is and who is in charge of maintaining it.
+including what its latest version is and who is in charge of maintaining it.
 
 As its name implies, the B<update> command takes care of keeping this list up to
 date, and as such it should probably be the first command to run.
@@ -86,8 +86,13 @@ descriptor specifies any dependencies, B<install> will also offer to install
 these.
 
 You also use B<install> to re-install a plugin that has already been installed
-with the B<--force> option. This is useful if your local version somehow becomes
-corrupted (eg, if you've accidentally deleted files from within it).
+with the B<--reinstall> option. This is useful if your local version somehow
+becomes corrupted (eg, if you've accidentally deleted files from within it).
+
+Plugins will be tested before installation, and only those that pass all tests
+will be installed. You can change this behaviour by using the B<--force> option,
+which will disregard the results of the tests and proceed with installation (not
+recommended!).
 
 See L<CPrAN::Command::install|install> for the full documentation.
 
@@ -98,7 +103,7 @@ See L<CPrAN::Command::install|install> for the full documentation.
 
 If a new version of an installed plugin has been released, you can use
 B<upgrade> to bring your local installation up to date. You can specify a name
-to upgrade that individual plugin, or you can call it with no arguments, to
+to upgrade that individual plugin, or you can call it with no arguments to
 upgrade all plugins that are out of date.
 
 See L<CPrAN::Command::upgrade|upgrade> for the full documentation.
@@ -110,16 +115,15 @@ See L<CPrAN::Command::upgrade|upgrade> for the full documentation.
 If you are not going to be using a plugin anymore, you can remove it with
 B<remove>.
 
-See CPrAN::Command::remove for the full documentation.
+See L<CPrAN::Command::remove|remove> for the full documentation.
 
 =item B<test>
 
     cpran test [options] [names]
 
 By default, part of the installation process involves testing the downloaded
-plugin to make sure that things are working as expected.
-
-Both the testing and the aggregation of the test results is done by B<test>.
+plugin to make sure that things are working as expected. Both the testing and
+the aggregation of the test results is done by B<test>.
 
 The command can be run manually on any downloaded plugin. When given the name of
 a plugin, regardless of whether it is a CPrAN plugin or not, it will look in
@@ -131,18 +135,9 @@ will be regarded as tests. Tests are all run by Praat, and they are expected to
 conform to the L<Test Anything Protocol|http://testanything.org/> for correct
 evaluation. You might want to look at the
 L<testsimple|https://gitlab.com/cpran/plugin_testsimple> plugin to make it 
-easier to write tests.
+easier to write your own tests.
 
 See L<CPrAN::Command::test|test> for the full documentation.
-
-=item B<remove>
-
-    cpran remove [options] [names]
-
-If you are not going to be using a plugin anymore, you can remove it with
-B<remove>.
-
-See CPrAN::Command::remove for the full documentation.
 
 =back
 
