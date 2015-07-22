@@ -207,7 +207,7 @@ sub test {
   }
   my $harness = TAP::Harness->new({
     failures  => 1,
-    exec => [ $praat ],
+    exec => [ $praat, '-a' ], # Request ANSI console
   });
   my $aggregator = $harness->runtests(@tests);
 
