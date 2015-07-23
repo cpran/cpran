@@ -40,6 +40,27 @@ is not currently implemented.
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
+  
+  # Git support is enabled if
+  # 1. git is available
+  # 2. Git::Repository is installed
+  # 3. The user has not turned it off by setting --nogit
+  if (!defined $opt->{git} or $opt->{git}) {
+    try {
+      require Git::Repository;
+      $opt->{git} = 1;
+    }
+    catch {
+      unless (defined $opt->{debug}) {
+        warn "Disabling git support (use --debug to see why)\n";
+      }
+      else {
+        warn "$_";
+        warn "Disabling git support\n";
+      }
+      $opt->{git} = 0;
+    }
+  }  
 }
 
 =head1 EXAMPLES
@@ -127,12 +148,29 @@ sub execute {
 
 =over
 
+=item B<--git>, B<-g>
+=item B<--nogit>
+
+By default, B<upgrade> will try to use B<git> to bring plugins up to date. For
+this to work, B<upgrade> needs to be able to find git in the local system, the
+B<Git::Repository> module for perl needs to be installed, and the existing
+version of the plugin needs to be a git repository.
+
+If these requirements are met, and git support is enabled, the upgrade will be
+done using git, leaving the git repository intact, but now pointing to the
+latest version.
+
+If this is undesirable (even though the conditions are met), this behaviour can
+be disabled with the B<--nogit> option. Be advised that B<this will destroy any
+git repositories in the plugin directory>.
+
 =back
 
 =cut
 
 sub opt_spec {
   return (
+    [ "git|g!" => "request / disable git support" ],
   );
 }
 

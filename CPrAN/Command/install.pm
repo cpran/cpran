@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -52,19 +53,27 @@ sub validate_args {
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
   # but a (clumsy) way for Praat to recognize plugin directories.
   $args = strip_prefix($args);
-
-  # TODO(jja) This is to enable specific version requests. This feature is yet
-  #           to be implemented.
-#   foreach (@{$args}) {
-#     my @parts = split /-/, $_;
-#     push @parts, '' unless /-\d+\.\d+\.\d+$/;
-#     my $version = pop @parts;
-#     my $name = join '-', @parts;
-#     $_ = {
-#       version => $version,
-#       name    => $name,
-#     };
-#   }
+  
+  # Git support is enabled if
+  # 1. git is available
+  # 2. Git::Repository is installed
+  # 3. The user has not turned it off by setting --nogit
+  if (!defined $opt->{git} or $opt->{git}) {
+    try {
+      require Git::Repository;
+      $opt->{git} = 1;
+    }
+    catch {
+      unless (defined $opt->{debug}) {
+        warn "Disabling git support (use --debug to see why)\n";
+      }
+      else {
+        warn "$_";
+        warn "Disabling git support\n";
+      }
+      $opt->{git} = 0;
+    }
+  }
 }
 
 =head1 EXAMPLES
@@ -226,6 +235,20 @@ By default, an installed plugin will be ignored with a warning. If this option
 is enabled, all requested plugins will be marked for installation, even if
 already installed.
 
+=item B<--git>, B<-g>
+=item B<--nogit>
+
+By default, B<install> will try to use B<git> to download and manage new
+plugins. For this to work, B<install> needs to be able to find the git in the
+local system, and the B<Git::Repository> module for perl needs to be installed.
+
+If both these requirements are met, git support will be enabled making it
+possible to request specific versions. The resulting plugin directories will be
+working git repositories as well.
+
+If this is undesirable (and the conditions are met), this can be disabled with
+the B<--nogit> option.
+
 =item B<--debug>, B<-D>
 
 Print debug messages.
@@ -236,9 +259,10 @@ Print debug messages.
 
 sub opt_spec {
   return (
-    [ "yes|y"       => "assume yes for all questions" ],
-    [ "force|F"     => "ignore failing tests"         ],
-    [ "reinstall|r" => "re-install requested plugins" ],
+    [ "yes|y"       => "assume yes for all questions"  ],
+    [ "force|F"     => "ignore failing tests"          ],
+    [ "reinstall|r" => "re-install requested plugins"  ],
+    [ "git|g!"      => "request / disable git support" ],
   );
 }
 
