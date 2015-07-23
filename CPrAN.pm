@@ -278,13 +278,13 @@ an array of hashes properly formatted for processing with order_dependencies()
 sub dependencies {
   my ($opt, $args) = @_;
 
-  use GitLab::API::Tiny::v3;
+  use WWW::GitLab::v3;
   use CPrAN::Plugin;
 
   # If the argument is a scalar, convert it to a list with it as its single item
   $args = [ $args ] if (ref $args ne 'ARRAY');
 
-  my $api = GitLab::API::Tiny::v3->new(
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );

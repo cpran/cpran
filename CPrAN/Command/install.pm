@@ -280,9 +280,9 @@ disk.
 sub get_archive {
   my ($opt, $name, $version) = @_;
 
-  use GitLab::API::Tiny::v3;
+  use WWW::GitLab::v3;
 
-  my $api = GitLab::API::Tiny::v3->new(
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );

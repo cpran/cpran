@@ -83,9 +83,12 @@ Returns the serialised downloaded descriptor.
 
 # TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
 sub fetch_descriptor {
-  use GitLab::API::Tiny::v3;
+  use WWW::GitLab::v3;
   use YAML::XS;
   use Path::Class;
+  use Encode qw(encode decode);
+  use Data::Dumper;
+  use Try::Tiny;
 
   my ($self, $opt, $source) = @_;
   my $name;
@@ -93,18 +96,18 @@ sub fetch_descriptor {
   if ($source->{name} =~ /^plugin_(\w+)$/) { $name = $1 }
   else { die "Project is not a plugin" }
 
-  my $api = GitLab::API::Tiny::v3->new(
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
 
   my $commit = shift @{$api->commits( $source->{id} )};
 
-  my $descriptor = $api->blob(
+  my $descriptor = encode('utf-8', $api->blob(
     $source->{id},
     $commit->{id},
     { filepath => 'cpran.yaml' }
-  );
+  ), Encode::FB_CROAK );
 
   eval { YAML::XS::Load( $descriptor ) };
   if ($@) {
@@ -128,11 +131,11 @@ can find in the CPrAN group.
 =cut
 
 sub list_projects {
-  use GitLab::API::Tiny::v3;
+  use WWW::GitLab::v3;
 
   my ($self, $opt, $args) = @_;
 
-  my $api = GitLab::API::Tiny::v3->new(
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
