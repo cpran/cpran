@@ -170,7 +170,7 @@ Runs tests for the plugin (if any). Returns the result of those tests.
 =cut
 
 sub test {
-  use Test::Harness;
+  use App::Prove;
   use Path::Class;
 
   my ($self) = @_;
@@ -184,34 +184,27 @@ sub test {
   #           removed when all goes well.
   die "$self->{name} is not installed" unless ($self->is_installed);
 
-  my $path = dir($self->{root}, 't');
-  unless ( -e $path ) {
-    warn "No tests for $self->{name}\n" if $opt->{verbose};
-    return undef;
-  }
-
-  opendir (DIR, $path) or Carp::croak "$path: " . $!;
-
-  my @tests;
-  while (my $file = readdir(DIR)) {
-    push @tests, file($path, $file) if ($file =~ /\.t$/);
-  }
-  @tests = sort @tests;
-
   # Run the tests
+  my $prove = App::Prove->new;
+  my @args;
+  
   my $praat;
   for ($^O) {
     if    (/darwin/)  { $praat = 'Praat'    } # Untested
     elsif (/MSWin32/) { $praat = 'praatcon' }
     else              { $praat = 'praat'    }
   }
-  my $harness = TAP::Harness->new({
-    failures  => 1,
-    exec => [ $praat, '-a' ], # Request ANSI console
-  });
-  my $aggregator = $harness->runtests(@tests);
+  push @args, ('--exec', "$praat -a");
+  
+  my $log = dir($self->{root}, 'log');
+  unless ( -e $log ) {
+    $log = 'test_log.tgz';
+    warn "No log directory found. Archiving test log to $log\n" if $opt->{verbose};
+  }
+  push @args, ('--archive', $log);
 
-  if ($aggregator->all_passed) { return 1 } else { return 0 }
+  $prove->process_args( @args );
+  if ($prove->run) { return 1 } else { return 0 };
 }
 
 =item print(I<FIELD>)
