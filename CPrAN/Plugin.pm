@@ -37,7 +37,7 @@ sub new {
 
   $self->_init();
 
-  die "Plugin is uninstalled and unknown. Inconceivable"
+  die "No local or remote plugin named \"$name\" is known. Maybe try update?\n"
     unless ($self->{cpran} || $self->{installed});
 
   return $self;

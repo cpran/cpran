@@ -89,7 +89,12 @@ sub execute {
       $_;
     }
     else {
-      CPrAN::Plugin->new( $_ );
+      try   { CPrAN::Plugin->new( $_ ) }
+      catch {
+        warn $_;
+        warn "Aborting\n";
+        exit 1;
+      };
     }
   } @{$args};
 
@@ -109,9 +114,9 @@ sub execute {
           push @todo, $plugin;
         }
       }
-      else { warn "W: $plugin->{name} is not a CPrAN plugin\n" if $opt->{debug} }
+      else { warn "$plugin->{name} is not a CPrAN plugin\n" if $opt->{debug} }
     }
-    else { warn "W: $plugin->{name} is not installed\n" }
+    else { warn "$plugin->{name} is not installed\n" }
   }
 
   if (@todo) {
@@ -169,7 +174,8 @@ sub execute {
           }
           catch {
             warn "$_";
-            die "Aborting\n";
+            warn "Aborting\n";
+            exit 1;
           }
         }
         else {
