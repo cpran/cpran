@@ -42,6 +42,35 @@ sub validate_args {
 
   $self->usage_error("Missing arguments") unless @{$args};
 
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      use CPrAN::Praat;
+      my $praat = CPrAN::Praat->new;
+    
+      unless (defined $praat->{path}) {
+        warn "Praat is not installed. Use 'cpran install praat' to install it\n";
+        exit 0;
+      }
+    
+      unless ($opt->{quiet}) {
+        print "Praat will be permanently REMOVED:\n";
+        print "Do you want to continue? [y/N] ";
+      }
+      if (CPrAN::yesno( $opt, 'n' )) {
+        try {
+          $praat->remove;
+        }
+        catch {
+          die "Could not remove Praat: $_\n"
+        };
+        print "Done.\n" unless $opt->{quiet};
+      }
+    }
+  }
+
   my $prefix_warning = 0;
   foreach (0..$#{$args}) {
     if ($args->[$_] =~ /^plugin_/) {

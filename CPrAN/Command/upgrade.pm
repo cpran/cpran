@@ -49,8 +49,6 @@ sub validate_args {
       die "Praat must be the only argument for processing\n";
     }
     else {
-      print "Processing Praat...\n" unless $opt->{quiet};
-    
       $self->_praat($opt);
     }
   }

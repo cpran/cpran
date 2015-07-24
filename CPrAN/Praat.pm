@@ -31,10 +31,6 @@ sub new {
   my ($class) = @_;
   
   my $self = {
-    current => undef,
-    latest  => undef,
-    path    => undef,
-    bit     => undef,
     home    => 'http://www.fon.hum.uva.nl/praat/',
   };
   
@@ -133,7 +129,7 @@ sub remove {
     unless defined $self->{path};
 
   my $removed = unlink($self->{path})
-    or die "Could not remove $$self->{path}: $!\n";
+    or die "Could not remove $self->{path}: $!\n";
   return $removed;
 }
 

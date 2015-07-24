@@ -50,10 +50,19 @@ sub validate_args {
 
   $self->usage_error("Missing arguments") unless @{$args};
 
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      $self->_praat($opt);
+    }
+  }
+  
   # Users might be tempted to input the names of plugin as "plugin_name", but
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
   # but a (clumsy) way for Praat to recognize plugin directories.
-  $args = strip_prefix($args);
+  $args = strip_prefix($args, $opt);
   
   # Git support is enabled if
   # 1. git is available
@@ -258,10 +267,11 @@ Print debug messages.
 
 sub opt_spec {
   return (
-    [ "yes|y"       => "assume yes for all questions"  ],
-    [ "force|F"     => "ignore failing tests"          ],
-    [ "reinstall|r" => "re-install requested plugins"  ],
-    [ "git|g!"      => "request / disable git support" ],
+    [ "yes|y"       => "assume yes for all questions"        ],
+    [ "force|F"     => "ignore failing tests"                ],
+    [ "reinstall|r" => "re-install requested plugins"        ],
+    [ "git|g!"      => "request / disable git support"       ],
+    [ "path"        => "specify path for Praat installation" ],
   );
 }
 
@@ -458,17 +468,96 @@ reference to the same list, without the prefix.
 =cut
 
 sub strip_prefix {
-  my $args = shift;
+  my ($args, $opt) = @_;
 
   my $prefix_warning = 0;
   foreach (@{$args}) {
     $prefix_warning = 1 if (/^plugin_/);
     s/^plugin_//;
   };
-  warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
-    if ($prefix_warning);
+  warn "Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
+    if ($prefix_warning and !$opt->{quiet});
 
   return $args;
+}
+
+sub _praat {
+  use CPrAN::Praat;
+  use Path::Class;
+  
+  my ($self, $opt) = @_;
+  
+  try {
+    my $praat = CPrAN::Praat->new();
+    
+    if (defined $praat->{path}) {
+      unless (defined $opt->{reinstall}) {
+        warn "Praat is already installed. Use --reinstall to ignore this warning\n";
+        exit 0;
+      }
+    }
+    else {
+      if ($^O =~ /darwin/) {
+        print "** MacOS is a jungle! Completely uncharted territory! **\n";
+        # Use hdiutil and cp?
+        #     hdituil mount some.dmg
+        #     cp -R "/Volumes/Praat/Praat.app" "/Applications" (as sudo)
+        #     hdiutil umount "/Volumes/Praat"
+      }
+      else {
+        use Cwd;
+        $praat->{path} = $opt->{path} // getcwd;
+        $praat->{path} = file($praat->{path}, $praat->{bin})->stringify;        
+      }
+    }
+    
+    # TODO(jja) Should we check for the target path to be in PATH?
+    
+    print "Querying server for latest version...\n" unless $opt->{quiet};
+    unless ($opt->{quiet}) {
+      print "Praat v", $praat->latest, " will be INSTALLED in $praat->{path}\n";
+      print "Do you want to continue? [y/N] ";
+    }
+    if (CPrAN::yesno( $opt, 'n' )) {
+      
+      print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n" unless $opt->{quiet}; 
+      my $archive = $praat->download( $praat->latest );
+        
+      use File::Temp;
+      my $package = File::Temp->new(
+        template => 'praat' . $praat->latest . '-XXXXX',
+        suffix => $praat->{ext},
+      );
+
+      my $extract = File::Temp->newdir(
+        template => 'praat-XXXXX',
+      );
+
+      print "Saving archive to ", $package->filename, "\n";
+      use Path::Class;
+      my $fh = Path::Class::file( $package->filename )->openw();
+      binmode($fh);
+      $fh->print($archive);
+
+      print "Extracting package to $praat->{path}...\n";
+
+      # Extract archives
+      use Archive::Extract;
+      
+      my $ae = Archive::Extract->new( archive => $package->filename );
+      $ae->extract( to => $extract )
+        or die "Could not extract package: $ae->error";
+      
+      use Path::Class;
+      my $file = file($ae->extract_path, $ae->files->[0]);
+      File::Copy::move $file, $praat->{path}
+        or die "Could not move file: $!\n";
+    }
+  }
+  catch {
+    die "Could not install Praat", ($opt->{debug}) ? ": $_" : ".\n";
+  };
+  exit 0;
 }
 
 =back
