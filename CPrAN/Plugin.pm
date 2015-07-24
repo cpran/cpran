@@ -138,8 +138,8 @@ sub url {
   
   return undef unless defined $self->{remote};
 
-  use GitLab::API::Tiny::v3;
-  my $api = GitLab::API::Tiny::v3->new(
+  use WWW::GitLab::v3;
+  my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );

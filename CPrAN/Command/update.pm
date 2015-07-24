@@ -56,14 +56,16 @@ sub execute {
 
   my $projects = list_projects($self, $opt, $args);
 
-  my $descriptors;
+  use CPrAN::Plugin;
+  my @updated;
   foreach my $source (@{$projects}) {
     if ($source->{name} =~ /^plugin_(\w+)$/) {
       print "Fetching $1...\n" if $opt->{verbose};
-      $descriptors .= fetch_descriptor($self, $opt, $source);
+      fetch_descriptor($self, $opt, $source);
+      push @updated, CPrAN::Plugin->new($1);
     }
   }
-  return $descriptors;
+  return \@updated;
 }
 
 =head1 METHODS
@@ -82,6 +84,7 @@ Returns the serialised downloaded descriptor.
 =cut
 
 # TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
+# TODO(jja) The fetching probably belongs in CPrAN::Plugin
 sub fetch_descriptor {
   use WWW::GitLab::v3;
   use YAML::XS;
