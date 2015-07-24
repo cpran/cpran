@@ -44,25 +44,32 @@ is not currently implemented.
 sub validate_args {
   my ($self, $opt, $args) = @_;
   
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      print "Processing Praat...\n" unless $opt->{quiet};
+    
+      $self->_praat($opt);
+    }
+  }
+  
+  $args = [ CPrAN::installed ] unless (@{$args});
+  
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
   # 3. The user has not turned it off by setting --nogit
   if (!defined $opt->{git} or $opt->{git}) {
     try {
-      die "W: Could not find path to git binary. Is git installed?\n"
+      die "Could not find path to git binary. Is git installed?\n"
         unless defined which('git');
       require Git::Repository;
       $opt->{git} = 1;
     }
     catch {
-      unless (defined $opt->{debug}) {
-        warn "W: Disabling git support (use --debug to see why)\n";
-      }
-      else {
-        warn "$_";
-        warn "W: Disabling git support\n";
-      }
+      warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
       $opt->{git} = 0;
     }
   }
@@ -83,7 +90,6 @@ sub execute {
 
   my ($self, $opt, $args) = @_;
 
-  $args = [ CPrAN::installed() ] unless (@{$args});
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -235,6 +241,71 @@ sub opt_spec {
 =head1 METHODS
 
 =over
+
+=cut 
+
+sub _praat {
+  use CPrAN::Praat;
+  
+  my ($self, $opt) = @_;
+  
+  try {
+    my $praat = CPrAN::Praat->new();
+    print "Querying server for latest version...\n" unless $opt->{quiet};
+    if ($praat->current < $praat->latest) {
+      unless ($opt->{quiet}) {
+        print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
+        print "Do you want to continue? [y/N] ";
+      }
+      if (CPrAN::yesno( $opt, 'n' )) {
+        
+        print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n" unless $opt->{quiet}; 
+        my $archive = $praat->download( $praat->latest );
+          
+        use File::Temp;
+        my $package = File::Temp->new(
+          template => 'praat' . $praat->latest . '-XXXXX',
+          suffix => $praat->{ext},
+        );
+
+        my $extract = File::Temp->newdir(
+          template => 'praat-XXXXX',
+        );
+
+        print "Saving archive to ", $package->filename, "\n";
+        use Path::Class;
+        my $fh = Path::Class::file( $package->filename )->openw();
+        binmode($fh);
+        $fh->print($archive);
+
+        print "Removing current version of Praat...\n" unless $opt->{quiet};
+        $praat->remove;
+
+        print "Extracting package to $praat->{path}...\n";
+
+        # Extract archives
+        use Archive::Extract;
+        
+        my $ae = Archive::Extract->new( archive => $package->filename );
+        $ae->extract( to => $extract )
+          or die "Could not extract package: $ae->error";
+        
+        use Path::Class;
+        my $file = file($ae->extract_path, $ae->files->[0]);
+        File::Copy::move $file, $praat->{path}
+          or die "Could not move file: $!\n";
+      }
+    }
+    else {
+      print "Praat is already at its latest version (", $praat->current, ")\n";
+      exit 0;
+    }
+  }
+  catch {
+    die "Could not upgrade Praat", ($opt->{debug}) ? ": $_" : ".\n";
+  };
+  exit 0;
+}
 
 =back
 
