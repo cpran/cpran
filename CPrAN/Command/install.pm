@@ -8,6 +8,7 @@ use warnings;
 
 use Carp;
 use Try::Tiny;
+use File::Which;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -60,17 +61,13 @@ sub validate_args {
   # 3. The user has not turned it off by setting --nogit
   if (!defined $opt->{git} or $opt->{git}) {
     try {
+      die "Could not find path to git binary. Is git installed?\n"
+        unless defined which('git');
       require Git::Repository;
       $opt->{git} = 1;
     }
     catch {
-      unless (defined $opt->{debug}) {
-        warn "Disabling git support (use --debug to see why)\n";
-      }
-      else {
-        warn "$_";
-        warn "Disabling git support\n";
-      }
+      warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
       $opt->{git} = 0;
     }
   }
@@ -121,7 +118,7 @@ sub execute {
       if ($plugin->is_installed) {
         if ($opt->{reinstall}) { $install = 1 }
         else {
-          warn "W: $plugin->{name} is already installed. Use --reinstall to ignore this warning\n";
+          warn "$plugin->{name} is already installed. Use --reinstall to ignore this warning\n";
         }
       }
       else { $install = 1 }
@@ -129,7 +126,7 @@ sub execute {
       push @todo, $plugin if $install;
     }
     else {
-      warn "W: $plugin->{name} is not in CPrAN database. Have you run update?\n"
+      warn "$plugin->{name} is not in CPrAN database. Have you run update?\n"
     }
   }
 
@@ -160,28 +157,28 @@ sub execute {
     if (CPrAN::yesno( $opt, 'n' )) {
       foreach my $plugin (@schedule) {
 
-        # Now that we know what plugins to install and in what order, we get
-        # them and install them
-        my $archive = get_archive( $opt, $plugin->{name}, '' );
+        # Now that we know what plugins to install and in what order, we
+        # install them
+        
+        if ($opt->{git}) {
+          try   { Git::Repository->run( clone => $plugin->url, $plugin->{root} ) }
+          catch { die "Error: could not clone repository.\n", ($opt->{debug}) ? "$_\n" : '' };
+        }
+        else {
+          my $archive = get_archive( $opt, $plugin->{name}, '' );
 
-        print "Extracting...\n" unless ($opt->{quiet});
-        install( $opt, $archive );
+          print "Extracting...\n" unless $opt->{quiet};
+          install( $opt, $archive );
+        }
 
-        print "Testing $plugin->{name}...\n" unless ($opt->{quiet});
+        print "Testing $plugin->{name}...\n" unless $opt->{quiet};
         $plugin->update;
 
         my $success = $plugin->test;
-        if ($Config{osname} eq 'MSWin32') {
-          unless ($opt->{quiet}) {
-            warn "Tests do not currently work on Windows. Ignoring tests!\n";
-            warn "See https://gitlab.com/cpran/plugin_cpran/issues/16 for more information.\n";
-          }
-          $success = 1;
-        }
 
         unless ($success) {
           if ($opt->{force}) {
-            warn "Tests failed, but continuing anyway because of --force\n" unless ($opt->{quiet});
+            warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
           }
           else {
             unless ($opt->{quiet}) {
@@ -196,10 +193,12 @@ sub execute {
 
             my $cmd = CPrAN::Command::remove->new({});
             $app->execute_command($cmd, \%params, $plugin->{name});
+            
+            exit 1;
           }
         }
         else {
-          print "$plugin->{name} installed successfully.\n" unless ($opt->{quiet});
+          print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
         }
 
         if ($plugin->{name} eq 'cpran') {
@@ -212,7 +211,7 @@ sub execute {
       }
     }
     else {
-      print "Abort.\n" unless ($opt->{quiet});
+      print "Abort.\n" unless $opt->{quiet};
     }
   }
 }

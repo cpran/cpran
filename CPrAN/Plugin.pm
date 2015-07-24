@@ -49,14 +49,14 @@ sub _init {
   my ($self) = @_;
 
   my $root = dir(CPrAN::praat(), 'plugin_' . $self->{name});
+  $self->{root} = $root->stringify;
 
   if ( -e $root ) {
-    $self->{root} = $root->stringify;
     $self->{installed} = 1;
   }
 
   $self->{'local'} = $self->_read(
-    file($root, 'cpran.yaml')
+    file($self->{root}, 'cpran.yaml')
   );
   $self->{'remote'} = $self->_read(
     file(CPrAN::root(), $self->{name})
@@ -103,6 +103,29 @@ sub update {
   $self->_init;
 }
 
+=item B<url()>
+
+Gets the plugin URL, pointing to the clonable git repository
+
+=cut
+
+sub url {
+  my ($self) = @_;
+
+  return undef unless defined $self->{remote};
+
+  use GitLab::API::Tiny::v3;
+  my $api = GitLab::API::Tiny::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
+    return $_->{http_url_to_repo} if ($_->{name} eq 'plugin_' . $self->{name});
+  }
+  return undef;
+}
+
 =item remote_id()
 
 Fetches the CPrAN remote id for the plugin.
@@ -141,8 +164,8 @@ sub is_latest {
   my ($self) = @_;
 
   return undef unless (defined $self->{remote});
-  return 0 if (!defined $self->{local});
-  return 1 if ($self->{remote}->{version} == $self->{local}->{version});
+  return 0     unless (defined $self->{local});
+  return 1 if ($self->{remote}->{version} eq $self->{local}->{version});
 
   die "Incorrectly formatted version number: $a, $b"
     if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
