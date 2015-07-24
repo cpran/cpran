@@ -49,14 +49,14 @@ sub _init {
   my ($self) = @_;
 
   my $root = dir(CPrAN::praat(), 'plugin_' . $self->{name});
+  $self->{root} = $root->stringify;
 
   if ( -e $root ) {
-    $self->{root} = $root->stringify;
     $self->{installed} = 1;
   }
 
   $self->{'local'} = $self->_read(
-    file($root, 'cpran.yaml')
+    file($self->{root}, 'cpran.yaml')
   );
   $self->{'remote'} = $self->_read(
     file(CPrAN::root(), $self->{name})
@@ -103,13 +103,67 @@ sub update {
   $self->_init;
 }
 
-=item remote_id()
+=item B<root()>
+
+Returns the plugin's root directory.
+
+=cut
+
+sub root {
+  my ($self) = @_;
+  return $self->{root};
+}
+
+=item B<name()>
+
+Returns the plugin's name.
+
+=cut
+
+sub name {
+  my ($self) = @_;
+  return $self->{name};
+}
+
+=item B<url()>
+
+Gets the plugin URL, pointing to the clonable git repository
+
+=cut
+
+sub url {
+  my ($self) = @_;
+
+  print "Generating URL\n";
+  
+  return undef unless defined $self->{remote};
+
+  use GitLab::API::Tiny::v3;
+  my $api = GitLab::API::Tiny::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  $self->{url} = undef;
+  foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
+    if ($_->{name} eq 'plugin_' . $self->{name}) {
+      $self->{url} = $_->{http_url_to_repo};
+      last;
+    }
+  }
+  
+  *CPrAN::Plugin::url = sub { print "Saved URL\n"; return $_[0]->{url} };
+}
+
+=item id()
 
 Fetches the CPrAN remote id for the plugin.
 
 =cut
 
-sub remote_id {
+sub id {
+  print "Generating ID\n";
+  
   my $self = shift;
 
   return undef unless defined $self->{remote};
@@ -120,10 +174,15 @@ sub remote_id {
     token => CPrAN::api_token(),
   );
 
+  my $self->{id} = undef;
   foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
-    return $_->{id} if ($_->{name} eq 'plugin_' . $self->{name});
+    if ($_->{name} eq 'plugin_' . $self->{name}) {
+      $self->{id} = $_->{id};
+      last;
+    }
   }
-  return undef;
+  
+  *CPrAN::Plugin::id = sub { print "Saved ID\n"; return $_[0]->{id} };
 }
 
 =item is_latest()

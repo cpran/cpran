@@ -7,6 +7,8 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
+use File::Which;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -52,19 +54,23 @@ sub validate_args {
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
   # but a (clumsy) way for Praat to recognize plugin directories.
   $args = strip_prefix($args);
-
-  # TODO(jja) This is to enable specific version requests. This feature is yet
-  #           to be implemented.
-#   foreach (@{$args}) {
-#     my @parts = split /-/, $_;
-#     push @parts, '' unless /-\d+\.\d+\.\d+$/;
-#     my $version = pop @parts;
-#     my $name = join '-', @parts;
-#     $_ = {
-#       version => $version,
-#       name    => $name,
-#     };
-#   }
+  
+  # Git support is enabled if
+  # 1. git is available
+  # 2. Git::Repository is installed
+  # 3. The user has not turned it off by setting --nogit
+  if (!defined $opt->{git} or $opt->{git}) {
+    try {
+      die "Could not find path to git binary. Is git installed?\n"
+        unless defined which('git');
+      require Git::Repository;
+      $opt->{git} = 1;
+    }
+    catch {
+      warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
+      $opt->{git} = 0;
+    }
+  }
 }
 
 =head1 EXAMPLES
@@ -112,7 +118,7 @@ sub execute {
       if ($plugin->is_installed) {
         if ($opt->{reinstall}) { $install = 1 }
         else {
-          warn "W: $plugin->{name} is already installed. Use --reinstall to ignore this warning\n";
+          warn "$plugin->{name} is already installed. Use --reinstall to ignore this warning\n";
         }
       }
       else { $install = 1 }
@@ -120,7 +126,7 @@ sub execute {
       push @todo, $plugin if $install;
     }
     else {
-      warn "W: $plugin->{name} is not in CPrAN database. Have you run update?\n"
+      warn "$plugin->{name} is not in CPrAN database. Have you run update?\n"
     }
   }
 
@@ -151,28 +157,28 @@ sub execute {
     if (CPrAN::yesno( $opt, 'n' )) {
       foreach my $plugin (@schedule) {
 
-        # Now that we know what plugins to install and in what order, we get
-        # them and install them
-        my $archive = get_archive( $opt, $plugin->{name}, '' );
+        # Now that we know what plugins to install and in what order, we
+        # install them
+        
+        if ($opt->{git}) {
+          try   { Git::Repository->run( clone => $plugin->url, $plugin->root ) }
+          catch { die "Error: could not clone repository.\n", ($opt->{debug}) ? "$_\n" : '' };
+        }
+        else {
+          my $archive = get_archive( $opt, $plugin->{name}, '' );
 
-        print "Extracting...\n" unless ($opt->{quiet});
-        install( $opt, $archive );
+          print "Extracting...\n" unless $opt->{quiet};
+          install( $opt, $archive );
+        }
 
-        print "Testing $plugin->{name}...\n" unless ($opt->{quiet});
+        print "Testing $plugin->{name}...\n" unless $opt->{quiet};
         $plugin->update;
 
         my $success = $plugin->test;
-        if ($Config{osname} eq 'MSWin32') {
-          unless ($opt->{quiet}) {
-            warn "Tests do not currently work on Windows. Ignoring tests!\n";
-            warn "See https://gitlab.com/cpran/plugin_cpran/issues/16 for more information.\n";
-          }
-          $success = 1;
-        }
 
         unless ($success) {
           if ($opt->{force}) {
-            warn "Tests failed, but continuing anyway because of --force\n" unless ($opt->{quiet});
+            warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
           }
           else {
             unless ($opt->{quiet}) {
@@ -187,10 +193,12 @@ sub execute {
 
             my $cmd = CPrAN::Command::remove->new({});
             $app->execute_command($cmd, \%params, $plugin->{name});
+            
+            exit 1;
           }
         }
         else {
-          print "$plugin->{name} installed successfully.\n" unless ($opt->{quiet});
+          print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
         }
 
         if ($plugin->{name} eq 'cpran') {
@@ -203,7 +211,7 @@ sub execute {
       }
     }
     else {
-      print "Abort.\n" unless ($opt->{quiet});
+      print "Abort.\n" unless $opt->{quiet};
     }
   }
 }
@@ -226,6 +234,20 @@ By default, an installed plugin will be ignored with a warning. If this option
 is enabled, all requested plugins will be marked for installation, even if
 already installed.
 
+=item B<--git>, B<-g>
+=item B<--nogit>
+
+By default, B<install> will try to use B<git> to download and manage new
+plugins. For this to work, B<install> needs to be able to find the git in the
+local system, and the B<Git::Repository> module for perl needs to be installed.
+
+If both these requirements are met, git support will be enabled making it
+possible to request specific versions. The resulting plugin directories will be
+working git repositories as well.
+
+If this is undesirable (and the conditions are met), this can be disabled with
+the B<--nogit> option.
+
 =item B<--debug>, B<-D>
 
 Print debug messages.
@@ -236,9 +258,10 @@ Print debug messages.
 
 sub opt_spec {
   return (
-    [ "yes|y"       => "assume yes for all questions" ],
-    [ "force|F"     => "ignore failing tests"         ],
-    [ "reinstall|r" => "re-install requested plugins" ],
+    [ "yes|y"       => "assume yes for all questions"  ],
+    [ "force|F"     => "ignore failing tests"          ],
+    [ "reinstall|r" => "re-install requested plugins"  ],
+    [ "git|g!"      => "request / disable git support" ],
   );
 }
 

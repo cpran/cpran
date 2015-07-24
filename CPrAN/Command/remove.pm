@@ -106,9 +106,9 @@ sub execute {
         print "Removing $plugin->{name}...\n" unless ($opt->{quiet});
 
         # TODO(jja) Improve error checking
-        my $ret = dir($plugin->{root})->rmtree($opt->{verbose} - 1, $opt->{cautious});
+        my $ret = dir($plugin->root)->rmtree($opt->{verbose} - 1, $opt->{cautious});
         unless ($ret) {
-          warn "Could not completely remove $plugin->{root}\n" unless ($opt->{quiet});
+          warn "Could not completely remove ", $plugin->root, "\n" unless ($opt->{quiet});
         }
       }
     }
