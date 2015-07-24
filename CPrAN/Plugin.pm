@@ -141,8 +141,8 @@ sub is_latest {
   my ($self) = @_;
 
   return undef unless (defined $self->{remote});
-  return 0 if (!defined $self->{local});
-  return 1 if ($self->{remote}->{version} == $self->{local}->{version});
+  return 0     unless (defined $self->{local});
+  return 1 if ($self->{remote}->{version} eq $self->{local}->{version});
 
   die "Incorrectly formatted version number: $a, $b"
     if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
