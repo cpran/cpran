@@ -256,9 +256,15 @@ sub test {
   push @args, ('--exec', "$praat -a");
   
   my $log = dir($self->{root}, 'log');
+  my $log_file = 'cpran_log.tgz';
   unless ( -e $log ) {
-    $log = 'test_log.tgz';
+    $log = $log_file;
     warn "No log directory found. Archiving test log to $log\n" if $opt->{verbose};
+  }
+  else {
+    if (-e $log_file) {
+      unlink $log_file or warn "Could not delete $log_file";
+    }
   }
   push @args, ('--archive', $log);
 
