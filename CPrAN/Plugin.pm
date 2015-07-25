@@ -1,5 +1,8 @@
 package CPrAN::Plugin;
 
+use strict;
+use warnings;
+
 use Carp;
 binmode STDOUT, ':utf8';
 
@@ -75,10 +78,7 @@ Checks if plugin has a descriptor that CPrAN can use.
 
 =cut
 
-sub is_cpran {
-  my ($self) = @_;
-  return $self->{cpran};
-}
+sub is_cpran { return $_[0]->{cpran} }
 
 =item B<is_installed()>
 
@@ -86,10 +86,7 @@ Checks if the plugin is installed or not.
 
 =cut
 
-sub is_installed {
-  my ($self) = @_;
-  return $self->{installed};
-}
+sub is_installed { return $_[0]->{installed} }
 
 =item B<update()>
 
@@ -98,10 +95,7 @@ took place after the object's creation.
 
 =cut
 
-sub update {
-  my ($self) = @_;
-  $self->_init;
-}
+sub update { $_[0]->_init }
 
 =item B<root()>
 
@@ -109,10 +103,7 @@ Returns the plugin's root directory.
 
 =cut
 
-sub root {
-  my ($self) = @_;
-  return $self->{root};
-}
+sub root { return $_[0]->{root} }
 
 =item B<name()>
 
@@ -120,10 +111,7 @@ Returns the plugin's name.
 
 =cut
 
-sub name {
-  my ($self) = @_;
-  return $self->{name};
-}
+sub name { return $_[0]->{name} }
 
 =item B<url()>
 
@@ -134,9 +122,8 @@ Gets the plugin URL, pointing to the clonable git repository
 sub url {
   my ($self) = @_;
 
-  print "Generating URL\n";
-  
-  return undef unless defined $self->{remote};
+  return undef        unless defined $self->{remote};
+  return $self->{url} if     defined $self->{url};
 
   use WWW::GitLab::v3;
   my $api = WWW::GitLab::v3->new(
@@ -152,7 +139,7 @@ sub url {
     }
   }
   
-  *CPrAN::Plugin::url = sub { print "Saved URL\n"; return $_[0]->{url} };
+  return $self->{url};
 }
 
 =item id()
@@ -162,11 +149,10 @@ Fetches the CPrAN remote id for the plugin.
 =cut
 
 sub id {
-  print "Generating ID\n";
-  
   my $self = shift;
 
-  return undef unless defined $self->{remote};
+  return undef       unless defined $self->{remote};
+  return $self->{id} if     defined $self->{id};
 
   use WWW::GitLab::v3;
   my $api = WWW::GitLab::v3->new(
@@ -174,7 +160,7 @@ sub id {
     token => CPrAN::api_token(),
   );
 
-  my $self->{id} = undef;
+  $self->{id} = undef;
   foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
     if ($_->{name} eq 'plugin_' . $self->{name}) {
       $self->{id} = $_->{id};
@@ -182,7 +168,7 @@ sub id {
     }
   }
   
-  *CPrAN::Plugin::id = sub { print "Saved ID\n"; return $_[0]->{id} };
+  return $self->{id};
 }
 
 =item is_latest()
@@ -232,8 +218,9 @@ sub test {
   use App::Prove;
   use Path::Class;
 
-  my ($self) = @_;
-
+  my ($self, $opt) = @_;
+  $opt = $opt // {};
+  
   # TODO(jja) Plugins should be testable even before installation
   #           Perhaps the best way to do this would be to install them and then
   #           remove them if tests were unsuccessful. The removal would be
@@ -259,7 +246,7 @@ sub test {
   my $log_file = 'cpran_log.tgz';
   unless ( -e $log ) {
     $log = $log_file;
-    warn "No log directory found. Archiving test log to $log\n" if $opt->{verbose};
+    warn "No log directory found. Archiving test log to $log\n" unless defined $opt->{quiet};
   }
   else {
     if (-e $log_file) {
@@ -269,7 +256,8 @@ sub test {
   push @args, ('--archive', $log);
 
   $prove->process_args( @args );
-  if ($prove->run) { return 1 } else { return 0 };
+  
+  if ($prove->run) { return 1 } else { return 0 }
 }
 
 =item print(I<FIELD>)

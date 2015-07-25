@@ -161,7 +161,7 @@ sub execute {
     unless ($opt->{quiet}) {
       print "The following plugins will be INSTALLED:\n";
       print '  ', join(' ', map { $_->{name} } @schedule), "\n";
-      print "Do you want to continue? [y/N] ";
+      print "Do you want to continue?";
     }
     if (CPrAN::yesno( $opt, 'n' )) {
       foreach my $plugin (@schedule) {
@@ -271,7 +271,7 @@ sub opt_spec {
     [ "force|F"     => "ignore failing tests"                ],
     [ "reinstall|r" => "re-install requested plugins"        ],
     [ "git|g!"      => "request / disable git support"       ],
-    [ "path"        => "specify path for Praat installation" ],
+    [ "path=s"      => "specify path for Praat installation" ],
   );
 }
 
@@ -320,7 +320,7 @@ sub get_archive {
     token => CPrAN::api_token(),
   );
 
-  print "Downloading archive for $name\n" unless ($opt->{quiet});
+  print "Downloading archive for $name\n" unless $opt->{quiet};
 
   my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
   my $tag;
@@ -393,23 +393,23 @@ sub install {
     use Data::Dumper;
     warn "Something went wrong\n";
     print Dumper($next);
-    warn 'Please contact the author at jjatria@gmail.com\n';
+    warn "Please contact the author at jjatria\@gmail.com\n";
     exit 1;
   }
   $root = $root->full_path;
   $root = dir(CPrAN::praat(), $root);
   if (-e $root->stringify && $opt->{force}) {
-    print "Removing $root\n";
+    print "Removing $root\n" unless $opt->{quiet};
     use File::Path qw(remove_tree);
     remove_tree( $root->stringify, { verbose => $opt->{verbose} - 1, safe => 0, error => \my $e } );
     if (@{$e}) {
       foreach (@{$e}) {
         my ($file, $message) = %{$_};
           if ($file eq '') {
-          warn "General error: $message\n";
+          warn "General error: $message\n" unless $opt->{quiet};
         }
         else {
-          warn "Problem unlinking $file: $message\n";
+          warn "Problem unlinking $file: $message\n" unless $opt->{quiet};
         }
       }
     }
@@ -497,21 +497,35 @@ sub _praat {
         exit 0;
       }
     }
+    elsif (defined $opt->{path}) {
+      die "Path does not exist"
+        unless -e $opt->{path};
+        
+      die "Path is not a directory"
+        unless -d $opt->{path};
+      
+      $praat->{path} = $opt->{path};
+    }
     else {
-      # TODO(jja) How to specify where to install Praat?
+      # TODO(jja) Default paths. Where is best?
       if ($^O =~ /darwin/) {
-        print "** MacOS is a jungle! Completely uncharted territory! **\n";
+        warn "** MacOS is a jungle! Completely uncharted territory! **\n";
         # Use hdiutil and cp?
         #     hdituil mount some.dmg
         #     cp -R "/Volumes/Praat/Praat.app" "/Applications" (as sudo)
         #     hdiutil umount "/Volumes/Praat"
       }
-      else {
-      # TODO(jja) Currently installed to cwd if not installed already
-        use Cwd;
-        $praat->{path} = $opt->{path} // getcwd;
-        $praat->{path} = file($praat->{path}, $praat->{bin})->stringify;        
+      elsif ($^O =~ /MSWin32/) {
+        # Untested
+        $praat->{path} = dir('C:', 'Program Files', 'Praat')->stringify;
+        warn "Got $praat->{path}. Is this correct?\n";
       }
+      else {
+        $praat->{path} = dir('', 'usr', 'bin')->stringify;
+      }
+    }
+    unless (-w $praat->{path}) {
+      die "Cannot write to $praat->{path}.\n";
     }
     
     # TODO(jja) Should we check for the target path to be in PATH?
@@ -519,11 +533,13 @@ sub _praat {
     print "Querying server for latest version...\n" unless $opt->{quiet};
     unless ($opt->{quiet}) {
       print "Praat v", $praat->latest, " will be INSTALLED in $praat->{path}\n";
-      print "Do you want to continue? [y/N] ";
+      print "Do you want to continue?";
     }
-    if (CPrAN::yesno( $opt, 'n' )) {
+    if (CPrAN::yesno( $opt )) {
       
-      print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n" if $opt->{quiet} == 1; 
+      print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n"
+        if defined $opt->{quiet} && $opt->{quiet} == 1;
+        
       my $archive = $praat->download;
         
       use File::Temp;
@@ -553,13 +569,14 @@ sub _praat {
       
       use Path::Class;
       my $file = file($ae->extract_path, $ae->files->[0]);
-      File::Copy::move $file, $praat->{path}
+      File::Copy::move $file, file($praat->{path}, $praat->{bin})
         or die "Could not move file: $!\n";
     }
   }
   catch {
     die "Could not install Praat", ($opt->{debug}) ? ": $_" : ".\n";
   };
+  print "Praat succesfully installed\n" unless $opt->{quiet};
   exit 0;
 }
 

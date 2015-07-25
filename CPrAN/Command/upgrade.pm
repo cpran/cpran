@@ -173,7 +173,7 @@ sub execute {
               }
             }
             catch {
-              die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or use --force to discard them.\n";
+              die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or discard them with --force.\n";
             };
           }
           catch {

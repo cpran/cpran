@@ -362,7 +362,7 @@ receives a reference to the options hash, followed by the default answer (ie,
 the answer that will be entered if the user simply presses enter).
 
     my $opt = ( yes => 1 );            # Will automatically say 'yes'
-    print "Yes or no? [y/N] ";
+    print "Yes or no?";
     if (yesno($opt, 'n')) { print "You said yes\n" }
     else { print "You said no\n" }
 
@@ -374,6 +374,9 @@ responses.
 sub yesno {
   my ($opt, $default) = @_;
 
+  $default = $default // 'n';
+  $default = substr($default, 0, 1);
+  
   if ($opt->{quiet} && !$opt->{yes}) {
     return 0;
   }
@@ -383,6 +386,10 @@ sub yesno {
     return 1;
   }
 
+  my $prompt = " [y/n] ";
+  $prompt =~ s/($default)/\U$1/;
+  print $prompt unless $opt->{quiet};
+  
   my $input;
   $input = <STDIN>;
   chomp $input;

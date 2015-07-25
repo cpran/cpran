@@ -114,7 +114,7 @@ sub fetch_descriptor {
 
   eval { YAML::XS::Load( $descriptor ) };
   if ($@) {
-    warn "E: Could not parse YAML descriptor" if $opt->{verbose};
+    warn "Could not parse YAML descriptor" if $opt->{verbose};
     warn "$@" if ($opt->{verbose} > 1);
   } else {
     

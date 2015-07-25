@@ -17,9 +17,15 @@ B<CPrAN::Praat> - Praat pseudo-class for CPrAN
 
 my $praat = CPrAN::Praat->new();
 
-$praat->is_installed  ; checks for local copy
-$praat->is_cpran      ; checks for presence of descriptor
-$praat->upgrade       ; upgrade installed version of Praat
+# safely removes the locally installed copy of Praat
+$praat->remove
+
+# download the archive of the latest version of Praat
+$praat->download 
+
+# respectively return the current or latest version of Praat for this platform
+$praat->current
+$praat->latest
 
 =head1 DESCRIPTION
 
@@ -61,7 +67,13 @@ sub new {
   }
   
   use File::Which;
+  use Path::Class;
   $self->{path} = which($self->{bin});
+  if (defined $self->{path}) {
+    my @parts = file($self->{path})->components;
+    pop @parts;
+    $self->{path} = dir(@parts)->stringify;
+  }
   
   if (!defined $self->{bit}) {
     try {
@@ -86,37 +98,6 @@ sub new {
 
 =cut
 
-=item B<upgrade()>
-
-Upgrades Praat to the latest version.
-
-=cut
-
-sub upgrade {
-  my ($self) = @_;
-
-  die "Could not find path to $self->{bin}\n"
-    unless defined $self->{path};
-
-  $self->remove;
-  my $archive = $self->download;
-
-  print "Extracting package to $self->{path}...\n";
-  
-  {
-    # Extract archives
-    use Archive::Extract;
-    
-    my $ae = Archive::Extract->new( archive => $archive );
-    my $ok = $ae->extract( to => $self->{path} )
-      or die "Could not extract package: $ae->error";
-  }
-  
-  print "Removing downloaded package...\n";
-  
-  unlink $archive or warn "Could not delete $archive: $!";
-}
-
 =item B<remove()>
 
 Removes praat from disk
@@ -126,11 +107,16 @@ Removes praat from disk
 sub remove {
   my ($self) = @_;
 
+  use Path::Class;
+  
   die "Could not find path to $self->{bin}\n"
     unless defined $self->{path};
 
-  my $removed = unlink($self->{path})
-    or die "Could not remove $self->{path}: $!\n";
+  my $full = file($self->{path}, $self->{bin})->stringify;
+  
+  my $removed = unlink($full)
+    or die "Could not remove $full: $!\n";
+    
   return $removed;
 }
 
@@ -144,10 +130,12 @@ sub download {
   my ($self, $version) = @_;
 
   $version = $version // $self->latest;
+  my $opt = $self->{options};
+  $opt->{quiet} = $opt->{quiet} // 0;
 
   use LWP::UserAgent;
   my $ua = LWP::UserAgent->new();
-  $ua->show_progress( 1 - $self->{options}->{quiet} );
+  $ua->show_progress( 1 - $opt->{quiet} );
 
   my $response = $ua->get( $self->{home} . $self->{package} );
   if ($response->is_success) {
@@ -160,18 +148,6 @@ sub download {
 
 }
 
-=item B<install()>
-
-Installs a new version of Praat
-
-=cut
-
-sub install {
-  my ($self) = @_;
-  print "Install not implemented yet\n";
-  exit 0;
-}
-
 =item B<current()>
 
 Gets the current version of Praat
@@ -181,10 +157,10 @@ Gets the current version of Praat
 sub current {
   my ($self) = @_;
 
+  return $self->{current} if defined $self->{current};  
+
   die "Could not find path to $self->{bin}\n"
     unless defined $self->{path};
-
-  return $self->{current} if defined $self->{current};  
     
   try {
     my $tmpfile = File::Temp->new(TEMPLATE => 'pscXXXXX');
@@ -211,13 +187,13 @@ Gets the latest version of Praat
 =cut
 
 sub latest {
-  use HTML::Tree;
-  use LWP::UserAgent;
-  use Data::Printer;
-  
   my ($self) = @_;
   
   return $self->{latest} if defined $self->{latest};
+  
+  use HTML::Tree;
+  use LWP::UserAgent;
+  use Data::Printer;
   
   my $tree    = HTML::Tree->new();
   my $ua      = LWP::UserAgent->new;
