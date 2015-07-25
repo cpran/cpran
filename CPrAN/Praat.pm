@@ -28,10 +28,11 @@ A pseudo-class to encapsulate CPrAN's handling of Praat itself.
 =cut
 
 sub new {
-  my ($class) = @_;
+  my ($class, $opt) = @_;
   
   my $self = {
     home    => 'http://www.fon.hum.uva.nl/praat/',
+    options => $opt // {},
   };
   
   for ($^O) {
@@ -146,7 +147,7 @@ sub download {
 
   use LWP::UserAgent;
   my $ua = LWP::UserAgent->new();
-  $ua->show_progress( 1 );
+  $ua->show_progress( 1 - $self->{options}->{quiet} );
 
   my $response = $ua->get( $self->{home} . $self->{package} );
   if ($response->is_success) {
@@ -183,6 +184,8 @@ sub current {
   die "Could not find path to $self->{bin}\n"
     unless defined $self->{path};
 
+  return $self->{current} if defined $self->{current};  
+    
   try {
     my $tmpfile = File::Temp->new(TEMPLATE => 'pscXXXXX');
     
@@ -198,11 +201,6 @@ sub current {
     die "Could not get current version of Praat: $_\n";
   };
 
-  {
-    no warnings 'redefine';
-    *CPrAN::Praat::current = sub { return $self->{current} };
-  }
-  
   return $self->{current};
 }
 
@@ -219,6 +217,8 @@ sub latest {
   
   my ($self) = @_;
   
+  return $self->{latest} if defined $self->{latest};
+  
   my $tree    = HTML::Tree->new();
   my $ua      = LWP::UserAgent->new;
   my $package = qr/^praat(?'version'[0-9]{4})_$self->{os}$self->{bit}$self->{ext}/;
@@ -231,18 +231,14 @@ sub latest {
       '_tag', 'a',
       sub { $_[0]->as_text =~ /$package/; }
     );
-    $self->{package} = $pkglink->as_trimmed_text;
-    $self->{latest} = $+{version} if $self->{package} =~ /$package/;
+    $self->{'package'} = $pkglink->as_trimmed_text;
+    $self->{latest} = $+{version} if ($self->{package} =~ /$package/);
+    
   }
   else {
     die $response->status_line;
   }
   
-  {
-    no warnings 'redefine';
-    *CPrAN::Praat::latest = sub { return $self->{latest} };
-  }
-
   return $self->{latest};
 }
 

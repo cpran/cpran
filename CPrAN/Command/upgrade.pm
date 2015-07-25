@@ -44,15 +44,6 @@ is not currently implemented.
 sub validate_args {
   my ($self, $opt, $args) = @_;
   
-  if (grep { /praat/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      $self->_praat($opt);
-    }
-  }
-  
   $args = [ CPrAN::installed ] unless (@{$args});
   
   # Git support is enabled if
@@ -87,6 +78,15 @@ sub execute {
   use CPrAN::Plugin;
 
   my ($self, $opt, $args) = @_;
+  
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      $self->_praat($opt);
+    }
+  }
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
@@ -257,41 +257,13 @@ sub _praat {
       }
       if (CPrAN::yesno( $opt, 'n' )) {
         
-        print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n" unless $opt->{quiet}; 
-        my $archive = $praat->download( $praat->latest );
-          
-        use File::Temp;
-        my $package = File::Temp->new(
-          template => 'praat' . $praat->latest . '-XXXXX',
-          suffix => $praat->{ext},
-        );
-
-        my $extract = File::Temp->newdir(
-          template => 'praat-XXXXX',
-        );
-
-        print "Saving archive to ", $package->filename, "\n";
-        use Path::Class;
-        my $fh = Path::Class::file( $package->filename )->openw();
-        binmode($fh);
-        $fh->print($archive);
-
-        print "Removing current version of Praat...\n" unless $opt->{quiet};
-        $praat->remove;
-
-        print "Extracting package to $praat->{path}...\n";
-
-        # Extract archives
-        use Archive::Extract;
+        my $app = CPrAN->new;
+        my %params = %{$opt};
+        $params{yes} = $params{reinstall} = 1;
+        # TODO(jja) Better verbosity controls
+        $params{quiet} = 2; # Silence everything _but_ the download progress bar
+        $app->execute_command(CPrAN::Command::install->new({}), \%params, 'praat');
         
-        my $ae = Archive::Extract->new( archive => $package->filename );
-        $ae->extract( to => $extract )
-          or die "Could not extract package: $ae->error";
-        
-        use Path::Class;
-        my $file = file($ae->extract_path, $ae->files->[0]);
-        File::Copy::move $file, $praat->{path}
-          or die "Could not move file: $!\n";
       }
     }
     else {

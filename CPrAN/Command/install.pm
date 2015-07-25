@@ -488,7 +488,8 @@ sub _praat {
   my ($self, $opt) = @_;
   
   try {
-    my $praat = CPrAN::Praat->new();
+    my $praat = CPrAN::Praat->new($opt);
+    $praat->latest;
     
     if (defined $praat->{path}) {
       unless (defined $opt->{reinstall}) {
@@ -497,6 +498,7 @@ sub _praat {
       }
     }
     else {
+      # TODO(jja) How to specify where to install Praat?
       if ($^O =~ /darwin/) {
         print "** MacOS is a jungle! Completely uncharted territory! **\n";
         # Use hdiutil and cp?
@@ -505,6 +507,7 @@ sub _praat {
         #     hdiutil umount "/Volumes/Praat"
       }
       else {
+      # TODO(jja) Currently installed to cwd if not installed already
         use Cwd;
         $praat->{path} = $opt->{path} // getcwd;
         $praat->{path} = file($praat->{path}, $praat->{bin})->stringify;        
@@ -520,8 +523,8 @@ sub _praat {
     }
     if (CPrAN::yesno( $opt, 'n' )) {
       
-      print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n" unless $opt->{quiet}; 
-      my $archive = $praat->download( $praat->latest );
+      print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n" if $opt->{quiet} == 1; 
+      my $archive = $praat->download;
         
       use File::Temp;
       my $package = File::Temp->new(
@@ -533,13 +536,13 @@ sub _praat {
         template => 'praat-XXXXX',
       );
 
-      print "Saving archive to ", $package->filename, "\n";
+      print "Saving archive to ", $package->filename, "\n" if $opt->{quiet} == 1;
       use Path::Class;
       my $fh = Path::Class::file( $package->filename )->openw();
       binmode($fh);
       $fh->print($archive);
 
-      print "Extracting package to $praat->{path}...\n";
+      print "Extracting package to $praat->{path}...\n" if $opt->{quiet} == 1;
 
       # Extract archives
       use Archive::Extract;
