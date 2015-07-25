@@ -1,0 +1,49 @@
+- v0.2.0: # (unreleased)
+  - Added this changelog :)
+  - Optional git support for install and upgrade
+  - CPrAN::Plugin used as return value for update
+  - Tests log results to archive or log directory
+  - Test support for Windows
+  - (install) new option --reinstall takes over remaining uses of --force
+  - (install) --force now deals exclusively with test results
+  - Text::FormatTable instead of Text::Table for search output with word wrap
+  - Internal GitLab API renamed to WWW::GitLab::API
+- v0.1.6:
+  - Bug fix in Plugin::is_latest
+- v0.1.5:
+  - Corrected path to preferences directory on Mac
+- v0.1.4:
+  - (search) refine search with multiple terms
+  - (search) looks for terms in name and descriptions
+  - CPrAN::Plugin to represent plugins
+  - Keys in descriptor internally changed to lowercase
+  - Minor bug fixes
+- v0.1.3:
+  - Trim down client dependency list
+  - Corrected wrong version number
+- v0.1.2:
+  - Bug fix for search and list. Now they find non-installed plugins
+- v0.1.1:
+  - (search) results always show both local and remote versions
+  - (test) skip plugins with no tests
+  - Minor bug fixes in code and documentation
+  - Removed many extraneous warnings
+- v0.1.0:
+  - Completed interface: new test and list commands
+  - Added instructions on user-level Perl (Dan McCloy)
+  - Completed internal API
+- v0.0.6:
+  - Changed from GitLab::API::v3 to internal API
+  - Code clean-up
+- v0.0.5:
+  - Internal calls to rmtree() inherit --verbose option 
+- v0.0.4:
+  - Multiple changes to documentation
+  - Minor bug fixes in client and supporting files
+- v0.0.3:
+  - Multiple minor bug fixes in client
+- v0.0.2:
+  - Added working Perl client: search, show, remove, upgrade, install, update
+  - Added client documentation
+- v0.0.1:
+  - Skeletal version of plugin: descriptor, readme and setup script
