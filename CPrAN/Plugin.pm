@@ -243,6 +243,16 @@ sub test {
   #           removed when all goes well.
   die "$self->{name} is not installed" unless ($self->is_installed);
 
+  use Cwd;
+  my $oldwd = getcwd;
+  chdir $self->{root}
+    or die "Could not change directory";
+  
+  unless ( -e 't' ) {
+    warn "No tests for $self->{name}\n";
+    return undef;
+  }
+  
   # Run the tests
   my $prove = App::Prove->new;
   my @args;
@@ -255,21 +265,26 @@ sub test {
   }
   push @args, ('--exec', "$praat -a");
   
-  my $log = dir($self->{root}, 'log');
-  my $log_file = 'cpran_log.tgz';
+  my $log = dir($self->{root}, '.log');
   unless ( -e $log ) {
-    $log = $log_file;
-    warn "No log directory found. Archiving test log to $log\n" if $opt->{verbose};
+    mkdir $log
+      or die "Could not create log directory";
   }
   else {
-    if (-e $log_file) {
-      unlink $log_file or warn "Could not delete $log_file";
+    while (my $file = $log->next) {
+      next unless -f $file;
+      $file->remove or die "Could not remove $file";
     }
   }
   push @args, ('--archive', $log);
 
   $prove->process_args( @args );
-  if ($prove->run) { return 1 } else { return 0 };
+  my $results = $prove->run;
+ 
+  chdir $oldwd
+    or die "Could not change directory";
+    
+  if ($results) { return 1 } else { return 0 }
 }
 
 =item print(I<FIELD>)
