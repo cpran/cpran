@@ -51,17 +51,15 @@ sub execute {
 
   my $app = CPrAN->new();
   my %params = %{$opt};
-  $params{quiet} = 1;
-
+  
   my $cmd = CPrAN::Command::search->new({});
   return $app->execute_command($cmd, \%params, '.*');
 }
 
 sub opt_spec {
   return (
-    # [ "name|n"        => "search in plugin name" ],
-    # [ "description|d" => "search in description" ],
-    # [ "installed|i"   => "only consider installed plugins" ],
+    [ "installed|i"   => "search on installed plugins" ],
+    [ "wrap!"         => "enable / disable line wrap for result table" ],
   );
 }
 

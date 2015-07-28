@@ -83,11 +83,11 @@ sub execute_command {
   # sets verbosity to 0, omitting all output. Higher values of verbose
   # will increase verbosity.
   $opt->{$_} = $self->global_options->{$_} foreach keys %{$self->global_options};
-  if (defined $self->global_options->{quiet}) {
+  if (defined $opt->{quiet}) {
     $opt->{verbose} = 0;
   }
   else {
-    $opt->{verbose} = ++$self->global_options->{verbose};
+    $opt->{verbose} = ++$opt->{verbose};
   }
 
   $cmd->validate_args($opt, \@args);

@@ -295,7 +295,7 @@ must be asked for by name. Any other names are an error.
 =cut
 
 sub print {
-  use Encode qw(encode decode);
+  use Encode qw( decode );
   use Path::Class;
   
   my ($self, $name) = @_;

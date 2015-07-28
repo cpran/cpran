@@ -70,18 +70,21 @@ sub execute {
   use Text::FormatTable;
 
   my @plugins;
-  my @names = CPrAN::installed();
+  my @names = CPrAN::installed;
   
   if (defined $opt->{installed}) {
-    print "D: " . scalar @names . " installed plugins\n" if ($opt->{debug});
+    print "D: " . scalar @names . " installed plugins\n" if $opt->{debug};
   }
   else {
-    @names = (@names, CPrAN::known());
-    my %names;
-    $names{$_} = 1 foreach @names;
-    @plugins = map { CPrAN::Plugin->new($_) } keys %names;
-    print "D: " . scalar @plugins . " known plugins\n" if $opt->{debug};
+    @names = (@names, CPrAN::known);
   }
+
+  my %names;
+  $names{$_} = 1 foreach @names;
+  @plugins = map { CPrAN::Plugin->new($_) } keys %names;
+  
+  print "D: " . scalar @plugins . " known plugins\n"
+    if (!defined $opt->{installed} && $opt->{debug});
 
   $self->{output} = Text::FormatTable->new('l l l l');
   $self->{output}->head(
@@ -97,16 +100,16 @@ sub execute {
         delete $list{$name};
       }
     }
-  };
+  }
 
   my @found = map {
     $self->_add_output_row($opt, $list{$_});
     $list{$_}
   } sort keys %list;
 
-  if ($opt->{verbose}) {
+  unless ($opt->{quiet}) {
     if (@found) {
-      my $width = (defined $opt->{nowrap}) ? 1000 : 79;
+      my $width = (!defined $opt->{wrap} or $opt->{wrap}) ? 79 : 1000;
       print $self->{output}->render($width);
     }
     else { print "No matches found\n" }
@@ -149,7 +152,7 @@ sub opt_spec {
     [ "name|n"        => "search in plugin name" ],
     [ "description|d" => "search in plugin description" ],
     [ "installed|i"   => "search on installed plugins" ],
-    [ "nowrap"        => "do not wrap lines of result table" ],
+    [ "wrap!"         => "enable / disable line wrap for result table" ],
   );
 }
 
