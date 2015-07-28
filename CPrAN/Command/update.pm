@@ -57,6 +57,9 @@ sub execute {
 
   my $descriptors;
   foreach my $source (@{$projects}) {
+    # Ignore projects that are not public
+    next if $source->{visibility_level} < 20;
+
     if ($source->{name} =~ /^plugin_(\w+)$/) {
       print "Fetching $1...\n" if $opt->{verbose};
       $descriptors .= fetch_descriptor($self, $opt, $source);
@@ -97,11 +100,14 @@ sub fetch_descriptor {
     token => CPrAN::api_token(),
   );
 
-  my $commit = shift @{$api->commits( $source->{id} )};
+  my $tags = $api->tags( $source->{id} );
+  my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+$/ } @{$tags};
+
+  my $latest = shift @releases;
 
   my $descriptor = $api->blob(
     $source->{id},
-    $commit->{id},
+    $latest->{commit}->{id},
     { filepath => 'cpran.yaml' }
   );
 
