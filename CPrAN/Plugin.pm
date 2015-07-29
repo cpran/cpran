@@ -148,8 +148,8 @@ sub is_latest {
     if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
         $self->{local}->{version}  !~ /^\d+\.\d+\.\d+$/);
 
-  my @remote = split /\./, $self->{remote};
-  my @local  = split /\./, $self->{local};
+  my @remote = split /\./, $self->{remote}->{version};
+  my @local  = split /\./, $self->{local}->{version};
 
   if    ($remote[0] > $local[0]) { return 0 }
   elsif ($remote[0] < $local[0]) { return 1 }
