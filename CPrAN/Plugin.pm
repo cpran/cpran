@@ -134,8 +134,7 @@ Gets the plugin URL, pointing to the clonable git repository
 sub url {
   my ($self) = @_;
 
-  print "Generating URL\n";
-  
+  return $self->{url} if defined $self->{url};
   return undef unless defined $self->{remote};
 
   use WWW::GitLab::v3;
@@ -152,7 +151,7 @@ sub url {
     }
   }
   
-  *CPrAN::Plugin::url = sub { print "Saved URL\n"; return $_[0]->{url} };
+  return $self->{url};
 }
 
 =item id()
@@ -166,6 +165,7 @@ sub id {
   
   my $self = shift;
 
+  return $self->{id} if defined $self->{id};
   return undef unless defined $self->{remote};
 
   use WWW::GitLab::v3;
@@ -182,7 +182,7 @@ sub id {
     }
   }
   
-  *CPrAN::Plugin::id = sub { print "Saved ID\n"; return $_[0]->{id} };
+  return $self->{id};
 }
 
 =item is_latest()

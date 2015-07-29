@@ -161,8 +161,15 @@ sub execute {
         # install them
         
         if ($opt->{git}) {
-          try   { Git::Repository->run( clone => $plugin->url, $plugin->root ) }
-          catch { die "Error: could not clone repository.\n", ($opt->{debug}) ? "$_\n" : '' };
+          try   {
+            my $out = Git::Repository->run( clone => $plugin->url, $plugin->root );
+            my $repo = Git::Repository->new( work_tree => $plugin->root );
+            my @tags = $repo->run( 'tag' );
+            my $latest = pop @tags;
+            $repo->run( 'checkout', '--quiet', $latest );
+            print "Note: checking out '$latest'\n" unless $opt->{quiet};
+          }
+          catch { die "Error: could not clone repository.\n$_\n" };
         }
         else {
           my $archive = get_archive( $opt, $plugin->{name}, '' );
