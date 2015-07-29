@@ -1,5 +1,6 @@
 - v0.2.0: # (unreleased)
   - Added this changelog :)
+  - CPrAN now manages Praat installations (upgrade, remove, install)
   - Optional git support for install and upgrade
   - CPrAN::Plugin used as return value for update
   - Tests log results to archive or log directory

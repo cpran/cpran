@@ -16,13 +16,13 @@ BEGIN {
     if ($@) {
       if ($@ =~ /Can't locate (\S+)/) {
         $missing = 1;
-        warn "W: Module $1 is not installed\n";
+        warn "Module $1 is not installed\n";
       }
       else { die $@ }
     }
   }
   if ($missing) {
-    warn "E: Unmet dependencies.";
+    warn "Unmet dependencies.";
     warn "Please install the missing modules before continuing.\n";
     exit 1;
   }
@@ -77,7 +77,7 @@ sub execute {
   my @plugins = map { CPrAN::Plugin->new( $_ ) } @{$args};
 
   foreach my $plugin (@plugins) {
-    my $result = $plugin->test;
+    my $result = $plugin->test($opt);
     $outcome = $result if defined $result;
   }
   return $outcome;

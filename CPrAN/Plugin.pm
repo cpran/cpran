@@ -1,5 +1,8 @@
 package CPrAN::Plugin;
 
+use strict;
+use warnings;
+
 use Carp;
 binmode STDOUT, ':utf8';
 
@@ -75,10 +78,7 @@ Checks if plugin has a descriptor that CPrAN can use.
 
 =cut
 
-sub is_cpran {
-  my ($self) = @_;
-  return $self->{cpran};
-}
+sub is_cpran { return $_[0]->{cpran} }
 
 =item B<is_installed()>
 
@@ -86,10 +86,7 @@ Checks if the plugin is installed or not.
 
 =cut
 
-sub is_installed {
-  my ($self) = @_;
-  return $self->{installed};
-}
+sub is_installed { return $_[0]->{installed} }
 
 =item B<update()>
 
@@ -98,10 +95,7 @@ took place after the object's creation.
 
 =cut
 
-sub update {
-  my ($self) = @_;
-  $self->_init;
-}
+sub update { $_[0]->_init }
 
 =item B<root()>
 
@@ -109,10 +103,7 @@ Returns the plugin's root directory.
 
 =cut
 
-sub root {
-  my ($self) = @_;
-  return $self->{root};
-}
+sub root { return $_[0]->{root} }
 
 =item B<name()>
 
@@ -120,10 +111,7 @@ Returns the plugin's name.
 
 =cut
 
-sub name {
-  my ($self) = @_;
-  return $self->{name};
-}
+sub name { return $_[0]->{name} }
 
 =item B<url()>
 
@@ -134,9 +122,9 @@ Gets the plugin URL, pointing to the clonable git repository
 sub url {
   my ($self) = @_;
 
-  return $self->{url} if defined $self->{url};
-  return undef unless defined $self->{remote};
-
+  return $self->{url} if     defined $self->{url};
+  return undef        unless defined $self->{remote};
+  
   use WWW::GitLab::v3;
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
@@ -161,20 +149,18 @@ Fetches the CPrAN remote id for the plugin.
 =cut
 
 sub id {
-  print "Generating ID\n";
-  
   my $self = shift;
 
-  return $self->{id} if defined $self->{id};
-  return undef unless defined $self->{remote};
-
+  return $self->{id} if     defined $self->{id};
+  return undef       unless defined $self->{remote};
+  
   use WWW::GitLab::v3;
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
 
-  my $self->{id} = undef;
+  $self->{id} = undef;
   foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
     if ($_->{name} eq 'plugin_' . $self->{name}) {
       $self->{id} = $_->{id};

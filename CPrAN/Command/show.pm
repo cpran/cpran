@@ -72,7 +72,7 @@ sub execute {
         $plugin->print('local') unless ($opt->{quiet});
       }
       else {
-        croak "E: $name is not installed";
+        croak "$name is not installed";
       }
     }
     else {
@@ -81,7 +81,7 @@ sub execute {
         $plugin->print('remote') unless ($opt->{quiet});
       }
       else {
-        croak "E: $name is not a CPrAN plugin";
+        croak "$name is not a CPrAN plugin";
       }
     }
   }

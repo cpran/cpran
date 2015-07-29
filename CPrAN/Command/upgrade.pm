@@ -44,25 +44,21 @@ is not currently implemented.
 sub validate_args {
   my ($self, $opt, $args) = @_;
   
+  $args = [ CPrAN::installed ] unless (@{$args});
+  
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
   # 3. The user has not turned it off by setting --nogit
   if (!defined $opt->{git} or $opt->{git}) {
     try {
-      die "W: Could not find path to git binary. Is git installed?\n"
+      die "Could not find path to git binary. Is git installed?\n"
         unless defined which('git');
       require Git::Repository;
       $opt->{git} = 1;
     }
     catch {
-      unless (defined $opt->{debug}) {
-        warn "W: Disabling git support (use --debug to see why)\n";
-      }
-      else {
-        warn "$_";
-        warn "W: Disabling git support\n";
-      }
+      warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
       $opt->{git} = 0;
     }
   }
@@ -82,8 +78,16 @@ sub execute {
   use CPrAN::Plugin;
 
   my ($self, $opt, $args) = @_;
+  
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      $self->_praat($opt);
+    }
+  }
 
-  $args = [ CPrAN::installed() ] unless (@{$args});
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -169,7 +173,7 @@ sub execute {
               }
             }
             catch {
-              die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or use --force to discard them.\n";
+              die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or discard them with --force.\n";
             };
           }
           catch {
@@ -235,6 +239,43 @@ sub opt_spec {
 =head1 METHODS
 
 =over
+
+=cut 
+
+sub _praat {
+  use CPrAN::Praat;
+  
+  my ($self, $opt) = @_;
+  
+  try {
+    my $praat = CPrAN::Praat->new();
+    print "Querying server for latest version...\n" unless $opt->{quiet};
+    if ($praat->current < $praat->latest) {
+      unless ($opt->{quiet}) {
+        print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
+        print "Do you want to continue? [y/N] ";
+      }
+      if (CPrAN::yesno( $opt, 'n' )) {
+        
+        my $app = CPrAN->new;
+        my %params = %{$opt};
+        $params{yes} = $params{reinstall} = 1;
+        # TODO(jja) Better verbosity controls
+        $params{quiet} = 2; # Silence everything _but_ the download progress bar
+        $app->execute_command(CPrAN::Command::install->new({}), \%params, 'praat');
+        
+      }
+    }
+    else {
+      print "Praat is already at its latest version (", $praat->current, ")\n";
+      exit 0;
+    }
+  }
+  catch {
+    die "Could not upgrade Praat", ($opt->{debug}) ? ": $_" : ".\n";
+  };
+  exit 0;
+}
 
 =back
 
