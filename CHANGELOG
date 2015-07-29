@@ -1,12 +1,13 @@
 - v0.2.0: # (unreleased)
   - Added this changelog :)
-  - CPrAN now manages Praat installations (upgrade, remove, install)
+  - Experimental management of Praat installations (upgrade, remove, install)
+  - Client ignores non-public projects, non-semver tags
   - Optional git support for install and upgrade
-  - CPrAN::Plugin used as return value for update
+  - CPrAN::Plugin used as return value for plugin lists
   - Tests log results to archive or log directory
-  - Test support for Windows
-  - (install) new option --reinstall takes over remaining uses of --force
+  - Tests supported on Windows
   - (install) --force now deals exclusively with test results
+  - (install) new option --reinstall takes over remaining uses of --force
   - Text::FormatTable instead of Text::Table for search output with word wrap
   - Internal GitLab API renamed to WWW::GitLab::API
 - v0.1.6:
