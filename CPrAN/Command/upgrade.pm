@@ -106,13 +106,13 @@ sub execute {
   # @todo will hold the names of the plugins passed as arguments that are
   #   a) valid CPrAN plugin names; and
   #   b) already installed
-  #   c) not at the latest version
+  #   c) not at the latest version  
   my @todo;
   foreach my $plugin (@plugins) {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran) {
-        if ($plugin->is_latest) { 
-          print "$plugin->{name} is already at its latest version\n" if ($opt->{verbose} > 1);
+        if ($plugin->is_latest // 1) {
+          print "$plugin->{name} is already at its latest version\n" if $opt->{verbose} > 1;
         }
         else {
           push @todo, $plugin;
