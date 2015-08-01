@@ -1,0 +1,5 @@
+-M Git::Repository
+-M TAP::Harness::Archive
+-M TAP::Formatter::Console
+-M TAP::Parser::Scheduler
+-M TAP::Formatter::Console::Session
