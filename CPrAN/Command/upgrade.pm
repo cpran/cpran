@@ -44,8 +44,6 @@ is not currently implemented.
 sub validate_args {
   my ($self, $opt, $args) = @_;
   
-  $args = [ CPrAN::installed ] unless (@{$args});
-  
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
@@ -79,15 +77,19 @@ sub execute {
 
   my ($self, $opt, $args) = @_;
   
+  warn "Running upgrade\n" if $opt->{debug};
+  
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
     }
     else {
+      warn "Processing praat\n" if $opt->{debug};
       $self->_praat($opt);
     }
   }
 
+  $args = [ CPrAN::installed ] unless @{$args};
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -101,6 +103,7 @@ sub execute {
       };
     }
   } @{$args};
+  warn scalar @{$args}, " plugins for processing: @{$args}\n" if $opt->{debug};
 
   # Plugins that are not installed cannot be upgraded.
   # @todo will hold the names of the plugins passed as arguments that are
@@ -122,12 +125,13 @@ sub execute {
     }
     else { warn "$plugin->{name} is not installed\n" }
   }
+  warn scalar @todo, " plugins require upgrading: @todo\n" if $opt->{debug};
 
   if (@todo) {
     unless ($opt->{quiet}) {
       print "The following plugins will be UPGRADED:\n";
       print '  ', join(' ', map { $_->{name} } @todo), "\n";
-      print "Do you want to continue? [y/N] ";
+      print "Do you want to continue?";
     }
     if (CPrAN::yesno( $opt, 'n' )) {
       my $app;
