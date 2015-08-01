@@ -10,6 +10,7 @@
   - (install) new option --reinstall takes over remaining uses of --force
   - Text::FormatTable instead of Text::Table for search output with word wrap
   - Internal GitLab API renamed to WWW::GitLab::API
+  - Better support for non-standard home directories
 - v0.1.6:
   - Bug fix in Plugin::is_latest
 - v0.1.5:
