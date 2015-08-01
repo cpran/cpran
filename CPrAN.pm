@@ -29,20 +29,20 @@ B<CPrAN> - A package manager for Praat
     my $user = getlogin || getpwuid($<) || "???";
     if ($Config{osname} eq 'darwin') {
       # Mac
-      $PRAAT = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat Prefs')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
-      $PRAAT = dir('C:\\', 'Documents and Settings', $user, 'Praat')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, 'Praat')->stringify;
     }
     elsif ($Config{osname} eq 'cygwin') {
       # cygwin
       warn "Cygwin not tested. Treating as if GNU/Linux\n";
-      $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
     else {
       # GNU/Linux
-      $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
     $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
   }
@@ -77,7 +77,7 @@ sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
 
   set_globals($self, $cmd, $opt, @args);
-  make_root();
+  make_root() unless (-e CPrAN::root);
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
@@ -226,7 +226,8 @@ Makes the B<CPrAN> root directory.
 =cut
 
 sub make_root {
-  File::Path::make_path( CPrAN::root() ) unless (-e CPrAN::root());
+  File::Path::make_path( CPrAN::root )
+    or carp "Could not make directory at CPrAN::root";
 }
 
 =item installed()
