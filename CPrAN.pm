@@ -511,6 +511,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.1.7';
+our $VERSION = '0.1.9';
 
 1;
