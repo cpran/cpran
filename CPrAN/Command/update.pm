@@ -113,12 +113,6 @@ sub fetch_descriptor {
 
   my $latest = shift @releases;
 
-  use Data::Printer;
-  if ($name eq 'vieweach') {
-#     p @releases;
-    p $latest;
-  }
-
   my $descriptor = encode('utf-8', $api->blob(
     $source->{id},
     $latest->{commit}->{id},
