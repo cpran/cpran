@@ -93,8 +93,8 @@ sub fetch_descriptor {
   use YAML::XS;
   use Path::Class;
   use Encode qw(encode decode);
-  use Data::Dumper;
   use Try::Tiny;
+  use Sort::Naturally;
 
   my ($self, $opt, $source) = @_;
   my $name;
@@ -109,8 +109,15 @@ sub fetch_descriptor {
 
   my $tags = $api->tags( $source->{id} );
   my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+$/ } @{$tags};
+  @releases = reverse sort { ncmp($a->{name}, $b->{name}) } @releases;
 
   my $latest = shift @releases;
+
+  use Data::Printer;
+  if ($name eq 'vieweach') {
+#     p @releases;
+    p $latest;
+  }
 
   my $descriptor = encode('utf-8', $api->blob(
     $source->{id},
