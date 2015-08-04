@@ -79,6 +79,13 @@ Now, on to the installation.
         * Text::FormatTable
         * URI
         * YAML::XS
+        * JSON::Tiny
+        * File::Which
+        * HTML::Tree
+        * Archive::Extract
+        * TAP::Harness::Archive
+        * LWP::Protocol::https
+        * Git::Repository
 
     You should be able to install the packages using the CPAN client with a line like this:
 
