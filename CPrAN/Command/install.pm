@@ -171,9 +171,11 @@ sub execute {
         
         if ($opt->{git}) {
           try   {
+            use Sort::Naturally;
             my $out = Git::Repository->run( clone => $plugin->url, $plugin->root );
             my $repo = Git::Repository->new( work_tree => $plugin->root );
             my @tags = $repo->run( 'tag' );
+            @tags = sort { ncmp($a, $b) } @tags;
             my $latest = pop @tags;
             $repo->run( 'checkout', '--quiet', $latest );
             print "Note: checking out '$latest'\n" unless $opt->{quiet};
@@ -321,6 +323,7 @@ sub get_archive {
   my ($opt, $name, $version) = @_;
 
   use WWW::GitLab::v3;
+  use Sort::Naturally;
 
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
@@ -334,19 +337,25 @@ sub get_archive {
   if ($version eq '') {
     my @tags = @{$api->tags($project->{id})};
     croak "No tags for $name" unless (@tags);
-    $tag = shift @tags;
+    @tags = sort { ncmp($a->{name}, $b->{name}) } @tags;
+    $tag = pop @tags;
   }
   else {
     # TODO(jja) Enable installation of specific versions
-    my $tags = $api->tags($project->{id});
-    $tag = shift @{$tags};
+    my @tags = @{$api->tags($project->{id})};
+    @tags = sort { ncmp($a->{name}, $b->{name}) } @tags;
+    $tag = pop @tags;
   }
 
   my %params = ( sha => $tag->{commit}->{id} );
+  use Data::Printer;
+  p $project;
+  p %params;
   my $archive = $api->archive(
     $project->{id},
     \%params
   );
+  p $archive;
 
   # TODO(jja) Improve error checking. Does this work on Windows?
   use File::Temp;

@@ -1,7 +1,6 @@
 package CPrAN;
 
 use App::Cmd::Setup -app;
-use File::Path;
 use Carp;
 
 =encoding utf8
@@ -22,7 +21,7 @@ B<CPrAN> - A package manager for Praat
 # accessors below.
 # NOTE(jja) Should this be made into a class, and this into proper attributes?
 {
-  use Path::Class;
+  use Path::Class 0.35;
   use Config;
   my ($ROOT, $PRAAT);
   {
@@ -33,7 +32,7 @@ B<CPrAN> - A package manager for Praat
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
-      $PRAAT = dir('', $ENV{HOME}, 'Praat')->stringify;
+      $PRAAT = dir('', $ENV{HOMEPATH}, 'Praat')->stringify;
     }
     elsif ($Config{osname} eq 'cygwin') {
       # cygwin
@@ -47,11 +46,8 @@ B<CPrAN> - A package manager for Praat
     $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
   }
 
-  sub root  { return $ROOT   }
-  sub praat { return $PRAAT  }
-
-  sub set_root  { $ROOT  = shift }
-  sub set_praat { $PRAAT = shift }
+  sub root  { if (@_) { $ROOT  = shift } else { return $ROOT  } }
+  sub praat { if (@_) { $PRAAT = shift } else { return $PRAAT } }
 }
 
 # TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
@@ -61,13 +57,9 @@ B<CPrAN> - A package manager for Praat
   my $APIURL = 'https://gitlab.com/api/v3/';
   my $GROUP  = '133578';
 
-  sub api_token { return $TOKEN  }
-  sub api_url   { return $APIURL }
-  sub api_group { return $GROUP  }
-
-  sub set_api_token { $TOKEN  = shift }
-  sub set_api_url   { $APIURL = shift }
-  sub set_api_group { $GROUP  = shift }
+  sub api_token { if (@_) { $TOKEN  = shift } else { return $TOKEN  } }
+  sub api_url   { if (@_) { $APIURL = shift } else { return $APIURL } }
+  sub api_group { if (@_) { $GROUP  = shift } else { return $GROUP  } }
 }
 
 # By redefining this subroutine, we lightly modify the behaviour of the App::Cmd
@@ -180,15 +172,14 @@ sub set_globals {
   my ($self, $cmd, $opt, @args) = @_;
   my $gopt = $self->global_options;
 
-  set_praat($gopt->{praat}) if (defined $gopt->{praat});
-  set_root($gopt->{cpran}) if (defined $gopt->{cpran});
+  praat     $gopt->{praat}       if (defined $gopt->{praat}      );
+  root      $gopt->{cpran}       if (defined $gopt->{cpran}      );
 
-  set_api_token($gopt->{'api-token'}) if (defined $gopt->{'api-token'});
-  set_api_group($gopt->{'api-group'}) if (defined $gopt->{'api-group'});
-  set_api_url($gopt->{'api-url'}) if (defined $gopt->{'api-url'});
+  api_token $gopt->{'api-token'} if (defined $gopt->{'api-token'});
+  api_group $gopt->{'api-group'} if (defined $gopt->{'api-group'});
+  api_url   $gopt->{'api-url'}   if (defined $gopt->{'api-url'}  );
 
   check_permissions($self, $cmd, $opt, @args) unless ($cmd =~ /(version|help)/);
-
 }
 
 =item check_permissions()
@@ -205,17 +196,17 @@ sub check_permissions {
   my ($self, $cmd, $opt, @args) = @_;
 
   if (-e CPrAN::root()) {
-    croak "E: Cannot read from CPrAN root at " . CPrAN::root()
+    croak "Cannot read from CPrAN root at " . CPrAN::root()
       unless (-r CPrAN::root());
-    croak "E: Cannot write to CPrAN root at " . CPrAN::root()
+    croak "Cannot write to CPrAN root at " . CPrAN::root()
       unless (-w CPrAN::root());
   }
   else {
-    warn "W: CPrAN root not found.\nW: If this is a fresh install, try running cpran update\n" unless ($cmd =~ /update/);
+    warn "CPrAN root not found.\nIf this is a fresh install, try running cpran update\n" unless ($cmd =~ /update/);
   }
-  croak "E: Cannot read from preferences directory at " . CPrAN::praat()
+  croak "Cannot read from preferences directory at " . CPrAN::praat()
     unless (-r CPrAN::praat());
-  croak "E: Cannot write to preferences directory at " . CPrAN::praat()
+  croak "Cannot write to preferences directory at " . CPrAN::praat()
     unless (-w CPrAN::praat());
 }
 
@@ -338,7 +329,7 @@ Closely modeled after http://stackoverflow.com/a/12166653/807650
 =cut
 
 sub order_dependencies {
-  use Graph qw();
+  use Graph 0.96 qw();
 
    my %recs;
    my $graph = Graph->new();
