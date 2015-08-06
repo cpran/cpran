@@ -88,6 +88,7 @@ sub fetch_descriptor {
   use GitLab::API::Tiny::v3;
   use YAML::XS;
   use Path::Class;
+  use Sort::Naturally;
 
   my ($self, $opt, $source) = @_;
   my $name;
@@ -102,8 +103,9 @@ sub fetch_descriptor {
 
   my $tags = $api->tags( $source->{id} );
   my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+$/ } @{$tags};
+  @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
 
-  my $latest = shift @releases;
+  my $latest = pop @releases;
 
   my $descriptor = $api->blob(
     $source->{id},

@@ -13,4 +13,4 @@
 # A copy of the GNU General Public License is available at
 # <http://www.gnu.org/licenses/>.
 
-Add menu command: "Objects", "Praat", "CPrAN",    "",      0, ""
+Add menu command... "Objects" "Praat" "CPrAN" "" 0 

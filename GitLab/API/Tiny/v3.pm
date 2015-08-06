@@ -2633,7 +2633,7 @@ sub _get {
     return $response->decoded_content;
   }
   else {
-    confess $response->status_line;
+    croak $response->status_line;
   }
 }
 

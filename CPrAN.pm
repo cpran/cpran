@@ -26,23 +26,22 @@ B<CPrAN> - A package manager for Praat
   use Config;
   my ($ROOT, $PRAAT);
   {
-    my $user = getlogin || getpwuid($<) || "???";
     if ($Config{osname} eq 'darwin') {
       # Mac
-      $PRAAT = dir('', 'Users', $user, 'Library', 'Preferences', 'Praat Prefs')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
-      $PRAAT = dir('C:\\', 'Documents and Settings', $user, 'Praat')->stringify;
+      $PRAAT = dir('', $ENV{HOMEPATH}, 'Praat')->stringify;
     }
     elsif ($Config{osname} eq 'cygwin') {
       # cygwin
       warn "Cygwin not tested. Treating as if GNU/Linux\n";
-      $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
     else {
       # GNU/Linux
-      $PRAAT = dir('', 'home', $user, '.praat-dir')->stringify;
+      $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
     $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
   }
@@ -511,6 +510,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.1.9';
+our $VERSION = '0.1.10';
 
 1;

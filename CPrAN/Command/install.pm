@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
 use Encode qw(encode decode);
 binmode STDOUT, ':utf8';
 
@@ -279,6 +280,8 @@ disk.
 
 # TODO(jja) More testing on Windows: Non-blocking sockets?
 sub get_archive {
+  use Sort::Naturally;
+  
   my ($opt, $name, $version) = @_;
 
   use GitLab::API::Tiny::v3;
@@ -290,24 +293,25 @@ sub get_archive {
 
   print "Downloading archive for $name\n" unless ($opt->{quiet});
 
-  my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
-  my $tag;
-  if ($version eq '') {
+  my $archive;
+  try {
+    my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
+    my $tag;
+    # TODO(jja) Enable installation of specific versions
     my @tags = @{$api->tags($project->{id})};
     croak "No tags for $name" unless (@tags);
     $tag = shift @tags;
-  }
-  else {
-    # TODO(jja) Enable installation of specific versions
-    my $tags = $api->tags($project->{id});
-    $tag = shift @{$tags};
-  }
 
-  my %params = ( sha => $tag->{commit}->{id} );
-  my $archive = $api->archive(
-    $project->{id},
-    \%params
-  );
+    $archive = $api->archive(
+      $project->{id},
+      { sha => $tag->{commit}->{id} },
+    );
+  }
+  catch {
+    chomp;
+    warn "Could not contact server:\n$_\nPlease check your connection and/or try again in a few minutes.\n";
+    exit 1;
+  };
 
   # TODO(jja) Improve error checking. Does this work on Windows?
   use File::Temp;
@@ -358,10 +362,13 @@ sub install {
   # already exists
   my $root = $next->();
   unless ($root) {
-    use Data::Dumper;
     warn "Something went wrong\n";
-    print Dumper($next);
-    exit;
+    try {
+      use Data::Dumper;
+      print Dumper($next);
+    } catch {};
+    warn "Please contact the author at jjatria\@gmail.com\n";
+    exit 1;
   }
   $root = $root->full_path;
   $root = dir(CPrAN::praat(), $root);
