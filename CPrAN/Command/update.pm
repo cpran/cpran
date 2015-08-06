@@ -109,9 +109,9 @@ sub fetch_descriptor {
 
   my $tags = $api->tags( $source->{id} );
   my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+$/ } @{$tags};
-  @releases = reverse sort { ncmp($a->{name}, $b->{name}) } @releases;
+  @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
 
-  my $latest = shift @releases;
+  my $latest = pop @releases;
 
   my $descriptor = encode('utf-8', $api->blob(
     $source->{id},

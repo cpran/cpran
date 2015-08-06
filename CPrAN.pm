@@ -1,6 +1,7 @@
 package CPrAN;
 
 use App::Cmd::Setup -app;
+use File::Path;
 use Carp;
 
 =encoding utf8
@@ -25,7 +26,6 @@ B<CPrAN> - A package manager for Praat
   use Config;
   my ($ROOT, $PRAAT);
   {
-    my $user = getlogin || getpwuid($<) || "???";
     if ($Config{osname} eq 'darwin') {
       # Mac
       $PRAAT = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
@@ -180,6 +180,7 @@ sub set_globals {
   api_url   $gopt->{'api-url'}   if (defined $gopt->{'api-url'}  );
 
   check_permissions($self, $cmd, $opt, @args) unless ($cmd =~ /(version|help)/);
+
 }
 
 =item check_permissions()
@@ -416,6 +417,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.2.0';
+our $VERSION = '0.2.0.01';
 
 1;

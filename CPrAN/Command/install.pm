@@ -193,6 +193,13 @@ sub execute {
         $plugin->update;
 
         my $success = $plugin->test;
+        if ($Config{osname} eq 'MSWin32') {
+          unless ($opt->{quiet}) {
+            warn "Tests do not currently work on Windows. Ignoring tests!\n";
+            warn "See https://gitlab.com/cpran/plugin_cpran/issues/16 for more information.\n";
+          }
+          $success = 1;
+        }
 
         unless ($success) {
           if ($opt->{force}) {
@@ -332,30 +339,26 @@ sub get_archive {
 
   print "Downloading archive for $name\n" unless $opt->{quiet};
 
-  my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
-  my $tag;
-  if ($version eq '') {
+  my $archive;
+  try {
+    my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
+    my $tag;
+    # TODO(jja) Enable installation of specific versions
     my @tags = @{$api->tags($project->{id})};
     croak "No tags for $name" unless (@tags);
     @tags = sort { ncmp($a->{name}, $b->{name}) } @tags;
     $tag = pop @tags;
-  }
-  else {
-    # TODO(jja) Enable installation of specific versions
-    my @tags = @{$api->tags($project->{id})};
-    @tags = sort { ncmp($a->{name}, $b->{name}) } @tags;
-    $tag = pop @tags;
-  }
 
-  my %params = ( sha => $tag->{commit}->{id} );
-  use Data::Printer;
-  p $project;
-  p %params;
-  my $archive = $api->archive(
-    $project->{id},
-    \%params
-  );
-  p $archive;
+    $archive = $api->archive(
+      $project->{id},
+      { sha => $tag->{commit}->{id} },
+    );
+  }
+  catch {
+    chomp;
+    warn "Could not contact server:\n$_\nPlease check your connection and/or try again in a few minutes.\n";
+    exit 1;
+  };
 
   # TODO(jja) Improve error checking. Does this work on Windows?
   use File::Temp;
@@ -406,9 +409,11 @@ sub install {
   # already exists
   my $root = $next->();
   unless ($root) {
-    use Data::Dumper;
     warn "Something went wrong\n";
-    print Dumper($next);
+    try {
+      use Data::Dumper;
+      print Dumper($next);
+    } catch {};
     warn "Please contact the author at jjatria\@gmail.com\n";
     exit 1;
   }
@@ -422,10 +427,10 @@ sub install {
       foreach (@{$e}) {
         my ($file, $message) = %{$_};
           if ($file eq '') {
-          warn "General error: $message\n" unless $opt->{quiet};
+          warn "General error: $message\n";
         }
         else {
-          warn "Problem unlinking $file: $message\n" unless $opt->{quiet};
+          warn "Problem unlinking $file: $message\n";
         }
       }
     }
