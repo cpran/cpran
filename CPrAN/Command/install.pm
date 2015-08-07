@@ -150,11 +150,12 @@ sub execute {
   my @ordered = CPrAN::order_dependencies( @deps );
 
   # Scheduled plugins that are already installed are descheduled
-  my @schedule;
-  foreach my $plugin (@ordered) {
-    my $plugin = CPrAN::Plugin->new( $plugin->{name} );
-    push @schedule, $plugin unless $plugin->is_installed;
-  }
+  my @schedule = grep {
+    my $plugin = $_;
+    my $in_args = grep { /$plugin->{name}/ } @{$args};
+    if (!$plugin->is_installed or ($opt->{reinstall} and $in_args)) { 1 }
+    else { 0 }
+  } map { CPrAN::Plugin->new( $_->{name} ) } @ordered;
 
   # Output and user query modeled after apt's
   if (@schedule) {
@@ -170,9 +171,11 @@ sub execute {
         # install them
         
         if ($opt->{git}) {
-          try   {
+          try {
             use Sort::Naturally;
-            my $out = Git::Repository->run( clone => $plugin->url, $plugin->root );
+            unless ($plugin->is_installed) {
+              Git::Repository->run( clone => $plugin->url, $plugin->root );
+            }
             my $repo = Git::Repository->new( work_tree => $plugin->root );
             my @tags = $repo->run( 'tag' );
             @tags = sort { ncmp($a, $b) } @tags;

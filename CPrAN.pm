@@ -1,7 +1,7 @@
 package CPrAN;
 
 use App::Cmd::Setup -app;
-use File::Path;
+use Try::Tiny;
 use Carp;
 
 =encoding utf8
@@ -53,9 +53,19 @@ B<CPrAN> - A package manager for Praat
 # TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
 # access is limited to the accessors below.
 {
-  my $TOKEN  = 'Myz-wxxGLnV_syejdkWx';
-  my $APIURL = 'https://gitlab.com/api/v3/';
-  my $GROUP  = '133578';
+  my ($TOKEN, $APIURL, $GROUP);
+  $TOKEN  = 'Myz-wxxGLnV_syejdkWx';
+  # NOTE (jja) This does not seem to work. HTTPS requirement somehow propagates
+  #            all the way to WWW::GitLab::v3->_get()
+  try {
+    require LWP::Protocol::https;
+    $APIURL = 'https://gitlab.com/api/v3/';
+  }
+  catch {
+    warn "Falling back to HTTP. Install LWP::Protocol::https for HTTPS\n";
+    $APIURL = 'http://gitlab.com/api/v3/';
+  };
+  $GROUP  = '133578';
 
   sub api_token { if (@_) { $TOKEN  = shift } else { return $TOKEN  } }
   sub api_url   { if (@_) { $APIURL = shift } else { return $APIURL } }
@@ -417,6 +427,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.2.0.01';
+our $VERSION = '0.2.0.02';
 
 1;
