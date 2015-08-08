@@ -36,6 +36,7 @@ sub description {
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
+  $opt->{log} = 1 unless defined $opt->{log};
 }
 
 =head1 EXAMPLES
@@ -69,6 +70,7 @@ sub execute {
 
 sub opt_spec {
   return (
+    [ "log|l!" => "enable / disable test logs" ],
   );
 }
 

@@ -220,8 +220,9 @@ sub test {
   use Path::Class;
   use File::Which;
 
-  my ($self) = @_;
-
+  my ($self, $opt) = @_;
+  $opt = $opt // {}; 
+  
   my $praat;
   for ($^O) {
     if    (/darwin/)  { $praat = which 'Praat'    }
@@ -249,26 +250,28 @@ sub test {
   
   push @args, ('--exec', "$praat -a");
   
-  try {
-    require TAP::Harness::Archive;
-    TAP::Harness::Archive->import;
-    
-    my $log = dir($self->{root}, '.log');
-    unless ( -e $log ) {
-      mkdir $log
-        or die "Could not create log directory";
-    }
-    else {
-      while (my $file = $log->next) {
-        next unless -f $file;
-        $file->remove or die "Could not remove $file";
+  if ($opt->{log}) {
+    try {
+      require TAP::Harness::Archive;
+      TAP::Harness::Archive->import;
+      
+      my $log = dir($self->{root}, '.log');
+      unless ( -e $log ) {
+        mkdir $log
+          or die "Could not create log directory";
       }
+      else {
+        while (my $file = $log->next) {
+          next unless -f $file;
+          $file->remove or die "Could not remove $file";
+        }
+      }
+      push @args, ('--archive', $log);
     }
-    push @args, ('--archive', $log);
+    catch {
+      warn "Disabling logging. Install TAP::Harness::Archive to enable it\n";
+    };
   }
-  catch {
-    warn "Disabling logging. Install TAP::Harness::Archive to enable it\n";
-  };
 
   $prove->process_args( @args );
   my $results = $prove->run;
