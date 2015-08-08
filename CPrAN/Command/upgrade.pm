@@ -167,7 +167,9 @@ sub execute {
               die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
             };
             
+            use Sort::Naturally;
             my @tags = split /\n/, $repo->run( 'tag', { fatal => '!0' } );
+            @tags = sort { ncmp($a, $b) } @tags;
             my @args = ( 'checkout', '--quiet', $tags[-1] );
             push @args, '--force' if defined $opt->{force};
             
