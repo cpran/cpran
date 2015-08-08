@@ -17,6 +17,18 @@ B<CPrAN> - A package manager for Praat
 
 =cut
 
+{
+  use File::Which;
+  my $praat;
+  for ($^O) {
+    if    (/darwin/)  { $praat = which 'Praat'    }
+    elsif (/MSWin32/) { $praat = which 'praatcon' }
+    else              { $praat = which 'praat'    }
+  }
+  warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n"
+    unless defined $praat;
+}
+
 # ROOT and PRAAT hold the paths to the preferences directory and the CPrAN root
 # respectively. Being in this enclosure, acces to them is limited to the
 # accessors below.

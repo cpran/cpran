@@ -2,31 +2,8 @@
 package CPrAN::Command::test;
 
 use CPrAN -command;
-
-# Safely load required modules
-BEGIN {
-  my @use = (
-    'use TAP::Harness',
-    'use Path::Class',
-    'use Carp',
-  );
-  my $missing = 0;
-  foreach (@use) {
-    eval $_;
-    if ($@) {
-      if ($@ =~ /Can't locate (\S+)/) {
-        $missing = 1;
-        warn "Module $1 is not installed\n";
-      }
-      else { die $@ }
-    }
-  }
-  if ($missing) {
-    warn "Unmet dependencies.";
-    warn "Please install the missing modules before continuing.\n";
-    exit 1;
-  }
-}
+use Carp;
+use Try::Tiny;
 
 use strict;
 use warnings;
@@ -76,18 +53,22 @@ sub execute {
   my $outcome = 1;
   my @plugins = map { CPrAN::Plugin->new( $_ ) } @{$args};
 
-  foreach my $plugin (@plugins) {
-    my $result = $plugin->test($opt);
-    $outcome = $result if defined $result;
+  try {
+    foreach my $plugin (@plugins) {
+      my $result;
+        $result = $plugin->test($opt);
+      $outcome = $result if defined $result;
+    }
   }
+  catch {
+    chomp;
+    die "There were errors while testing:\n$_\n";
+  };
   return $outcome;
 }
 
 sub opt_spec {
   return (
-    # [ "name|n"        => "search in plugin name" ],
-    # [ "description|d" => "search in description" ],
-    # [ "installed|i"   => "only consider installed plugins" ],
   );
 }
 

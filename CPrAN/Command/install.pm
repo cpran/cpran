@@ -165,78 +165,86 @@ sub execute {
       print "Do you want to continue?";
     }
     if (CPrAN::yesno( $opt, 'n' )) {
-      foreach my $plugin (@schedule) {
+      try {
+        foreach my $plugin (@schedule) {
 
-        # Now that we know what plugins to install and in what order, we
-        # install them
-        
-        if ($opt->{git}) {
-          try {
-            use Sort::Naturally;
-            unless ($plugin->is_installed) {
-              Git::Repository->run( clone => $plugin->url, $plugin->root );
+          # Now that we know what plugins to install and in what order, we
+          # install them
+          
+          if ($opt->{git}) {
+            try {
+              use Sort::Naturally;
+              unless ($plugin->is_installed) {
+                Git::Repository->run( clone => $plugin->url, $plugin->root );
+              }
+              my $repo = Git::Repository->new( work_tree => $plugin->root );
+              my @tags = $repo->run( 'tag' );
+              @tags = sort { ncmp($a, $b) } @tags;
+              my $latest = pop @tags;
+              $repo->run( 'checkout', '--quiet', $latest );
+              print "Note: checking out '$latest'\n" unless $opt->{quiet};
             }
-            my $repo = Git::Repository->new( work_tree => $plugin->root );
-            my @tags = $repo->run( 'tag' );
-            @tags = sort { ncmp($a, $b) } @tags;
-            my $latest = pop @tags;
-            $repo->run( 'checkout', '--quiet', $latest );
-            print "Note: checking out '$latest'\n" unless $opt->{quiet};
-          }
-          catch { die "Error: could not clone repository.\n$_\n" };
-        }
-        else {
-          my $archive = get_archive( $opt, $plugin->{name}, '' );
-
-          print "Extracting...\n" unless $opt->{quiet};
-          install( $opt, $archive );
-        }
-
-        print "Testing $plugin->{name}...\n" unless $opt->{quiet};
-        $plugin->update;
-
-        my $success = $plugin->test;
-        if ($Config{osname} eq 'MSWin32') {
-          unless ($opt->{quiet}) {
-            warn "Tests do not currently work on Windows. Ignoring tests!\n";
-            warn "See https://gitlab.com/cpran/plugin_cpran/issues/16 for more information.\n";
-          }
-          $success = 1;
-        }
-
-        unless ($success) {
-          if ($opt->{force}) {
-            warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
+            catch { die "Error: could not clone repository.\n$_\n" };
           }
           else {
-            unless ($opt->{quiet}) {
-              warn "Tests failed. Aborting installation of $plugin->{name}.\n";
-              warn "Use --force to ignore this warning\n";
+            my $archive = get_archive( $opt, $plugin->{name}, '' );
+
+            print "Extracting...\n" unless $opt->{quiet};
+            install( $opt, $archive );
+          }
+          
+          print "Testing $plugin->{name}...\n" unless $opt->{quiet};
+          $plugin->update;
+
+          my $success = 0;
+          try {
+            $success = $plugin->test;
+          }
+          catch {
+            chomp;
+            warn "There were errors while testing:\n$_\n";
+          };
+          
+          unless ($success) {
+            if ($opt->{force}) {
+              warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
             }
+            else {
+              unless ($opt->{quiet}) {
+                warn "Tests failed. Aborting installation of $plugin->{name}.\n";
+                warn "Use --force to ignore this warning\n";
+              }
 
-            my $app = CPrAN->new();
-            my %params = %{$opt};
-            $params{yes} = 1;
-            $params{force} = 1;
+              my $app = CPrAN->new();
+              my %params = %{$opt};
+              $params{yes} = 1;
+              $params{force} = 1;
+              $params{verbose} = 0;
 
-            my $cmd = CPrAN::Command::remove->new({});
-            $app->execute_command($cmd, \%params, $plugin->{name});
-            
-            exit 1;
+              my $cmd = CPrAN::Command::remove->new({});
+              $app->execute_command($cmd, \%params, $plugin->{name});
+              
+              print "Did not install $plugin->{name}.\n" unless $opt->{quiet};
+              die;
+            }
+          }
+          else {
+            print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
+          }
+
+          if ($plugin->{name} eq 'cpran') {
+            # CPrAN is installing itself!
+            # HACK(jja) currently, a reinstall deletes the original directory
+            # which in the case of CPrAN will likely destroy the CPrAN root.
+            # If that's the case, we rebuild it.
+            rebuild_list($self, $opt) unless (-e CPrAN::root());
           }
         }
-        else {
-          print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
-        }
-
-        if ($plugin->{name} eq 'cpran') {
-          # CPrAN is installing itself!
-          # HACK(jja) currently, a reinstall deletes the original directory
-          # which in the case of CPrAN will likely destroy the CPrAN root.
-          # If that's the case, we rebuild it.
-          rebuild_list($self, $opt) unless (-e CPrAN::root());
-        }
       }
+      catch {
+        warn "There were errors during installation\n";
+        exit 1;
+      };
     }
     else {
       print "Abort.\n" unless $opt->{quiet};

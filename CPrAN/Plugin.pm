@@ -218,16 +218,19 @@ Runs tests for the plugin (if any). Returns the result of those tests.
 sub test {
   use App::Prove;
   use Path::Class;
+  use File::Which;
 
   my ($self) = @_;
 
-  # TODO(jja) Plugins should be testable even before installation
-  #           Perhaps the best way to do this would be to install them and then
-  #           remove them if tests were unsuccessful. The removal would be
-  #           skipped with --force.
-  #           To mark a plugin being tested we could create some temporary lock
-  #           file (maybe a setup.praat that deletes its own plugin?), which is
-  #           removed when all goes well.
+  my $praat;
+  for ($^O) {
+    if    (/darwin/)  { $praat = which 'Praat'    }
+    elsif (/MSWin32/) { $praat = which 'praatcon' }
+    else              { $praat = which 'praat'    }
+  }
+  die "Could not find path to Praat executable. Make sure Praat is available\n"
+    unless defined $praat;
+  
   die "$self->{name} is not installed" unless ($self->is_installed);
 
   use Cwd;
@@ -244,12 +247,6 @@ sub test {
   my $prove = App::Prove->new;
   my @args;
   
-  my $praat;
-  for ($^O) {
-    if    (/darwin/)  { $praat = 'Praat'    } # Untested
-    elsif (/MSWin32/) { $praat = 'praatcon' }
-    else              { $praat = 'praat'    }
-  }
   push @args, ('--exec', "$praat -a");
   
   try {
