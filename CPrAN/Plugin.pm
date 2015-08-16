@@ -197,9 +197,8 @@ sub test {
   # Run the tests
   my $praat;
   for ($^O) {
-    if    (/darwin/)  { $praat = 'Praat'    } # Untested
-    elsif (/MSWin32/) { $praat = 'praatcon' }
-    else              { $praat = 'praat'    }
+    if (/MSWin32/) { $praat = 'praatcon' }
+    else           { $praat = 'praat'    }
   }
   my $harness = TAP::Harness->new({
     failures  => 1,
