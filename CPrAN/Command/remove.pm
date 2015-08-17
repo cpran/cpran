@@ -131,7 +131,7 @@ sub execute {
       print '  ', join(' ', map { $_->{name} } @todo ), "\n";
       print "Do you want to continue?";
     }
-    if (CPrAN::yesno( $opt, 'n' )) {
+    if (CPrAN::yesno( $opt )) {
       foreach my $plugin (@todo) {
         print "Removing $plugin->{name}...\n" unless ($opt->{quiet});
 

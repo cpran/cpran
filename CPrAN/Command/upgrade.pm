@@ -133,7 +133,7 @@ sub execute {
       print '  ', join(' ', map { $_->{name} } @todo), "\n";
       print "Do you want to continue?";
     }
-    if (CPrAN::yesno( $opt, 'n' )) {
+    if (CPrAN::yesno( $opt )) {
       my $app;
       my %params;
       
@@ -261,7 +261,7 @@ sub _praat {
         print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
         print "Do you want to continue? [y/N] ";
       }
-      if (CPrAN::yesno( $opt, 'n' )) {
+      if (CPrAN::yesno( $opt )) {
         
         my $app = CPrAN->new;
         my %params = %{$opt};

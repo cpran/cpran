@@ -164,7 +164,7 @@ sub execute {
       print '  ', join(' ', map { $_->{name} } @schedule), "\n";
       print "Do you want to continue?";
     }
-    if (CPrAN::yesno( $opt, 'n' )) {
+    if (CPrAN::yesno( $opt )) {
       try {
         foreach my $plugin (@schedule) {
 

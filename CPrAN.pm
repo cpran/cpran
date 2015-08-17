@@ -378,7 +378,7 @@ the answer that will be entered if the user simply presses enter).
 
     my $opt = ( yes => 1 );            # Will automatically say 'yes'
     print "Yes or no?";
-    if (yesno($opt, 'n')) { print "You said yes\n" }
+    if (yesno( $opt )) { print "You said yes\n" }
     else { print "You said no\n" }
 
 By default, responses matching /^y(es)?$/i are considered to be I<yes>
@@ -389,7 +389,7 @@ responses.
 sub yesno {
   my ($opt, $default) = @_;
 
-  $default = $default // 'n';
+  $default = $default // 'y';
   $default = substr($default, 0, 1);
   
   if ($opt->{quiet} && !$opt->{yes}) {
