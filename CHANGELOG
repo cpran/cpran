@@ -11,6 +11,8 @@
   - Text::FormatTable instead of Text::Table for search output with word wrap
   - Internal GitLab API renamed to WWW::GitLab::API
   - Better support for non-standard home directories
+  - CPrAN now prefers lowercase Praat executable on Linux and Mac
+  - Prompts default to "yes"
 - v0.1.10:
   - Praat preferences directory now derived from user HOME in all platforms
   - Improved error checking

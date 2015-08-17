@@ -56,6 +56,7 @@ sub _init {
   $self->{root} = $root->stringify;
 
   if ( -e $root ) {
+    $self->{root} = $root->stringify;
     $self->{installed} = 1;
   }
 
@@ -225,9 +226,8 @@ sub test {
   
   my $praat;
   for ($^O) {
-    if    (/darwin/)  { $praat = which 'Praat'    }
-    elsif (/MSWin32/) { $praat = which 'praatcon' }
-    else              { $praat = which 'praat'    }
+    if    (/MSWin32/) { $praat = which('praatcon')       }
+    else              { which('praat') || which('Praat') }
   }
   die "Could not find path to Praat executable. Make sure Praat is available\n"
     unless defined $praat;
