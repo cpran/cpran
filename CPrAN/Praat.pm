@@ -139,7 +139,6 @@ sub download {
 
   my $response = $ua->get( $self->{home} . $self->{package} );
   if ($response->is_success) {
-    use Data::Printer;
     return $response->decoded_content;
   }
   else {
@@ -193,7 +192,6 @@ sub latest {
   
   use HTML::Tree;
   use LWP::UserAgent;
-  use Data::Printer;
   
   my $tree    = HTML::Tree->new();
   my $ua      = LWP::UserAgent->new;

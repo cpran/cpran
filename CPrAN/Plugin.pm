@@ -227,7 +227,7 @@ sub test {
   my $praat;
   for ($^O) {
     if    (/MSWin32/) { $praat = which('praatcon')       }
-    else              { which('praat') || which('Praat') }
+    else              { $praat = which('praat') || which('Praat') }
   }
   die "Could not find path to Praat executable. Make sure Praat is available\n"
     unless defined $praat;
