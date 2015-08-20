@@ -14,3 +14,4 @@
 # <http://www.gnu.org/licenses/>.
 
 Add menu command... "Objects" "Praat" "CPrAN" "" 0 
+Add menu command... "Objects" "Help" "CPrAN" "" 0 
