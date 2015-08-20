@@ -109,7 +109,9 @@ sub execute {
 
   unless ($opt->{quiet}) {
     if (@found) {
-      my $width = (!defined $opt->{wrap} or $opt->{wrap}) ? 79 : 1000;
+      use Term::ReadKey;
+      my ($wchar, $hchar, $wpixels, $hpixels) = GetTerminalSize();
+      my $width = (!defined $opt->{wrap} or $opt->{wrap}) ? $wchar : 1000;
       print $self->{output}->render($width);
     }
     else { print "No matches found\n" }
