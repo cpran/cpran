@@ -21,9 +21,8 @@ B<CPrAN> - A package manager for Praat
   use File::Which;
   my $praat;
   for ($^O) {
-    if    (/darwin/)  { $praat = which 'Praat'    }
-    elsif (/MSWin32/) { $praat = which 'praatcon' }
-    else              { $praat = which 'praat'    }
+    if    (/MSWin32/) { $praat = which 'praatcon'                 }
+    else              { $praat = which('praat') || which('Praat') }
   }
   warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n"
     unless defined $praat;
