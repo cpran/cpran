@@ -13,6 +13,8 @@
   - Better support for non-standard home directories
   - CPrAN now prefers lowercase Praat executable on Linux and Mac
   - Prompts default to "yes"
+  - Changed client shebang to use /usr/bin/env perl
+  - Project list is now fetched from user instead of group
 - v0.1.10:
   - Praat preferences directory now derived from user HOME in all platforms
   - Improved error checking

@@ -119,13 +119,14 @@ sub fetch_descriptor {
   use Path::Class;
   use Encode qw(encode decode);
 
-  my ($self, $opt, $api, $project, $commit) = @_;
+  my ($self, $opt, $api, $project, $tag) = @_;
 
   my $name;
   if ($project->{name} =~ /^plugin_(\w+)$/) { $name = $1 }
   else { die "Project is not a plugin" }
 
   my $pid = $project->{id};
+  my $commit = $tag->{commit}->{id};
   
   my $descriptor = encode('utf-8', $api->blob(
     $pid, $commit,
@@ -170,9 +171,7 @@ sub list_projects {
     return \@projects;
   }
   else {
-    my $a = CPrAN::api_group;
-    my $projects = $api->group( CPrAN::api_group )->{projects};
-    return $projects;
+    return $api->projects;
   }
 }
 
