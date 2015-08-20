@@ -54,15 +54,12 @@ Now, on to the installation.
 1.  **Install Perl**. You will need Perl to run the current version. Skip to
     step 3 if you already have Perl and the modules you'll need, or if you know
     how to set that up.
-
     * If you are on GNU/Linux then chances are you already have it. If not,
     check your distro's documentation on how to get it.
-
     * If you are on Windows, you can find instructions on how to install it
     [here][winperl].
-
     * If you are on Mac, please see [here][macperl].
-
+    
     > Note: also consider using [perlbrew][] or [plenv][] (or [berrybrew][] if
     > on Windows), which make it easy to set up user-specific perl
     > installations.
