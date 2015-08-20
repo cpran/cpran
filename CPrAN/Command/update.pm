@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -54,17 +55,42 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  my $projects = list_projects($self, $opt, $args);
+  my $projects;
+  try {
+    $projects = list_projects($self, $opt, $args);
+  }
+  catch {
+    chomp;
+    warn "Could not connect to the server: $_\n";
+    exit 1;
+  };
 
+  use Sort::Naturally;
+  use WWW::GitLab::v3;
   use CPrAN::Plugin;
+  
   my @updated;
   foreach my $source (@{$projects}) {
     # Ignore projects that are not public
     next if $source->{visibility_level} < 20;
 
     if ($source->{name} =~ /^plugin_(\w+)$/) {
+
+      my $api = WWW::GitLab::v3->new(
+        url   => CPrAN::api_url(),
+        token => CPrAN::api_token(),
+      );
+
+      my $tags = $api->tags( $source->{id} );
+      my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+/ } @{$tags};
+      @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
+      
+      # Ignore projects with no tags
+      next unless @releases;
+      my $latest = pop @releases;
+      
       print "Fetching $1...\n" if $opt->{verbose};
-      fetch_descriptor($self, $opt, $source);
+      fetch_descriptor($self, $opt, $api, $source, $latest);
       push @updated, CPrAN::Plugin->new($1);
     }
   }
@@ -89,40 +115,27 @@ Returns the serialised downloaded descriptor.
 # TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
 # TODO(jja) The fetching probably belongs in CPrAN::Plugin
 sub fetch_descriptor {
-  use WWW::GitLab::v3;
   use YAML::XS;
   use Path::Class;
   use Encode qw(encode decode);
-  use Try::Tiny;
-  use Sort::Naturally;
 
-  my ($self, $opt, $source) = @_;
+  my ($self, $opt, $api, $project, $commit) = @_;
+
   my $name;
-
-  if ($source->{name} =~ /^plugin_(\w+)$/) { $name = $1 }
+  if ($project->{name} =~ /^plugin_(\w+)$/) { $name = $1 }
   else { die "Project is not a plugin" }
 
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
-
-  my $tags = $api->tags( $source->{id} );
-  my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+$/ } @{$tags};
-  @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
-
-  my $latest = pop @releases;
-
+  my $pid = $project->{id};
+  
   my $descriptor = encode('utf-8', $api->blob(
-    $source->{id},
-    $latest->{commit}->{id},
+    $pid, $commit,
     { filepath => 'cpran.yaml' }
   ), Encode::FB_CROAK );
 
   eval { YAML::XS::Load( $descriptor ) };
   if ($@) {
     warn "Could not parse YAML descriptor" if $opt->{verbose};
-    warn "$@" if ($opt->{verbose} > 1);
+    warn "$@" if ($opt->{debug});
   } else {
     
     my $target = file( CPrAN::root(), $name );
@@ -157,7 +170,9 @@ sub list_projects {
     return \@projects;
   }
   else {
-    return $api->group( CPrAN::api_group() )->{projects};
+    my $a = CPrAN::api_group;
+    my $projects = $api->group( CPrAN::api_group )->{projects};
+    return $projects;
   }
 }
 
