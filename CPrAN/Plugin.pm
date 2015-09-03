@@ -126,7 +126,7 @@ sub url {
 
   return $self->{url} if     defined $self->{url};
   return undef        unless defined $self->{remote};
-  
+
   use WWW::GitLab::v3;
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
@@ -140,7 +140,7 @@ sub url {
       last;
     }
   }
-  
+
   return $self->{url};
 }
 
@@ -155,7 +155,7 @@ sub id {
 
   return $self->{id} if     defined $self->{id};
   return undef       unless defined $self->{remote};
-  
+
   use WWW::GitLab::v3;
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
@@ -169,7 +169,7 @@ sub id {
       last;
     }
   }
-  
+
   return $self->{id};
 }
 
@@ -222,39 +222,59 @@ sub test {
   use File::Which;
 
   my ($self, $opt) = @_;
-  $opt = $opt // {}; 
-  
+  $opt = $opt // {};
+
+  # Find the Praat executable
+  # In Windows, this will normally be "praatcon" (case-insensitive)
+  # In Linux, this is (normally) "praat" (case-sensitive)
+  # In Mac, this will normally be "Praat" (case-insensitive), but could
+  # be case sensitive in some systems.
+  # For more obscure cases, an option to specify the path to Praat is needed.
   my $praat;
-  for ($^O) {
-    if    (/MSWin32/) { $praat = which('praatcon')                }
-    else              { $praat = which('praat') || which('Praat') }
+  try {
+    for ($^O) {
+      if    (/MSWin32/) {
+        $praat = 'praatcon';
+        which($praat) or die;
+      }
+      else {
+        if (which 'praat') {
+          $praat = 'praat';
+        }
+        elsif (which 'Praat') {
+          $praat = 'Praat';
+        }
+        else { die }
+      }
+    }
   }
-  die "Could not find path to Praat executable. Make sure Praat is available\n"
-    unless defined $praat;
-  
+  catch {
+    die "Could not find path to Praat executable. Make sure Praat is available\n";
+  };
+
   die "$self->{name} is not installed" unless ($self->is_installed);
 
   use Cwd;
   my $oldwd = getcwd;
   chdir $self->{root}
     or die "Could not change directory";
-  
+
   unless ( -e 't' ) {
     warn "No tests for $self->{name}\n";
     return undef;
   }
-  
+
   # Run the tests
   my $prove = App::Prove->new;
   my @args;
-  
+
   push @args, ('--exec', "$praat -a");
-  
+
   if ($opt->{log}) {
     try {
       require TAP::Harness::Archive;
       TAP::Harness::Archive->import;
-      
+
       my $log = dir($self->{root}, '.log');
       unless ( -e $log ) {
         mkdir $log
@@ -275,10 +295,10 @@ sub test {
 
   $prove->process_args( @args );
   my $results = $prove->run;
- 
+
   chdir $oldwd
     or die "Could not change directory";
-    
+
   if ($results) { return 1 } else { return 0 }
 }
 
@@ -292,7 +312,7 @@ must be asked for by name. Any other names are an error.
 sub print {
   use Encode qw( decode );
   use Path::Class;
-  
+
   my ($self, $name) = @_;
   die "Not a valid field"
     unless $name =~ /^(local|remote)$/;
@@ -308,7 +328,7 @@ sub print {
 sub _read {
   use YAML::XS;
   use Path::Class;
-  
+
   my ($self, $file) = @_;
 
   if (-e $file) {
