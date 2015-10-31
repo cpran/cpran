@@ -58,12 +58,12 @@ sub validate_args {
       $self->_praat($opt);
     }
   }
-  
+
   # Users might be tempted to input the names of plugin as "plugin_name", but
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
   # but a (clumsy) way for Praat to recognize plugin directories.
   $args = strip_prefix($args, $opt);
-  
+
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
@@ -170,7 +170,7 @@ sub execute {
 
           # Now that we know what plugins to install and in what order, we
           # install them
-          
+
           if ($opt->{git}) {
             try {
               use Sort::Naturally;
@@ -192,7 +192,7 @@ sub execute {
             print "Extracting...\n" unless $opt->{quiet};
             install( $opt, $archive );
           }
-          
+
           print "Testing $plugin->{name}...\n" unless $opt->{quiet};
           $plugin->update;
 
@@ -204,7 +204,7 @@ sub execute {
             chomp;
             warn "There were errors while testing:\n$_\n";
           };
-          
+
           unless ($success) {
             if ($opt->{force}) {
               warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
@@ -223,7 +223,7 @@ sub execute {
 
               my $cmd = CPrAN::Command::remove->new({});
               $app->execute_command($cmd, \%params, $plugin->{name});
-              
+
               print "Did not install $plugin->{name}.\n" unless $opt->{quiet};
               die;
             }
@@ -516,13 +516,13 @@ sub strip_prefix {
 sub _praat {
   use CPrAN::Praat;
   use Path::Class;
-  
+
   my ($self, $opt) = @_;
-  
+
   try {
     my $praat = CPrAN::Praat->new($opt);
     $praat->latest;
-    
+
     if (defined $praat->{path}) {
       unless (defined $opt->{reinstall}) {
         warn "Praat is already installed. Use --reinstall to ignore this warning\n";
@@ -532,10 +532,10 @@ sub _praat {
     elsif (defined $opt->{path}) {
       die "Path does not exist"
         unless -e $opt->{path};
-        
+
       die "Path is not a directory"
         unless -d $opt->{path};
-      
+
       $praat->{path} = $opt->{path};
     }
     else {
@@ -559,21 +559,21 @@ sub _praat {
     unless (-w $praat->{path}) {
       die "Cannot write to $praat->{path}.\n";
     }
-    
+
     # TODO(jja) Should we check for the target path to be in PATH?
-    
+
     print "Querying server for latest version...\n" unless $opt->{quiet};
     unless ($opt->{quiet}) {
       print "Praat v", $praat->latest, " will be INSTALLED in $praat->{path}\n";
       print "Do you want to continue?";
     }
     if (CPrAN::yesno( $opt )) {
-      
+
       print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n"
         if defined $opt->{quiet} && $opt->{quiet} == 1;
-        
+
       my $archive = $praat->download;
-        
+
       use File::Temp;
       my $package = File::Temp->new(
         template => 'praat' . $praat->latest . '-XXXXX',
@@ -594,11 +594,11 @@ sub _praat {
 
       # Extract archives
       use Archive::Extract;
-      
+
       my $ae = Archive::Extract->new( archive => $package->filename );
       $ae->extract( to => $extract )
         or die "Could not extract package: $ae->error";
-      
+
       use Path::Class;
       my $file = file($ae->extract_path, $ae->files->[0]);
       File::Copy::move $file, file($praat->{path}, $praat->{bin})

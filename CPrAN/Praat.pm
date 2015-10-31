@@ -21,7 +21,7 @@ my $praat = CPrAN::Praat->new();
 $praat->remove
 
 # download the archive of the latest version of Praat
-$praat->download 
+$praat->download
 
 # respectively return the current or latest version of Praat for this platform
 $praat->current
@@ -35,20 +35,18 @@ A pseudo-class to encapsulate CPrAN's handling of Praat itself.
 
 sub new {
   my ($class, $opt) = @_;
-  
+
   my $self = {
     home    => 'http://www.fon.hum.uva.nl/praat/',
     options => $opt // {},
   };
-  
+
   for ($^O) {
     if (/darwin/) {
-      $self->{bin} = 'Praat';
       $self->{os}  = "mac";
       $self->{ext} = "\.dmg";
     }
     elsif (/MSWin32/) {
-      $self->{bin} = 'praatcon';
       $self->{os}  = "win";
       $self->{ext} = "\.zip";
       if (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ and
@@ -60,21 +58,29 @@ sub new {
       }
     }
     else {
-      $self->{bin} = 'praat';
       $self->{os}  = "linux";
       $self->{ext} = "\.tar\.gz";
     }
   }
-  
+
   use File::Which;
+  $self->{bin} = which('praatcon') || which('praat') || which('Praat');
+  unless (defined $self->{bin}) {
+    die "Could not find path to Praat executable. Make sure Praat is available\n";
+  }
+
+  $self = bless($self, $class);
+
   use Path::Class;
   $self->{path} = which($self->{bin});
   if (defined $self->{path}) {
     my @parts = file($self->{path})->components;
-    pop @parts;
+    $self->{bin} = pop @parts;
     $self->{path} = dir(@parts)->stringify;
   }
-  
+
+  $self->{current} = $self->current;
+
   if (!defined $self->{bit}) {
     try {
       my $cmd = 'uname -a';
@@ -88,8 +94,9 @@ sub new {
       $self->{bit} = 32;
     };
   }
-  
-  return bless $self, $class;
+
+  return $self;
+
 }
 
 =head1 METHODS
@@ -108,15 +115,15 @@ sub remove {
   my ($self) = @_;
 
   use Path::Class;
-  
+
   die "Could not find path to $self->{bin}\n"
     unless defined $self->{path};
 
   my $full = file($self->{path}, $self->{bin})->stringify;
-  
+
   my $removed = unlink($full)
     or die "Could not remove $full: $!\n";
-    
+
   return $removed;
 }
 
@@ -156,21 +163,22 @@ Gets the current version of Praat
 sub current {
   my ($self) = @_;
 
-  return $self->{current} if defined $self->{current};  
+  return $self->{current} if defined $self->{current};
 
   die "Could not find path to $self->{bin}\n"
     unless defined $self->{path};
-    
+
   try {
-    my $tmpfile = File::Temp->new(TEMPLATE => 'pscXXXXX');
-    
-    my $script = "printline 'praatVersion'";
-    print $tmpfile $script;
-    
-    my $cmd = $self->{bin} . " " . $tmpfile;
-    open CMD, "$cmd 2>&1 |"
-      or die ("Could not execute $cmd: $!");
-    chomp($self->{current} = <CMD>);
+    my $tmpin  = File::Temp->new(TEMPLATE => 'pscXXXXX',  SUFFIX => '.praat' );
+    my $tmpout = File::Temp->new(TEMPLATE => 'praat_versionXXXXX' );
+
+    my $script = "praatVersion\$ > $tmpout";
+    print $tmpin $script;
+
+    use Path::Class;
+    system($self->{bin}, $tmpin);
+    $self->{current} = file($tmpout)->slurp;
+    $self->{current} =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   }
   catch {
     die "Could not get current version of Praat: $_\n";
@@ -187,12 +195,12 @@ Gets the latest version of Praat
 
 sub latest {
   my ($self) = @_;
-  
+
   return $self->{latest} if defined $self->{latest};
-  
+
   use HTML::Tree;
   use LWP::UserAgent;
-  
+
   my $tree    = HTML::Tree->new();
   my $ua      = LWP::UserAgent->new;
   my $package = qr/^praat(?'version'[0-9]{4})_$self->{os}$self->{bit}$self->{ext}/;
@@ -207,12 +215,12 @@ sub latest {
     );
     $self->{'package'} = $pkglink->as_trimmed_text;
     $self->{latest} = $+{version} if ($self->{package} =~ /$package/);
-    
+
   }
   else {
     die $response->status_line;
   }
-  
+
   return $self->{latest};
 }
 

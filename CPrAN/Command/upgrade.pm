@@ -43,7 +43,7 @@ is not currently implemented.
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
-  
+
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
@@ -76,9 +76,9 @@ sub execute {
   use CPrAN::Plugin;
 
   my ($self, $opt, $args) = @_;
-  
+
   warn "Running upgrade\n" if $opt->{debug};
-  
+
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
@@ -109,7 +109,7 @@ sub execute {
   # @todo will hold the names of the plugins passed as arguments that are
   #   a) valid CPrAN plugin names; and
   #   b) already installed
-  #   c) not at the latest version  
+  #   c) not at the latest version
   my @todo;
   foreach my $plugin (@plugins) {
     if ($plugin->is_installed) {
@@ -136,7 +136,7 @@ sub execute {
     if (CPrAN::yesno( $opt )) {
       my $app;
       my %params;
-      
+
       unless ($opt->{git}) {
         $app = CPrAN->new();
 
@@ -145,7 +145,7 @@ sub execute {
         $params{quiet} = 1;
         $params{yes}   = 1;
       }
-    
+
       foreach my $plugin (@todo) {
         print "Upgrading $plugin->{name} from v$plugin->{local}->{version} to v$plugin->{remote}->{version}...\n" unless $opt->{quiet};
 
@@ -159,20 +159,20 @@ sub execute {
             catch {
               die "No git repository at ", $plugin->root, "\n", ($opt->{debug}) ? $_ : '';
             };
-            
+
             try {
               $repo->run( 'fetch', '--quiet', { fatal => '!0' } )
             }
             catch {
               die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
             };
-            
+
             use Sort::Naturally;
             my @tags = split /\n/, $repo->run( 'tag', { fatal => '!0' } );
             @tags = sort { ncmp($a, $b) } @tags;
             my @args = ( 'checkout', '--quiet', $tags[-1] );
             push @args, '--force' if defined $opt->{force};
-            
+
             try {
               my ($STDOUT, $STDERR) = capture {
                 $repo->run(@args, { fatal => '!0' })
@@ -246,13 +246,13 @@ sub opt_spec {
 
 =over
 
-=cut 
+=cut
 
 sub _praat {
   use CPrAN::Praat;
-  
+
   my ($self, $opt) = @_;
-  
+
   try {
     my $praat = CPrAN::Praat->new();
     print "Querying server for latest version...\n" unless $opt->{quiet};
@@ -262,14 +262,14 @@ sub _praat {
         print "Do you want to continue? [y/N] ";
       }
       if (CPrAN::yesno( $opt )) {
-        
+
         my $app = CPrAN->new;
         my %params = %{$opt};
         $params{yes} = $params{reinstall} = 1;
         # TODO(jja) Better verbosity controls
         $params{quiet} = 2; # Silence everything _but_ the download progress bar
         $app->execute_command(CPrAN::Command::install->new({}), \%params, 'praat');
-        
+
       }
     }
     else {

@@ -71,7 +71,7 @@ sub execute {
 
   my @plugins;
   my @names = CPrAN::installed;
-  
+
   if (defined $opt->{installed}) {
     print "D: " . scalar @names . " installed plugins\n" if $opt->{debug};
   }
@@ -82,7 +82,7 @@ sub execute {
   my %names;
   $names{$_} = 1 foreach @names;
   @plugins = map { CPrAN::Plugin->new($_) } keys %names;
-  
+
   print "D: " . scalar @plugins . " known plugins\n"
     if (!defined $opt->{installed} && $opt->{debug});
 
@@ -91,7 +91,7 @@ sub execute {
     "Name", "Local", "Remote", "Description"
   );
   @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
-  
+
   my %list;
   $list{$_->{name}} = $_ foreach @plugins;
   foreach my $query (@{$args}) {

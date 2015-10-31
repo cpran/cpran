@@ -211,7 +211,7 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 
 =cut
 
-# TODO(jja) If this is a fresh install, CPrAN root will not exist, so will not 
+# TODO(jja) If this is a fresh install, CPrAN root will not exist, so will not
 # readable/writable. What needs to be checked is whether the root could be
 # created.
 sub check_permissions {
@@ -255,11 +255,11 @@ criteria they need to fulfill.
 
 sub installed {
   use Path::Class;
-  
+
   my @files = grep {
     ($_->is_dir && $_->basename =~ /^plugin_\w+/)
   } dir( CPrAN::praat() )->children;
-  
+
   return map {
     $1 if $_->basename =~ /^plugin_(\w+)/;
   } @files;
@@ -390,7 +390,7 @@ sub yesno {
 
   $default = $default // 'y';
   $default = substr($default, 0, 1);
-  
+
   if ($opt->{quiet} && !$opt->{yes}) {
     return 0;
   }
@@ -403,7 +403,7 @@ sub yesno {
   my $prompt = " [y/n] ";
   $prompt =~ s/($default)/\U$1/;
   print $prompt unless $opt->{quiet};
-  
+
   my $input;
   $input = <STDIN>;
   chomp $input;

@@ -68,7 +68,7 @@ sub execute {
   use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
-  
+
   my @updated;
   foreach my $source (@{$projects}) {
     # Ignore projects that are not public
@@ -84,11 +84,11 @@ sub execute {
       my $tags = $api->tags( $source->{id} );
       my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+/ } @{$tags};
       @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
-      
+
       # Ignore projects with no tags
       next unless @releases;
       my $latest = pop @releases;
-      
+
       print "Fetching $1...\n" if $opt->{verbose};
       fetch_descriptor($self, $opt, $api, $source, $latest);
       push @updated, CPrAN::Plugin->new($1);
@@ -127,7 +127,7 @@ sub fetch_descriptor {
 
   my $pid = $project->{id};
   my $commit = $tag->{commit}->{id};
-  
+
   my $descriptor = encode('utf-8', $api->blob(
     $pid, $commit,
     { filepath => 'cpran.yaml' }
@@ -138,7 +138,7 @@ sub fetch_descriptor {
     warn "Could not parse YAML descriptor" if $opt->{verbose};
     warn "$@" if ($opt->{debug});
   } else {
-    
+
     my $target = file( CPrAN::root(), $name );
     my $fh = $target->openw();
     $fh->print($descriptor);

@@ -220,6 +220,7 @@ sub test {
   use App::Prove;
   use Path::Class;
   use File::Which;
+  use CPrAN::Praat;
 
   my ($self, $opt) = @_;
   $opt = $opt // {};
@@ -229,28 +230,10 @@ sub test {
   # In Linux, this is (normally) "praat" (case-sensitive)
   # In Mac, this will normally be "Praat" (case-insensitive), but could
   # be case sensitive in some systems.
+  # For versions >=6.0 praatcon no longer exists in Windows, and "praat" should
+  # be used.
   # For more obscure cases, an option to specify the path to Praat is needed.
-  my $praat;
-  try {
-    for ($^O) {
-      if    (/MSWin32/) {
-        $praat = 'praatcon';
-        which($praat) or die;
-      }
-      else {
-        if (which 'praat') {
-          $praat = 'praat';
-        }
-        elsif (which 'Praat') {
-          $praat = 'Praat';
-        }
-        else { die }
-      }
-    }
-  }
-  catch {
-    die "Could not find path to Praat executable. Make sure Praat is available\n";
-  };
+  my $praat = CPrAN::Praat->new;
 
   die "$self->{name} is not installed" unless ($self->is_installed);
 
@@ -268,7 +251,17 @@ sub test {
   my $prove = App::Prove->new;
   my @args;
 
-  push @args, ('--exec', "$praat -a");
+
+  if ($praat->{current} >= 6 and $praat->{current} < 6.003) {
+    warn "Automated tests not supported for this version of Praat\n";
+    return undef;
+  }
+  elsif ($praat->{current} >= 6.003) {
+    push @args, ('--exec', "$praat->{bin} --ansi --run");
+  }
+  else {
+    push @args, ('--exec', "$praat->{bin} --ansi");
+  }
 
   if ($opt->{log}) {
     try {
