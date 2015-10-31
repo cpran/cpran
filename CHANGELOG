@@ -15,6 +15,7 @@
   - Prompts default to "yes"
   - Changed client shebang to use /usr/bin/env perl
   - Project list is now fetched from user instead of group
+  - Tests supported for Praat >= 6.0.03 (not 6.0 ~ 6.0.02)
 - v0.1.10:
   - Praat preferences directory now derived from user HOME in all platforms
   - Improved error checking
