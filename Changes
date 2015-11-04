@@ -1,3 +1,9 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+	Packaged with Dist::Zilla
+
+0.01
+
+	Other stuff.

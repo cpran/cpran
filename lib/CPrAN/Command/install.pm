@@ -205,7 +205,7 @@ sub execute {
             warn "There were errors while testing:\n$_\n";
           };
 
-          unless ($success) {
+          if (defined $success and !$success) {
             if ($opt->{force}) {
               warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
             }
@@ -242,7 +242,7 @@ sub execute {
         }
       }
       catch {
-        warn "There were errors during installation\n";
+        warn "There were errors during installation: $_\n";
         exit 1;
       };
     }

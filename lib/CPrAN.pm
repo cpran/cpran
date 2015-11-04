@@ -54,7 +54,7 @@ B<CPrAN> - A package manager for Praat
       # GNU/Linux
       $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
-    $ROOT = dir($PRAAT, 'plugin_cpran', '.cpran')->stringify;
+    $ROOT = dir($PRAAT, '.cpran')->stringify;
   }
 
   sub root  { if (@_) { $ROOT  = shift } else { return $ROOT  } }
