@@ -79,7 +79,7 @@ sub new {
     $self->{path} = dir(@parts)->stringify;
   }
 
-  $self->{current} = $self->current;
+  $self->current;
 
   if (!defined $self->{bit}) {
     try {
@@ -178,7 +178,6 @@ sub current {
     use Path::Class;
     system($self->{bin}, $tmpin);
     $self->{current} = file($tmpout)->slurp;
-    $self->{current} =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   }
   catch {
     die "Could not get current version of Praat: $_\n";

@@ -252,11 +252,13 @@ sub test {
   my @args;
 
 
-  if ($praat->{current} >= 6 and $praat->{current} < 6.003) {
+  my $version = $praat->{current};
+  $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
+  if ($version >= 6 and $version < 6.003) {
     warn "Automated tests not supported for this version of Praat\n";
     return undef;
   }
-  elsif ($praat->{current} >= 6.003) {
+  elsif ($version >= 6.003) {
     push @args, ('--exec', "$praat->{bin} --ansi --run");
   }
   else {
