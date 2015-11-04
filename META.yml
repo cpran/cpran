@@ -1,0 +1,49 @@
+---
+abstract: 'A package manager for Praat'
+author:
+  - 'José Joaquín Atria <jjatria@gmail.com>'
+build_requires:
+  Test::More: '0'
+  perl: '5.006'
+configure_requires:
+  ExtUtils::MakeMaker: '0'
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 5.041, CPAN::Meta::Converter version 2.150001'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: CPrAN
+requires:
+  App::Cmd::Setup: '0'
+  App::Prove: '0'
+  Archive::Extract: '0'
+  Archive::Tar: '0'
+  Capture::Tiny: '0'
+  Carp: '0'
+  Cwd: '0'
+  Data::Dumper: '0'
+  Data::Printer: '0'
+  Encode: '0'
+  File::Path: '0'
+  File::Temp: '0'
+  File::Which: '0'
+  Git::Repository: '0'
+  Graph: '0.96'
+  HTML::Tree: '0'
+  JSON::Tiny: '0'
+  LWP::Protocol::https: '0'
+  LWP::UserAgent: '0'
+  Params::Validate: '0'
+  Path::Class: '0.35'
+  Sort::Naturally: '0'
+  TAP::Harness::Archive: '0'
+  Term::ReadKey: '0'
+  Text::FormatTable: '0'
+  Try::Tiny: '0'
+  URI: '0'
+  URI::QueryParam: '0'
+  YAML::XS: '0'
+  strict: '0'
+  warnings: '0'
+version: '0.02004'

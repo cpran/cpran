@@ -32,7 +32,11 @@ plugins, regardless of whether they are on CPrAN or not.
 sub new {
   my ($class, $name) = @_;
 
-  croak "Already a reference" if ref $name;
+  if (ref $name) {
+    use Data::Printer;
+    p $name;
+    croak "Already a reference: " . ref $name;
+  }
 
   my $self = bless {
     name  => $name,
@@ -55,17 +59,20 @@ sub _init {
   my $root = dir(CPrAN::praat(), 'plugin_' . $self->{name});
   $self->{root} = $root->stringify;
 
-  if ( -e $root ) {
-    $self->{root} = $root->stringify;
-    $self->{installed} = 1;
+  $self->{installed} = 1 if ( -e $root );
+
+  my $local = file($self->{root}, 'cpran.yaml');
+  if (-e $local) {
+    $self->{'local'} = $self->_read( $local );
   }
 
-  $self->{'local'} = $self->_read(
-    file($self->{root}, 'cpran.yaml')
-  );
-  $self->{'remote'} = $self->_read(
-    file(CPrAN::root(), $self->{name})
-  );
+  my $remote = file(CPrAN::root(), $self->{name});
+  if (-e $remote) {
+    $self->{'remote'} = $self->_read( $remote );
+  }
+  else {
+    $self->fetch;
+  }
 }
 
 =head1 METHODS
@@ -121,28 +128,7 @@ Gets the plugin URL, pointing to the clonable git repository
 
 =cut
 
-sub url {
-  my ($self) = @_;
-
-  return $self->{url} if     defined $self->{url};
-  return undef        unless defined $self->{remote};
-
-  use WWW::GitLab::v3;
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
-
-  $self->{url} = undef;
-  foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
-    if ($_->{name} eq 'plugin_' . $self->{name}) {
-      $self->{url} = $_->{http_url_to_repo};
-      last;
-    }
-  }
-
-  return $self->{url};
-}
+sub url { return $_[0]->{url} }
 
 =item id()
 
@@ -150,27 +136,77 @@ Fetches the CPrAN remote id for the plugin.
 
 =cut
 
-sub id {
+sub id { return $_[0]->{id} }
+
+=item fetch()
+
+Fetches remote CPrAN data for the plugin.
+
+=cut
+
+sub fetch {
   my $self = shift;
 
-  return $self->{id} if     defined $self->{id};
-  return undef       unless defined $self->{remote};
-
   use WWW::GitLab::v3;
+  use Sort::Naturally;
+  use YAML::XS;
+  use Encode qw(encode decode);
+
+
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
   );
 
-  $self->{id} = undef;
+  my ($id, $url, $latest, $remote);
   foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
-    if ($_->{name} eq 'plugin_' . $self->{name}) {
-      $self->{id} = $_->{id};
+    if (($_->{name} eq 'plugin_' . $self->{name}) &&
+        ($_->{visibility_level} >= 20)) {
+
+      $id  = $_->{id};
+      $url = $_->{http_url_to_repo};
       last;
     }
   }
+  unless (defined $id && defined $url) {
+    warn "No remote version of $self->{name}";
+    return undef;
+  }
 
-  return $self->{id};
+  my $tags = $api->tags( $id );
+  my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+/ } @{$tags};
+  @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
+
+  # Ignore projects with no tags
+  unless (@releases) {
+    warn "No releases for $self->{name}";
+    warn "  $_->{name}\n" foreach (@{$tags});
+    return undef;
+  }
+
+  $latest = pop @releases;
+  $latest = $latest->{commit}->{id};
+
+  $remote = encode('utf-8', $api->blob(
+    $id, $latest,
+    { filepath => 'cpran.yaml' }
+  ), Encode::FB_CROAK );
+
+  try {
+    YAML::XS::Load( $remote )
+  }
+  catch {
+    warn "Improperly formed descriptor for $self->{name}";
+    return undef;
+  };
+
+  $self->{id}     = $id;
+  $self->{url}    = $url;
+  $self->{remote} = $self->_read( $remote );
+  $self->{latest} = $latest;
+  $self->{cpran}  = 1;
+
+  return 1;
 }
 
 =item is_latest()
@@ -252,11 +288,13 @@ sub test {
   my @args;
 
 
-  if ($praat->{current} >= 6 and $praat->{current} < 6.003) {
+  my $version = $praat->{current};
+  $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
+  if ($version >= 6 and $version < 6.003) {
     warn "Automated tests not supported for this version of Praat\n";
     return undef;
   }
-  elsif ($praat->{current} >= 6.003) {
+  elsif ($version >= 6.003) {
     push @args, ('--exec', "$praat->{bin} --ansi --run");
   }
   else {
@@ -321,26 +359,42 @@ sub print {
 sub _read {
   use YAML::XS;
   use Path::Class;
+  use Data::Printer;
 
-  my ($self, $file) = @_;
+  my ($self, $in) = @_;
+  my $yaml;
 
-  if (-e $file) {
-    my $yaml = Load( scalar $file->slurp );
-    _force_lc_hash($yaml);
-    $yaml->{name} = $yaml->{plugin};
-    $yaml->{descriptor} = $file->stringify;
-    $self->{cpran} = 1;
-    return $yaml;
+  try {
+    if (ref $in eq 'Path::Class::file') {
+      croak unless -e $in;
+      $in = scalar $in->slurp;
+    }
+    $yaml = YAML::XS::Load( $in );
   }
-  return undef;
+  catch {
+    warn "Could not deserialise descriptor";
+    return undef;
+  };
+
+  unless (ref $yaml eq 'HASH') {
+    p $yaml;
+    return undef;
+  }
+
+  _force_lc_hash($yaml);
+  $yaml->{name} = $yaml->{plugin};
+  $self->{cpran} = 1;
+  return $yaml;
 }
 
 sub _force_lc_hash {
   my $hashref = shift;
-  foreach my $key (keys %{$hashref} ) {
-    $hashref->{lc($key)} = $hashref->{$key};
-    _force_lc_hash($hashref->{lc($key)}) if ref $hashref->{$key} eq 'HASH';
-    delete($hashref->{$key}) unless $key eq lc($key);
+  if (ref $hashref eq 'HASH') {
+    foreach my $key (keys %{$hashref} ) {
+      $hashref->{lc($key)} = $hashref->{$key};
+      _force_lc_hash($hashref->{lc($key)}) if ref $hashref->{$key} eq 'HASH';
+      delete($hashref->{$key}) unless $key eq lc($key);
+    }
   }
 }
 

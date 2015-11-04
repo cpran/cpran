@@ -1,5 +1,4 @@
 *~
 *kate-swp
-*.orig
-.cpran
-wiki
+
+.build

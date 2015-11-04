@@ -71,27 +71,22 @@ sub execute {
 
   my @updated;
   foreach my $source (@{$projects}) {
-    # Ignore projects that are not public
-    next if $source->{visibility_level} < 20;
+    my $name = $source->{name};
+    $name =~ s/^plugin_//;
 
-    if ($source->{name} =~ /^plugin_(\w+)$/) {
+    my $plugin = CPrAN::Plugin->new( $name );
 
-      my $api = WWW::GitLab::v3->new(
-        url   => CPrAN::api_url(),
-        token => CPrAN::api_token(),
-      );
+    if (defined $plugin->{remote}) {
+      print "Fetching $plugin->{name}...\n" if $opt->{verbose};
+      $plugin->fetch;
 
-      my $tags = $api->tags( $source->{id} );
-      my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+/ } @{$tags};
-      @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
+      push @updated, $plugin;
 
-      # Ignore projects with no tags
-      next unless @releases;
-      my $latest = pop @releases;
-
-      print "Fetching $1...\n" if $opt->{verbose};
-      fetch_descriptor($self, $opt, $api, $source, $latest);
-      push @updated, CPrAN::Plugin->new($1);
+      unless (defined $opt->{virtual}) {
+        my $out = file( CPrAN::root(), $plugin->{name} );
+        my $fh = $out->openw();
+        $fh->print( $plugin->{remote} );
+      }
     }
   }
   return \@updated;
@@ -102,49 +97,6 @@ sub execute {
 =over
 
 =cut
-
-=item B<fetch_descriptor()>
-
-Fetches the descriptor of a plugin and writes it into an appropriately named
-file in the specified directory.
-
-Returns the serialised downloaded descriptor.
-
-=cut
-
-# TODO(jja) This subroutine fetches _and_ writes. It should be broken apart.
-# TODO(jja) The fetching probably belongs in CPrAN::Plugin
-sub fetch_descriptor {
-  use YAML::XS;
-  use Path::Class;
-  use Encode qw(encode decode);
-
-  my ($self, $opt, $api, $project, $tag) = @_;
-
-  my $name;
-  if ($project->{name} =~ /^plugin_(\w+)$/) { $name = $1 }
-  else { die "Project is not a plugin" }
-
-  my $pid = $project->{id};
-  my $commit = $tag->{commit}->{id};
-
-  my $descriptor = encode('utf-8', $api->blob(
-    $pid, $commit,
-    { filepath => 'cpran.yaml' }
-  ), Encode::FB_CROAK );
-
-  eval { YAML::XS::Load( $descriptor ) };
-  if ($@) {
-    warn "Could not parse YAML descriptor" if $opt->{verbose};
-    warn "$@" if ($opt->{debug});
-  } else {
-
-    my $target = file( CPrAN::root(), $name );
-    my $fh = $target->openw();
-    $fh->print($descriptor);
-  }
-  return $descriptor;
-}
 
 =item B<list_projects()>
 
@@ -191,6 +143,7 @@ Increase verbosity of output.
 
 sub opt_spec {
   return (
+    [ "virtual" => "do not write anything to disk" ],
   );
 }
 
