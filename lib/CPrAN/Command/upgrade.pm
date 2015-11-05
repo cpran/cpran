@@ -259,7 +259,7 @@ sub _praat {
     if ($praat->current < $praat->latest) {
       unless ($opt->{quiet}) {
         print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
-        print "Do you want to continue? [y/N] ";
+        print "Do you want to continue?";
       }
       if (CPrAN::yesno( $opt )) {
 

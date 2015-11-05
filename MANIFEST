@@ -7,6 +7,7 @@ Makefile.PL
 README
 bin/cpran
 dist.ini
+dist.ini~
 lib/CPrAN.pm
 lib/CPrAN/Command/init.pm
 lib/CPrAN/Command/install.pm
@@ -16,10 +17,8 @@ lib/CPrAN/Command/search.pm
 lib/CPrAN/Command/show.pm
 lib/CPrAN/Command/test.pm
 lib/CPrAN/Command/update.pm
-lib/CPrAN/Command/update.pm~
 lib/CPrAN/Command/upgrade.pm
 lib/CPrAN/Plugin.pm
 lib/CPrAN/Praat.pm
 lib/WWW/GitLab/v3.pm
-readme.md
 t/00-load.t

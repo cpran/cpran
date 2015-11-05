@@ -181,7 +181,7 @@ sub execute {
               my @tags = $repo->run( 'tag' );
               @tags = sort { ncmp($a, $b) } @tags;
               my $latest = pop @tags;
-              $repo->run( 'checkout', '--quiet', $latest );
+              $repo->run( 'checkout', $latest );
               print "Note: checking out '$latest'\n" unless $opt->{quiet};
             }
             catch { die "Error: could not clone repository.\n$_\n" };
