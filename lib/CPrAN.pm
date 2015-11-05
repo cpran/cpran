@@ -438,6 +438,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.2.0.04';
+our $VERSION = '0.02005';
 
 1;
