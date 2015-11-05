@@ -2,8 +2,102 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
-	Packaged with Dist::Zilla
+  * install now more verbose
+  * init uses --yes by default
+
+0.02004   2015-11-05 12:41:09+00:00 Europe/London
+
+  * Packaged with Dist::Zilla
+  * Separated Perl client from Praat plugin
+  * Added init command
+  * Incorrectly jumped to next version :(
+
+0.0110
+
+  * Uses Sort::Naturally to sort plugin versions
+  * Better detection of home directory
+
+0.0110
+
+  * Uses Sort::Naturally to sort plugin versions
+  * Better detection of home directory
+
+
+0.0109
+
+  * update ignores plugins with no remote versions
+
+0.0108
+
+  * Fixed a bug qwith version checking in CPrAN::Plugin
+
+0.0107
+
+  * Client only considers public repositories with semver tags, and safely
+    ignores the rest.
+
+0.0106
+
+  * Fixed a bug with version checking in CPrAN::Plugin
+  * Added git support with --git
+  * Added experimental support to install, remove and upgrade Praat itself
+  * Better option handling in search and list
+
+0.0105
+
+  * Fixed console output on Windows, using --ansi for Praat
+  * Added word wrap for output tables
+  * --force and --reinstall are now different options
+  * Simplified code
+  * Better Mac support: client correctly finds preferences directory
+
+0.0104
+
+  * Added a CPrAN::Plugin module, used throughout interface
+  * search accepts multiple terms
+  * Improved option handling
+
+0.0103
+
+  * Reduced number of required modules
+
+0.0102
+
+  * Fixed a bug with search: they now find non-installed plugins
+
+0.0101
+
+  * Removed unnecessary warnings on runtime
+  * Default behaviou for upgrade command: upgrade all plugins
+  * test skips commands with no tests
+  * Other minor bug fixes
 
 0.01
 
-	Other stuff.
+  * Implemented test, and list; full interface is implemented
+
+0.0006
+
+  * Changed to a custom GitLab API
+
+0.0005
+
+  * --verbose spreads through to rmtree as global option
+
+0.0004
+
+  * Updated documentation
+  * Better argument validation
+
+0.0003
+
+  * Minor bug fixes
+
+0.0002
+
+  * Experimental client uses App::Cmd
+  * Added first commands: install, show, search, remove, update
+
+0.0001
+
+  * Initial release
