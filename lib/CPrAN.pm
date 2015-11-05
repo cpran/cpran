@@ -396,7 +396,7 @@ sub yesno {
   }
 
   if ($opt->{yes}) {
-    print "yes\n" unless ($opt->{quiet});
+    print " yes\n" unless ($opt->{quiet});
     return 1;
   }
 

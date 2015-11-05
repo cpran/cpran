@@ -50,7 +50,9 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   my $app = CPrAN->new();
-  my %params = %{$opt};
+  my %params;
+
+  %params = %{$opt};
   $params{virtual} = 1;
 
   my $cmd;
@@ -59,8 +61,11 @@ sub execute {
   my $cpran = $app->execute_command($cmd, \%params, 'cpran');
   $cpran = pop @{$cpran};
 
+  %params = %{$opt};
+  $params{yes} = 1;
+
   $cmd = CPrAN::Command::install->new({});
-  $app->execute_command($cmd, $opt, $cpran);
+  $app->execute_command($cmd, \%params, $cpran);
 }
 
 sub opt_spec {

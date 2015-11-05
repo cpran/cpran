@@ -33,8 +33,6 @@ sub new {
   my ($class, $name) = @_;
 
   if (ref $name) {
-    use Data::Printer;
-    p $name;
     croak "Already a reference: " . ref $name;
   }
 
@@ -376,10 +374,8 @@ sub _read {
     return undef;
   };
 
-  unless (ref $yaml eq 'HASH') {
-    p $yaml;
-    return undef;
-  }
+  # When does this happen?
+  return undef unless (ref $yaml eq 'HASH');
 
   _force_lc_hash($yaml);
   $yaml->{name} = $yaml->{plugin};
