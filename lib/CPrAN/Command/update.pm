@@ -55,6 +55,8 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running update\n" if $opt->{debug};
+
   my $projects;
   try {
     $projects = list_projects($self, $opt, $args);

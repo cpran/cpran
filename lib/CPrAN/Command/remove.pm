@@ -49,19 +49,19 @@ sub validate_args {
     else {
       use CPrAN::Praat;
       my $praat = CPrAN::Praat->new;
-    
+
       unless (defined $praat->{path}) {
         warn "Praat is not installed. Use 'cpran install praat' to install it\n";
         exit 0;
       }
-    
+
       unless ($opt->{quiet}) {
         print "Praat will be permanently REMOVED:\n";
         print "Do you want to continue?";
       }
       if (CPrAN::yesno( $opt )) {
         $praat->remove;
-        
+
         print "Done.\n" unless $opt->{quiet};
         exit 0;
       }
@@ -94,6 +94,8 @@ sub validate_args {
 
 sub execute {
   my ($self, $opt, $args) = @_;
+
+  warn "DEBUG: Running remove\n" if $opt->{debug};
 
   use Path::Class;
   use CPrAN::Plugin;

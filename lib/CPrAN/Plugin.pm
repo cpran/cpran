@@ -315,6 +315,7 @@ sub test {
     push @args, ('--exec', "$praat->{bin} --ansi");
   }
 
+
   if ($opt->{log}) {
     try {
       require TAP::Harness::Archive;

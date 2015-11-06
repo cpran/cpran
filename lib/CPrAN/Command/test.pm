@@ -49,6 +49,8 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running test\n" if $opt->{debug};
+
   use CPrAN::Plugin;
 
   my $outcome = 1;

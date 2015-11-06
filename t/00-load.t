@@ -33,6 +33,7 @@ can_ok('CPrAN::Plugin', (
   'url',
   'is_latest',
   'test',
+  'fetch',
   'print',
   '_read',
   '_force_lc_hash',

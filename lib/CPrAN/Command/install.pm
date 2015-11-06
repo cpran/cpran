@@ -99,6 +99,8 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running install\n" if $opt->{debug};
+
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
