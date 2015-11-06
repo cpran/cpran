@@ -286,7 +286,8 @@ sub test {
   # For more obscure cases, an option to specify the path to Praat is needed.
   my $praat = CPrAN::Praat->new;
 
-  die "$self->{name} is not installed" unless ($self->is_installed);
+  croak "$self->{name} is not installed; cannot test"
+    unless ($self->is_installed);
 
   use Cwd;
   my $oldwd = getcwd;
