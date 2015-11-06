@@ -23,7 +23,6 @@ requires:
   Carp: '0'
   Cwd: '0'
   Data::Dumper: '0'
-  Data::Printer: '0'
   Encode: '0'
   File::Path: '0'
   File::Temp: '0'
@@ -46,4 +45,4 @@ requires:
   YAML::XS: '0'
   strict: '0'
   warnings: '0'
-version: '0.02005'
+version: '0.02006'

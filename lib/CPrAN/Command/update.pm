@@ -68,24 +68,38 @@ sub execute {
   use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
+  use Path::Class;
 
   my @updated;
   foreach my $source (@{$projects}) {
-    my $name = $source->{name};
-    $name =~ s/^plugin_//;
 
-    my $plugin = CPrAN::Plugin->new( $name );
+    next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
+    next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
 
-    if (defined $plugin->{remote}) {
+    my $plugin;
+    try {
+      $plugin = CPrAN::Plugin->new( $source );
+    }
+    catch {
+      warn "Could not initialise plugin \"$source->{name}\"" if $opt->{debug};
+    };
+    next unless defined $plugin;
+
+    if ($plugin->is_cpran) {
       print "Fetching $plugin->{name}...\n" if $opt->{verbose};
       $plugin->fetch;
 
       push @updated, $plugin;
 
       unless (defined $opt->{virtual}) {
-        my $out = file( CPrAN::root(), $plugin->{name} );
-        my $fh = $out->openw();
-        $fh->print( $plugin->{remote} );
+        if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
+          my $out = file( CPrAN::root(), $plugin->{name} );
+          my $fh = $out->openw();
+          $fh->print( $plugin->{remote}->{descriptor} );
+        }
+        else {
+          # warn "Nothing to write for $plugin->{name}";
+        }
       }
     }
   }

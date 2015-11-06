@@ -1,5 +1,9 @@
 Revision history for CPrAN
 
+0.02006   2015-11-06 02:07:53+00:00 Europe/London
+
+  * Fixed broken version (I really need to implement tests)
+
 0.02005   2015-11-05 13:10:19+00:00 Europe/London
 
   * install now more verbose

@@ -28,7 +28,6 @@ my %WriteMakefileArgs = (
     "Carp" => 0,
     "Cwd" => 0,
     "Data::Dumper" => 0,
-    "Data::Printer" => 0,
     "Encode" => 0,
     "File::Path" => 0,
     "File::Temp" => 0,
@@ -55,7 +54,7 @@ my %WriteMakefileArgs = (
   "TEST_REQUIRES" => {
     "Test::More" => 0
   },
-  "VERSION" => "0.02005",
+  "VERSION" => "0.02006",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -71,7 +70,6 @@ my %FallbackPrereqs = (
   "Carp" => 0,
   "Cwd" => 0,
   "Data::Dumper" => 0,
-  "Data::Printer" => 0,
   "Encode" => 0,
   "File::Path" => 0,
   "File::Temp" => 0,

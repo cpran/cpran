@@ -30,20 +30,32 @@ plugins, regardless of whether they are on CPrAN or not.
 =cut
 
 sub new {
-  my ($class, $name) = @_;
+  my ($class, $in) = @_;
 
-  if (ref $name) {
-    croak "Already a reference: " . ref $name;
+  my $self = {};
+  if (ref $in eq 'HASH') {
+    # Assume we received a GitLab project hash ref as input and parse for data
+    try {
+      $self->{name}  = $in->{name};
+      $self->{id}    = $in->{id};
+      $self->{url}   = $in->{http_url_to_repo};
+    }
+    catch {
+      croak "Unknown hashref as input: $_";
+    }
   }
+  else {
+    $self = {
+      name => $in,
+    };
+  }
+  $self->{name}  =~ s/^plugin_//;
 
-  my $self = bless {
-    name  => $name,
-    cpran => 0,
-  }, $class;
+  $self = bless $self, $class;
 
   $self->_init();
 
-  die "No local or remote plugin named \"$name\" is known. Maybe try update?\n"
+  die "No local or remote plugin named \"$self->{name}\" is known. Maybe try update?\n"
     unless ($self->{cpran} || $self->{installed});
 
   return $self;
@@ -61,14 +73,16 @@ sub _init {
 
   my $local = file($self->{root}, 'cpran.yaml');
   if (-e $local) {
-    $self->{'local'} = $self->_read( $local );
+    $self->{local} = $self->_read( $local );
   }
 
   my $remote = file(CPrAN::root(), $self->{name});
   if (-e $remote) {
     $self->{'remote'} = $self->_read( $remote );
+    $self->fetch unless $self->{remote}->{descriptor};
   }
   else {
+    # warn "No known remote descriptor for $self->{name}. Looking online...";
     $self->fetch;
   }
 }
@@ -150,7 +164,6 @@ sub fetch {
   use YAML::XS;
   use Encode qw(encode decode);
 
-
   my $api = WWW::GitLab::v3->new(
     url   => CPrAN::api_url(),
     token => CPrAN::api_token(),
@@ -158,6 +171,7 @@ sub fetch {
 
   my ($id, $url, $latest, $remote);
   foreach (@{$api->projects( { search => 'plugin_' . $self->{name} } )}) {
+
     if (($_->{name} eq 'plugin_' . $self->{name}) &&
         ($_->{visibility_level} >= 20)) {
 
@@ -167,7 +181,7 @@ sub fetch {
     }
   }
   unless (defined $id && defined $url) {
-    warn "No remote version of $self->{name}";
+    # warn "$self->{name} not found remotely";
     return undef;
   }
 
@@ -177,8 +191,7 @@ sub fetch {
 
   # Ignore projects with no tags
   unless (@releases) {
-    warn "No releases for $self->{name}";
-    warn "  $_->{name}\n" foreach (@{$tags});
+    # warn "No releases for $self->{name}";
     return undef;
   }
 
@@ -190,13 +203,17 @@ sub fetch {
     { filepath => 'cpran.yaml' }
   ), Encode::FB_CROAK );
 
-  try {
-    YAML::XS::Load( $remote )
+  {
+    my $check;
+    try {
+      $check = YAML::XS::Load( $remote )
+    }
+    catch {};
+    unless (defined $check) {
+      # warn "Could not deserialise fetched remote for $self->{name}";
+      return undef;
+    }
   }
-  catch {
-    warn "Improperly formed descriptor for $self->{name}";
-    return undef;
-  };
 
   $self->{id}     = $id;
   $self->{url}    = $url;
@@ -285,7 +302,6 @@ sub test {
   my $prove = App::Prove->new;
   my @args;
 
-
   my $version = $praat->{current};
   $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   if ($version >= 6 and $version < 6.003) {
@@ -357,27 +373,27 @@ sub print {
 sub _read {
   use YAML::XS;
   use Path::Class;
-  use Data::Printer;
 
   my ($self, $in) = @_;
   my $yaml;
 
+  if (ref $in eq 'Path::Class::File') {
+    return undef unless -e $in;
+    $in = scalar $in->slurp;
+    return undef if $in eq '';
+  }
+
   try {
-    if (ref $in eq 'Path::Class::file') {
-      croak unless -e $in;
-      $in = scalar $in->slurp;
-    }
     $yaml = YAML::XS::Load( $in );
   }
   catch {
-    warn "Could not deserialise descriptor";
-    return undef;
+    warn "Could not deserialise descriptor: $in at $self->{name}";
   };
 
-  # When does this happen?
-  return undef unless (ref $yaml eq 'HASH');
+  return undef unless defined $yaml;
 
   _force_lc_hash($yaml);
+  $yaml->{descriptor} = $in;
   $yaml->{name} = $yaml->{plugin};
   $self->{cpran} = 1;
   return $yaml;
@@ -420,6 +436,6 @@ L<CPrAN::Command::upgrade|upgrade>,
 
 =cut
 
-our $VERSION = '0.02005';
+our $VERSION = '0.02006';
 
 1;
