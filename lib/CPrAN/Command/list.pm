@@ -49,9 +49,11 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running list\n" if $opt->{debug};
+
   my $app = CPrAN->new();
   my %params = %{$opt};
-  
+
   my $cmd = CPrAN::Command::search->new({});
   return $app->execute_command($cmd, \%params, '.*');
 }

@@ -49,6 +49,8 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running init\n" if $opt->{debug};
+
   my $app = CPrAN->new();
   my %params;
 

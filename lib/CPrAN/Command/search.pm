@@ -66,6 +66,8 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running search\n" if $opt->{debug};
+
   use CPrAN::Plugin;
   use Text::FormatTable;
 
@@ -73,7 +75,7 @@ sub execute {
   my @names = CPrAN::installed;
 
   if (defined $opt->{installed}) {
-    print "D: " . scalar @names . " installed plugins\n" if $opt->{debug};
+    warn "DEBUG: " . scalar @names . " installed plugins\n" if $opt->{debug};
   }
   else {
     @names = (@names, CPrAN::known);
@@ -83,7 +85,7 @@ sub execute {
   $names{$_} = 1 foreach @names;
   @plugins = map { CPrAN::Plugin->new($_) } keys %names;
 
-  print "D: " . scalar @plugins . " known plugins\n"
+  warn "DEBUG: " . scalar @plugins . " known plugins\n"
     if (!defined $opt->{installed} && $opt->{debug});
 
   $self->{output} = Text::FormatTable->new('l l l l');

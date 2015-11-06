@@ -1,5 +1,10 @@
 Revision history for CPrAN
 
+0.02007   2015-11-06 15:08:03+00:00 Europe/London
+
+  * Improvements to non-git installation
+  * Added first app test
+
 0.02006   2015-11-06 02:07:53+00:00 Europe/London
 
   * Fixed broken version (I really need to implement tests)

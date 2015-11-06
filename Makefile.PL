@@ -52,9 +52,11 @@ my %WriteMakefileArgs = (
     "warnings" => 0
   },
   "TEST_REQUIRES" => {
+    "App::Cmd::Tester" => 0,
+    "Data::Printer" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.02006",
+  "VERSION" => "0.02007",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -63,6 +65,7 @@ my %WriteMakefileArgs = (
 
 my %FallbackPrereqs = (
   "App::Cmd::Setup" => 0,
+  "App::Cmd::Tester" => 0,
   "App::Prove" => 0,
   "Archive::Extract" => 0,
   "Archive::Tar" => 0,
@@ -70,6 +73,7 @@ my %FallbackPrereqs = (
   "Carp" => 0,
   "Cwd" => 0,
   "Data::Dumper" => 0,
+  "Data::Printer" => 0,
   "Encode" => 0,
   "File::Path" => 0,
   "File::Temp" => 0,

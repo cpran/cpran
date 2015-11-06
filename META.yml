@@ -3,6 +3,8 @@ abstract: 'A package manager for Praat'
 author:
   - 'José Joaquín Atria <jjatria@gmail.com>'
 build_requires:
+  App::Cmd::Tester: '0'
+  Data::Printer: '0'
   Test::More: '0'
   perl: '5.006'
 configure_requires:
@@ -45,4 +47,4 @@ requires:
   YAML::XS: '0'
   strict: '0'
   warnings: '0'
-version: '0.02006'
+version: '0.02007'

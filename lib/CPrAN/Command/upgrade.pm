@@ -77,7 +77,7 @@ sub execute {
 
   my ($self, $opt, $args) = @_;
 
-  warn "Running upgrade\n" if $opt->{debug};
+  warn "DEBUG: Running upgrade\n" if $opt->{debug};
 
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {

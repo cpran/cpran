@@ -286,7 +286,8 @@ sub test {
   # For more obscure cases, an option to specify the path to Praat is needed.
   my $praat = CPrAN::Praat->new;
 
-  die "$self->{name} is not installed" unless ($self->is_installed);
+  croak "$self->{name} is not installed; cannot test"
+    unless ($self->is_installed);
 
   use Cwd;
   my $oldwd = getcwd;
@@ -314,6 +315,7 @@ sub test {
   else {
     push @args, ('--exec', "$praat->{bin} --ansi");
   }
+
 
   if ($opt->{log}) {
     try {
@@ -436,6 +438,6 @@ L<CPrAN::Command::upgrade|upgrade>,
 
 =cut
 
-our $VERSION = '0.02006';
+our $VERSION = '0.02007';
 
 1;

@@ -99,6 +99,8 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  warn "DEBUG: Running install\n" if $opt->{debug};
+
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -175,22 +177,31 @@ sub execute {
             try {
               use Sort::Naturally;
               unless ($plugin->is_installed) {
+                print "Contacting server...\n" unless $opt->{quiet};
+                unless ($plugin->url) {
+                  print "Querying repository URL...\n" unless $opt->{quiet};
+                  $plugin->fetch
+                }
+                print "Cloning from ", $plugin->url, "\n";
                 Git::Repository->run( clone => $plugin->url, $plugin->root );
               }
+
               my $repo = Git::Repository->new( work_tree => $plugin->root );
               my @tags = $repo->run( 'tag' );
               @tags = sort { ncmp($a, $b) } @tags;
               my $latest = pop @tags;
-              $repo->run( 'checkout', $latest );
-              print "Note: checking out '$latest'\n" unless $opt->{quiet};
+              print "Checking out '$latest'\n" unless $opt->{quiet};
+              $repo->run( 'checkout', '--quiet', $latest );
             }
-            catch { die "Error: could not clone repository.\n$_\n" };
+            catch {
+              croak "Error: could not clone repository.\n$_\n";
+            };
           }
           else {
             my $archive = get_archive( $opt, $plugin->{name}, '' );
 
             print "Extracting...\n" unless $opt->{quiet};
-            install( $opt, $archive );
+            install( $opt, $plugin, $archive );
           }
 
           print "Testing $plugin->{name}...\n" unless $opt->{quiet};
@@ -393,7 +404,7 @@ Extract the downloaded tarball.
 =cut
 
 sub install {
-  my ($opt, $archive) = @_;
+  my ($opt, $plugin, $archive) = @_;
 
   use Archive::Tar;
   use Path::Class qw(file dir foreign_file foreign_dir);
@@ -402,38 +413,17 @@ sub install {
 
   my $retval = 1;
 
-  # GitLab archives have a ".git" suffix in their directory names. We need to
-  # remove that suffix and extract the archive into the new plugin directory.
-  # So far, the best way to do so seems to be to iterate through the contents of
-  # the archive and rename each one to remove the /.git$/.
-  # We then construct a new target name and extract directly into that location,
-  # avoiding moving files, which is tricky.
-  my $next = Archive::Tar->iter( $archive->stringify, 1, { filter => qr/.*/ } );
-
   # TODO(jja) Improve handling of existing target directories
   # If we are forcing the re-install of a plugin, the previously existing
   # directory needs to be removed. Maybe this could be better handled? Because
   # if we are, say, reinstalling cpran itself, the .cpran root will be removed
   # Currently, the list is being manually recreated in the main loop.
 
-  # We make a new root in the preferences directory, and remove it if it
-  # already exists
-  my $root = $next->();
-  unless ($root) {
-    warn "Something went wrong\n";
-    try {
-      use Data::Dumper;
-      print Dumper($next);
-    } catch {};
-    warn "Please contact the author at jjatria\@gmail.com\n";
-    exit 1;
-  }
-  $root = $root->full_path;
-  $root = dir(CPrAN::praat(), $root);
-  if (-e $root->stringify && $opt->{force}) {
-    print "Removing $root\n" unless $opt->{quiet};
+  my $root = $plugin->{root};
+  if (-e $plugin->{root} && $opt->{force}) {
+    print "Removing $plugin->{root}\n" unless $opt->{quiet};
     use File::Path qw(remove_tree);
-    remove_tree( $root->stringify, { verbose => $opt->{verbose} - 1, safe => 0, error => \my $e } );
+    remove_tree( $plugin->{root}, { verbose => $opt->{verbose} - 1, safe => 0, error => \my $e } );
     if (@{$e}) {
       foreach (@{$e}) {
         my ($file, $message) = %{$_};
@@ -447,6 +437,9 @@ sub install {
     }
   }
 
+  # To make it possible to extract directly into the final location, we iterate
+  # through the contents of the archive and construct a new target name
+  my $next = Archive::Tar->iter( $archive->stringify, 1, { filter => qr/.*/ } );
   while (my $f = $next->()) {
     # $path is a Path::Class object for the current item in the archive
     my $path;
@@ -454,13 +447,12 @@ sub install {
       $path = Path::Class::Dir->new_foreign('Unix', $f->name);
     }
     else {
-      $path = Path::Class::File->new_foreign('Unix', $f->name);
+      $path = Path::Class::File->new_foreign('Unix', $f->prefix, $f->name);
     }
 
     # @components has all the items (directories and files) in the current name
-    # so we strip the /.git$/ of the first one (ie, the root)
     my @components = $path->components();
-    $components[0] =~ s/\.git$//;
+    $components[0] = 'plugin_' . $plugin->{name};
 
     # We place the preferences directory at the beginning of the new path
     unshift @components, CPrAN::praat();
