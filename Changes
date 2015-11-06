@@ -2,6 +2,10 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * Fixed broken version (I really need to implement tests)
+
+0.02005   2015-11-05 13:10:19+00:00 Europe/London
+
   * install now more verbose
   * init uses --yes by default
 
