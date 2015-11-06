@@ -1,5 +1,5 @@
-# ABSTRACT: delete an installed plugin from disk
 package CPrAN::Command::remove;
+# ABSTRACT: delete an installed plugin from disk
 
 use CPrAN -command;
 
@@ -213,5 +213,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+# VERSION
 
 1;

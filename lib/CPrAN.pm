@@ -1,4 +1,5 @@
 package CPrAN;
+# ABSTRACT: A package manager for Praat
 
 use App::Cmd::Setup -app;
 use Try::Tiny;
@@ -438,6 +439,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02007';
+# VERSION
 
 1;

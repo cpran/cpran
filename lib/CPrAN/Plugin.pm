@@ -1,4 +1,5 @@
 package CPrAN::Plugin;
+# ABSTRACT: A representation of a Praat plugin
 
 use strict;
 use warnings;
@@ -438,6 +439,6 @@ L<CPrAN::Command::upgrade|upgrade>,
 
 =cut
 
-our $VERSION = '0.02007';
+# VERSION
 
 1;
