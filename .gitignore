@@ -2,5 +2,6 @@
 *kate-swp
 *.orig
 .cpran
+.build
 wiki
 CPrAN-*
