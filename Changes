@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.02007   2015-11-06 15:08:03+00:00 Europe/London
+
   * Improvements to non-git installation
   * Added first app test
 
@@ -20,6 +22,22 @@ Revision history for {{$dist->name}}
   * Separated Perl client from Praat plugin
   * Added init command
   * Incorrectly jumped to next version :(
+  * Experimental management of Praat installations (upgrade, remove, install)
+  * Optional git support for install and upgrade
+  * CPrAN::Plugin used as return value for plugin lists
+  * Tests log results to archive or log directory
+  * Logs enabled by default, disabled if --nolog (needs TAP::Harness::Archive)
+  * Tests supported on Windows
+  * (install) --force now deals exclusively with test results
+  * (install) new option --reinstall takes over remaining uses of --force
+  * Text::FormatTable instead of Text::Table for search output with word wrap
+  * Internal GitLab API renamed to WWW::GitLab::API
+  * Better support for non-standard home directories
+  * CPrAN now prefers lowercase Praat executable on Linux and Mac
+  * Prompts default to "yes"
+  * Changed client shebang to use /usr/bin/env perl
+  * Project list is now fetched from user instead of group
+  * Tests supported for Praat >= 6.0.03 (not 6.0 ~ 6.0.02)
 
 0.0110
 
@@ -38,7 +56,7 @@ Revision history for {{$dist->name}}
 
 0.0108
 
-  * Fixed a bug qwith version checking in CPrAN::Plugin
+  * Fixed a bug with version checking in CPrAN::Plugin
 
 0.0107
 
