@@ -369,7 +369,7 @@ sub print {
     unless defined $self->{$name};
 
   print decode('utf8',
-    file($self->{$name}->{descriptor})->slurp
+    $self->{$name}->{descriptor}
   );
 }
 
