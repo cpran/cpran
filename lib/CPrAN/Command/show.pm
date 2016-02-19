@@ -1,5 +1,5 @@
-# ABSTRACT: show specified plugin descriptor
 package CPrAN::Command::show;
+# ABSTRACT: show specified plugin descriptor
 
 use CPrAN -command;
 
@@ -139,5 +139,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+# VERSION
 
 1;

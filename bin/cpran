@@ -1,4 +1,7 @@
 #!/usr/bin/env perl
+# ABSTRACT: A Perl client for CPrAN - the package manager for Praat
+
+# VERSION
 
 use CPrAN;
 CPrAN->run;

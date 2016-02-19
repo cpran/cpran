@@ -1,5 +1,5 @@
-# ABSTRACT: list all available plugins
 package CPrAN::Command::list;
+# ABSTRACT: list all available plugins
 
 use CPrAN -command;
 
@@ -89,5 +89,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+# VERSION
 
 1;
