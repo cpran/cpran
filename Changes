@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * Added CPrAN::Meta as a clone of CPAN::Meta v1.4
+
 0.02007   2015-11-06 15:08:03+00:00 Europe/London
 
   * Improvements to non-git installation
