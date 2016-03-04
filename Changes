@@ -2,6 +2,10 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+  * Bug fix for plugin print method
+
+0.02007   2015-11-06 15:08:03+00:00 Europe/London
+
   * Improvements to non-git installation
   * Added first app test
 
