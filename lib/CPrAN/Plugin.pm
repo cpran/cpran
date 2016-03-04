@@ -79,7 +79,7 @@ sub _init {
 
   my $remote = file(CPrAN::root(), $self->{name});
   if (-e $remote) {
-    $self->{'remote'} = $self->_read( $remote );
+    $self->{remote} = $self->_read( $remote );
     $self->fetch unless $self->{remote}->{descriptor};
   }
   else {
@@ -376,6 +376,7 @@ sub print {
 sub _read {
   use YAML::XS;
   use Path::Class;
+  use Encode qw( encode );
 
   my ($self, $in) = @_;
   my $yaml;
@@ -387,7 +388,7 @@ sub _read {
   }
 
   try {
-    $yaml = YAML::XS::Load( $in );
+    $yaml = YAML::XS::Load( encode('utf-8', $in) );
   }
   catch {
     warn "Could not deserialise descriptor: $in at $self->{name}";
@@ -399,6 +400,7 @@ sub _read {
   $yaml->{descriptor} = $in;
   $yaml->{name} = $yaml->{plugin};
   $self->{cpran} = 1;
+  
   return $yaml;
 }
 
