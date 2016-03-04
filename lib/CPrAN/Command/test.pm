@@ -1,5 +1,5 @@
-# ABSTRACT: run tests for the given plugin
 package CPrAN::Command::test;
+# ABSTRACT: run tests for the given plugin
 
 use CPrAN -command;
 use Carp;
@@ -98,5 +98,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+our $VERSION = '0.02008'; # VERSION
 
 1;

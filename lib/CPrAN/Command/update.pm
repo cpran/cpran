@@ -1,5 +1,5 @@
-# ABSTRACT: update local plugin list
 package CPrAN::Command::update;
+# ABSTRACT: update local plugin list
 
 use CPrAN -command;
 
@@ -186,5 +186,7 @@ L<CPrAN::Command::test|test>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+our $VERSION = '0.02008'; # VERSION
 
 1;

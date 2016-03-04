@@ -1,5 +1,5 @@
-# ABSTRACT: upgrade installed plugin to its latest version
 package CPrAN::Command::upgrade;
+# ABSTRACT: upgrade installed plugin to its latest version
 
 use CPrAN -command;
 
@@ -308,5 +308,7 @@ L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>
 
 =cut
+
+our $VERSION = '0.02008'; # VERSION
 
 1;

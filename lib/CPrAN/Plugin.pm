@@ -1,4 +1,5 @@
 package CPrAN::Plugin;
+# ABSTRACT: A representation of a Praat plugin
 
 use strict;
 use warnings;
@@ -368,7 +369,7 @@ sub print {
     unless defined $self->{$name};
 
   print decode('utf8',
-    file($self->{$name}->{descriptor})->slurp
+    $self->{$name}->{descriptor}
   );
 }
 
@@ -438,6 +439,6 @@ L<CPrAN::Command::upgrade|upgrade>,
 
 =cut
 
-our $VERSION = '0.02007';
+our $VERSION = '0.02008'; # VERSION
 
 1;

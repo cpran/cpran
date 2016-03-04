@@ -1,5 +1,5 @@
-# ABSTRACT: search among available CPrAN plugins
 package CPrAN::Command::search;
+# ABSTRACT: search among available CPrAN plugins
 
 use CPrAN -command;
 
@@ -267,5 +267,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+our $VERSION = '0.02008'; # VERSION
 
 1;

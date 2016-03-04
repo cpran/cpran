@@ -1,5 +1,5 @@
-# ABSTRACT: Initialise a CPrAN installation
 package CPrAN::Command::init;
+# ABSTRACT: Initialise a CPrAN installation
 
 use CPrAN -command;
 
@@ -101,5 +101,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+our $VERSION = '0.02008'; # VERSION
 
 1;

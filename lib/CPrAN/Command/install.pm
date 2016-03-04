@@ -1,5 +1,5 @@
-# ABSTRACT: install new plugins
 package CPrAN::Command::install;
+# ABSTRACT: install new plugins
 
 use CPrAN -command;
 
@@ -629,5 +629,7 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
+
+our $VERSION = '0.02008'; # VERSION
 
 1;
