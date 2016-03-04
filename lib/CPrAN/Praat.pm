@@ -1,4 +1,5 @@
 package CPrAN::Praat;
+# ABSTRACT: A Praat pseudo-class for CPrAN
 
 use strict;
 use warnings;
@@ -249,6 +250,6 @@ L<CPrAN::Command::upgrade|upgrade>,
 
 =cut
 
-our $VERSION = '0.02007';
+our $VERSION = '0.02008'; # VERSION
 
 1;

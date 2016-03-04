@@ -1,4 +1,7 @@
 #!/usr/bin/env perl
+# ABSTRACT: A Perl client for CPrAN - the package manager for Praat
+
+our $VERSION = '0.02008'; # VERSION
 
 use CPrAN;
 CPrAN->run;
