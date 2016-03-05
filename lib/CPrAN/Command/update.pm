@@ -57,54 +57,108 @@ sub execute {
 
   warn "DEBUG: Running update\n" if $opt->{debug};
 
-  my $projects;
-  try {
-    $projects = list_projects($self, $opt, $args);
-  }
-  catch {
-    chomp;
-    warn "Could not connect to the server: $_\n";
-    exit 1;
-  };
-
   use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
   use Path::Class;
+  use YAML::XS;
+  use Encode qw( encode decode );
 
+  my $api = WWW::GitLab::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  $opt->{verbose}-- if defined $opt->{print};
+
+  # The package list lives as a snippet in the plugin_cpran project
+  # To get it, we need the project and snippet ids
+  my $pid = $api->projects( { search => 'plugin_cpran' } )->[0]->{id};
+  my $snippets = $api->snippets($pid);
+  my $sid;
+  foreach (@{$snippets}) { $sid = $_->{id} if $_->{file_name} eq 'cpran.list' }
+  
   my @updated;
-  foreach my $source (@{$projects}) {
 
-    next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
-    next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
+  my %requested;
+  $requested{$_} = 1 foreach @{$args};
 
-    my $plugin;
+  unless (defined $opt->{raw}) {
+    print "Updating plugin data...\n" if $opt->{verbose};
+
+    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
+      next unless $_;
+  
+      my $encoded = "---" . encode('utf-8', $_);
+      my $plugin = Load(encode('utf-8', $encoded));
+      next if (scalar @{$args} > 1) && !defined $requested{$plugin->{Plugin}};
+    
+      if (defined $opt->{virtual}) {
+        $plugin = CPrAN::Plugin->new( $encoded );
+      }
+      else {
+        my $out = file( CPrAN::root(), $plugin->{Plugin} );
+        my $fh = $out->openw();
+        $fh->print( $encoded );
+        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
+      }
+    
+      push @updated, $plugin;
+    }
+  }
+  else {
+    print "Contacting remote repositories for latest data...\n" if $opt->{verbose};
+
+    my $projects;
     try {
-      $plugin = CPrAN::Plugin->new( $source );
+      $projects = list_projects($self, $opt, $args);
     }
     catch {
-      warn "Could not initialise plugin \"$source->{name}\"" if $opt->{debug};
+      chomp;
+      warn "Could not connect to the server: $_\n";
+      exit 1;
     };
-    next unless defined $plugin;
 
-    if ($plugin->is_cpran) {
-      print "Fetching $plugin->{name}...\n" if $opt->{verbose};
-      $plugin->fetch;
+    foreach my $source (@{$projects}) {
+ 
+      next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
+      next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
+      next if (scalar @{$args} > 1) && !defined $requested{$source->{name}};
 
-      push @updated, $plugin;
+      my $plugin;
+      try {
+        $plugin = CPrAN::Plugin->new( $source );
+      }
+      catch {
+        warn "Could not initialise plugin \"$source->{name}\"" if $opt->{debug};
+      };
+      next unless defined $plugin;
 
-      unless (defined $opt->{virtual}) {
-        if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
-          my $out = file( CPrAN::root(), $plugin->{name} );
-          my $fh = $out->openw();
-          $fh->print( $plugin->{remote}->{descriptor} );
-        }
-        else {
-          # warn "Nothing to write for $plugin->{name}";
+      if ($plugin->is_cpran) {
+        print "Fetching $plugin->{name}...\n" if $opt->{verbose};
+        $plugin->fetch;
+
+        push @updated, $plugin; 
+
+        unless (defined $opt->{virtual}) {
+          if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
+            my $out = file( CPrAN::root(), $plugin->{name} );
+            my $fh = $out->openw();
+            $fh->print( $plugin->{remote}->{descriptor} );
+          }
+          else {
+            # warn "Nothing to write for $plugin->{name}";
+          }
         }
       }
     }
   }
+  print "Updated " . scalar @updated . " packages\n" if $opt->{verbose};
+  
+  if (defined $opt->{print}) {
+    $_->print('remote') foreach (@updated);
+  }
+  
   return \@updated;
 }
 
@@ -160,6 +214,8 @@ Increase verbosity of output.
 sub opt_spec {
   return (
     [ "virtual" => "do not write anything to disk" ],
+    [ "print"   => "print the stream of updated descriptors to STDOUT" ],
+    [ "raw"     => "compute a new list of plugins from scratch" ],
   );
 }
 

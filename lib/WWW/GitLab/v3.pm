@@ -1418,8 +1418,8 @@ sub edit_snippet {
     { type => HASHREF, default => {} }
   );
 
-  my $url = $self->build_url( ['projects', $pid, 'snippets', $sid], $params);
-  $self->_put($url);
+  my $url = $self->build_url( ['projects', $pid, 'snippets', $sid], {});
+  $self->_put($url, $params);
 }
 
 =head2 delete_snippet
@@ -3248,7 +3248,7 @@ sub _put {
     return $response->decoded_content;
   }
   else {
-#     print Dumper($response);
+    # print Dumper($response);
     confess $response->message;
   }
 }
