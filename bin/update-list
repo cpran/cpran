@@ -1,0 +1,37 @@
+#!/usr/bin/env perl
+
+use strict;
+use diagnostics;
+use warnings;
+
+use CPrAN;
+use CPrAN::Plugin;
+use WWW::GitLab::v3;
+use Capture::Tiny ':all';
+
+my $api = WWW::GitLab::v3->new(
+  url   => CPrAN::api_url(),  
+  token => $ENV{'CPRAN_PUSHER_TOKEN'},
+);
+
+my $pid = $api->projects( { search => 'plugin_cpran' } )->[0]->{id};
+my $snippets = $api->snippets($pid);
+my $sid;
+foreach (@{$snippets}) { $sid = $_->{id} if $_->{file_name} eq 'cpran.list' }
+
+my $app = CPrAN->new;
+my $cmd = CPrAN::Command::update->new({});
+
+my ($stdout, $stderr) = capture {
+  $app->execute_command($cmd, {
+    virtual => 1,
+    raw     => 1,
+    print   => 1
+  }, '');
+};
+
+$api->edit_snippet(
+  $pid, $sid, {
+    code => $stdout
+  }
+);

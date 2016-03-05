@@ -91,15 +91,19 @@ sub execute {
   
       my $encoded = "---" . encode('utf-8', $_);
       my $plugin = Load(encode('utf-8', $encoded));
-      next if @{$args} && !defined $requested{$plugin->{Plugin}};
+      next if (scalar @{$args} > 1) && !defined $requested{$plugin->{Plugin}};
     
-      my $out = file( CPrAN::root(), $plugin->{Plugin} );
-      {
+      if (defined $opt->{virtual}) {
+        $plugin = CPrAN::Plugin->new( $encoded );
+      }
+      else {
+        my $out = file( CPrAN::root(), $plugin->{Plugin} );
         my $fh = $out->openw();
-        $fh->print( $encoded ); 
+        $fh->print( $encoded );
+        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
       }
     
-      push @updated, CPrAN::Plugin->new( $plugin->{Plugin} );
+      push @updated, $plugin;
     }
   }
   else {
@@ -119,7 +123,7 @@ sub execute {
  
       next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
       next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
-      next if @{$args} && !defined $requested{$source->{name}};
+      next if (scalar @{$args} > 1) && !defined $requested{$source->{name}};
 
       my $plugin;
       try {

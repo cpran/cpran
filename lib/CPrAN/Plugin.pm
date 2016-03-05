@@ -33,7 +33,8 @@ plugins, regardless of whether they are on CPrAN or not.
 sub new {
   my ($class, $in) = @_;
 
-  my $self = {};
+  my $self = bless {}, $class;
+  
   if (ref $in eq 'HASH') {
     # Assume we received a GitLab project hash ref as input and parse for data
     try {
@@ -43,16 +44,23 @@ sub new {
     }
     catch {
       croak "Unknown hashref as input: $_";
-    }
-  }
-  else {
-    $self = {
-      name => $in,
     };
   }
+  else {
+    # If not a hash, check to see if it is a descriptor
+    my $yaml = $self->_parse( $in );
+    if (!defined $yaml) {
+      # If it is not, assume it is the name of a plugin
+      $self->{name} = $in;
+    }
+    else {
+      # Otherwise, read as the remote descriptor
+      # NOTE Or maybe local?
+      $self->{name} = $yaml->{plugin}; 
+      $self->{remote} = $yaml;
+    }
+  }
   $self->{name}  =~ s/^plugin_//;
-
-  $self = bless $self, $class;
 
   $self->_init();
 
@@ -72,19 +80,23 @@ sub _init {
 
   $self->{installed} = 1 if ( -e $root );
 
-  my $local = file($self->{root}, 'cpran.yaml');
-  if (-e $local) {
-    $self->{local} = $self->_read( $local );
+  unless (defined $self->{local}) {
+    my $local = file($self->{root}, 'cpran.yaml');
+    if (-e $local) {
+      $self->{local} = $self->_read( $local );
+    }
   }
 
-  my $remote = file(CPrAN::root(), $self->{name});
-  if (-e $remote) {
-    $self->{remote} = $self->_read( $remote );
-    $self->fetch unless $self->{remote}->{descriptor};
-  }
-  else {
-    # warn "No known remote descriptor for $self->{name}. Looking online...";
-    $self->fetch;
+  unless (defined $self->{remote}) {
+    my $remote = file(CPrAN::root(), $self->{name});
+    if (-e $remote) {
+      $self->{remote} = $self->_read( $remote );
+      $self->fetch unless $self->{remote}->{descriptor};
+    }
+    else {
+      # warn "No known remote descriptor for $self->{name}. Looking online...";
+      $self->fetch;
+    }
   }
 }
 
@@ -374,19 +386,25 @@ sub print {
 }
 
 sub _read {
-  use YAML::XS;
-  use Path::Class;
-  use Encode qw( encode );
-
   my ($self, $in) = @_;
-  my $yaml;
 
   if (ref $in eq 'Path::Class::File') {
     return undef unless -e $in;
     $in = scalar $in->slurp;
     return undef if $in eq '';
   }
+  
+  return $self->_parse( $in );
+}
 
+sub _parse {
+  use YAML::XS;
+  use Path::Class;
+  use Encode qw( encode );
+  
+  my ($self, $in) = @_;
+  my $yaml;
+  
   try {
     $yaml = YAML::XS::Load( encode('utf-8', $in) );
   }
@@ -395,6 +413,7 @@ sub _read {
   };
 
   return undef unless defined $yaml;
+  return undef unless ref $yaml eq 'HASH';
 
   _force_lc_hash($yaml);
   $yaml->{descriptor} = $in;
