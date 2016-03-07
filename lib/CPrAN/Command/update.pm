@@ -92,6 +92,7 @@ sub execute {
       my $encoded = "---" . encode('utf-8', $_);
       my $plugin = Load(encode('utf-8', $encoded));
       next if (scalar @{$args} > 1) && !defined $requested{$plugin->{Plugin}};
+      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
     
       if (defined $opt->{virtual}) {
         $plugin = CPrAN::Plugin->new( $encoded );
@@ -100,6 +101,7 @@ sub execute {
         my $out = file( CPrAN::root(), $plugin->{Plugin} );
         my $fh = $out->openw();
         $fh->print( $encoded );
+        $fh->close;
         $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
       }
     
@@ -135,7 +137,7 @@ sub execute {
       next unless defined $plugin;
 
       if ($plugin->is_cpran) {
-        print "Fetching $plugin->{name}...\n" if $opt->{verbose};
+        print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
         $plugin->fetch;
 
         push @updated, $plugin; 
