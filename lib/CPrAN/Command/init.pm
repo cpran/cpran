@@ -66,6 +66,7 @@ sub execute {
 
   %params = %{$opt};
   $params{yes} = 1;
+  $params{git} = $opt->{git} // 1;
 
   $cmd = CPrAN::Command::install->new({});
   $app->execute_command($cmd, \%params, $cpran);
@@ -73,8 +74,7 @@ sub execute {
 
 sub opt_spec {
   return (
-#     [ "installed|i"   => "search on installed plugins" ],
-#     [ "wrap!"         => "enable / disable line wrap for result table" ],
+    [ "git|g!" => "request / disable git support" ],
   );
 }
 
