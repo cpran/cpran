@@ -2,7 +2,6 @@ use Test::More tests => 3;
 use App::Cmd::Tester;
 
 use CPrAN;
-use Data::Printer;
 
 my $result = test_app(CPrAN => [qw( --version )]);
 
