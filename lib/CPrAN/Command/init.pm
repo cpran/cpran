@@ -56,6 +56,7 @@ sub execute {
 
   %params = %{$opt};
   $params{virtual} = 1;
+  $params{verbose} = 0;
 
   my $cmd;
 
