@@ -2,7 +2,6 @@ use Test::More tests => 14;
 use App::Cmd::Tester;
 
 use CPrAN;
-use Data::Printer;
 
 my $result = test_app(CPrAN => [qw( list )]);
 
