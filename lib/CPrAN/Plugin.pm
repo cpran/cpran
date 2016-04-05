@@ -34,7 +34,7 @@ sub new {
   my ($class, $in) = @_;
 
   my $self = bless {}, $class;
-  
+
   if (ref $in eq 'HASH') {
     # Assume we received a GitLab project hash ref as input and parse for data
     try {
@@ -56,7 +56,7 @@ sub new {
     else {
       # Otherwise, read as the remote descriptor
       # NOTE Or maybe local?
-      $self->{name} = $yaml->{plugin}; 
+      $self->{name} = $yaml->{plugin};
       $self->{remote} = $yaml;
     }
   }
@@ -91,11 +91,6 @@ sub _init {
     my $remote = file(CPrAN::root(), $self->{name});
     if (-e $remote) {
       $self->{remote} = $self->_read( $remote );
-      $self->fetch unless $self->{remote}->{descriptor};
-    }
-    else {
-      # warn "No known remote descriptor for $self->{name}. Looking online...";
-      $self->fetch;
     }
   }
 }
@@ -393,7 +388,7 @@ sub _read {
     $in = scalar $in->slurp;
     return undef if $in eq '';
   }
-  
+
   return $self->_parse( $in );
 }
 
@@ -401,10 +396,10 @@ sub _parse {
   use YAML::XS;
   use Path::Class;
   use Encode qw( encode );
-  
+
   my ($self, $in) = @_;
   my $yaml;
-  
+
   try {
     $yaml = YAML::XS::Load( encode('utf-8', $in) );
   }
@@ -419,7 +414,7 @@ sub _parse {
   $yaml->{descriptor} = $in;
   $yaml->{name} = $yaml->{plugin};
   $self->{cpran} = 1;
-  
+
   return $yaml;
 }
 
