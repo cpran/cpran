@@ -77,7 +77,7 @@ sub execute {
   my $snippets = $api->snippets($pid);
   my $sid;
   foreach (@{$snippets}) { $sid = $_->{id} if $_->{file_name} eq 'cpran.list' }
-  
+
   my @updated;
 
   my %requested;
@@ -88,12 +88,12 @@ sub execute {
 
     foreach (split /---/, $api->raw_snippet($pid, $sid)) {
       next unless $_;
-  
+
       my $encoded = "---" . encode('utf-8', $_);
       my $plugin = Load(encode('utf-8', $encoded));
-      next if (scalar @{$args} > 1) && !defined $requested{$plugin->{Plugin}};
+      next if (scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}};
       warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
-    
+
       if (defined $opt->{virtual}) {
         $plugin = CPrAN::Plugin->new( $encoded );
       }
@@ -104,7 +104,7 @@ sub execute {
         $fh->close;
         $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
       }
-    
+
       push @updated, $plugin;
     }
   }
@@ -122,7 +122,7 @@ sub execute {
     };
 
     foreach my $source (@{$projects}) {
- 
+
       next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
       next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
       next if (scalar @{$args} > 1) && !defined $requested{$source->{name}};
@@ -156,11 +156,11 @@ sub execute {
     }
   }
   print "Updated " . scalar @updated . " packages\n" if $opt->{verbose};
-  
+
   if (defined $opt->{print}) {
     $_->print('remote') foreach (@updated);
   }
-  
+
   return \@updated;
 }
 
