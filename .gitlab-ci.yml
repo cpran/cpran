@@ -1,0 +1,5 @@
+test:
+  script:
+    - dzil test
+  tags:
+    - cpran
