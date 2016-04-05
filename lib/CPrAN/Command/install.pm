@@ -194,6 +194,7 @@ sub execute {
               $repo->run( 'checkout', '--quiet', $latest );
             }
             catch {
+              chomp;
               croak "Error: could not clone repository.\n$_\n";
             };
           }
