@@ -303,7 +303,7 @@ sub test {
     or die "Could not change directory";
 
   unless ( -e 't' ) {
-    warn "No tests for $self->{name}\n";
+    # warn "No tests for $self->{name}\n";
     return undef;
   }
 
