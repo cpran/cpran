@@ -137,10 +137,12 @@ sub execute {
       next unless defined $plugin;
 
       if ($plugin->is_cpran) {
-        print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
         $plugin->fetch;
+        next unless defined $plugin->{remote};
 
-        push @updated, $plugin; 
+        print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
+
+        push @updated, $plugin;
 
         unless (defined $opt->{virtual}) {
           if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
