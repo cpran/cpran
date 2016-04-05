@@ -151,7 +151,7 @@ sub execute {
             $fh->print( $plugin->{remote}->{descriptor} );
           }
           else {
-            # warn "Nothing to write for $plugin->{name}";
+            warn "Nothing to write for $plugin->{name}" if $opt->{debug};
           }
         }
       }
