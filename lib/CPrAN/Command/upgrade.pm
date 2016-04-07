@@ -291,20 +291,21 @@ sub _praat {
   try {
     my $praat = CPrAN::Praat->new();
     print "Querying server for latest version...\n" unless $opt->{quiet};
-    if ($praat->current < $praat->latest) {
+
+    use Sort::Naturally;
+    if (ncmp($praat->latest, $praat->current) > 0) {
       unless ($opt->{quiet}) {
         print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
         print "Do you want to continue?";
       }
-      if (CPrAN::yesno( $opt )) {
 
+      if (CPrAN::yesno( $opt )) {
         my $app = CPrAN->new;
         my %params = %{$opt};
         $params{yes} = $params{reinstall} = 1;
         # TODO(jja) Better verbosity controls
         $params{quiet} = 2; # Silence everything _but_ the download progress bar
         $app->execute_command(CPrAN::Command::install->new({}), \%params, 'praat');
-
       }
     }
     else {

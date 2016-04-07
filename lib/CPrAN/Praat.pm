@@ -214,8 +214,10 @@ sub latest {
       sub { $_[0]->as_text =~ /$package/; }
     );
     $self->{'package'} = $pkglink->as_trimmed_text;
-    $self->{latest} = $+{version} if ($self->{package} =~ /$package/);
-
+    if ($self->{package} =~ /$package/) {
+      $self->{latest} = $+{version};
+      $self->{latest} =~ s/(\d)(\d{2})$/.$1.$2/;
+    }
   }
   else {
     die $response->status_line;
