@@ -160,8 +160,16 @@ sub execute {
               die "No git repository at ", $plugin->root, "\n", ($opt->{debug}) ? $_ : '';
             };
 
+            my $head;
             try {
-              $repo->run( 'fetch', '--quiet', { fatal => '!0' } )
+              $head = $repo->run('rev-parse', 'HEAD', { fatal => '!0' } );
+            }
+            catch {
+              die "Could not locate HEAD.\n", ($opt->{debug}) ? $_ : '';
+            };
+
+            try {
+              $repo->run( 'fetch', '--quiet', { fatal => '!0' } );
             }
             catch {
               die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
@@ -181,6 +189,33 @@ sub execute {
             catch {
               die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or discard them with --force.\n";
             };
+
+            $plugin->update;
+            my $success = 0;
+            try { $success = $plugin->test }
+            catch {
+              chomp;
+              warn "There were errors while testing:\n$_\n";
+            };
+
+            if (defined $success and !$success) {
+              if ($opt->{force}) {
+                warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
+              }
+              else {
+                unless ($opt->{quiet}) {
+                  warn "Tests failed. Rolling back upgrade of $plugin->{name}.\n";
+                  warn "Use --force to ignore this warning\n";
+                }
+                $repo->run('reset', '--hard', '--quiet', $head , { fatal => '!0' });
+
+                my $msg = ($opt->{quiet}) ? "" : "Did not upgrade $plugin->{name}.";
+                die $msg . "\n";
+              }
+            }
+            else {
+              print "$plugin->{name} upgraded successfully.\n" unless $opt->{quiet};
+            }
           }
           catch {
             warn "$_";
@@ -191,12 +226,12 @@ sub execute {
         else {
           $app->execute_command(CPrAN::Command::remove->new({}),  \%params, $plugin->{name});
           $app->execute_command(CPrAN::Command::install->new({}), \%params, $plugin->{name});
+          print "$plugin->{name} upgraded successfully.\n" unless $opt->{quiet};
         }
-        print "Succesfully upgraded $plugin->{name}\n" unless $opt->{quiet};
       }
     }
     else {
-      print "Abort.\n" unless ($opt->{quiet});
+      print "Abort\n" unless ($opt->{quiet});
       exit;
     }
   }
