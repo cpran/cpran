@@ -24,7 +24,6 @@ try {
   $pid = $api->projects( { search => 'plugin_cpran' } )->[0]->{id};
   my $snippets = $api->snippets($pid);
   foreach (@{$snippets}) {
-    p $_->{file_name};
     $sid = $_->{id} if $_->{file_name} eq 'cpran.list';
   }
 }
