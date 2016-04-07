@@ -5,6 +5,7 @@ Revision history for CPrAN
   * Improved speed of update command with precompiled list
   * Faster startup times using CPrAN::Plugin
   * update honours argument list
+  * upgrade tests upgraded plugins
   * Added tests for list and init (latter only without git)
 
 0.02008   2016-03-04 17:41:04+00:00 Europe/London
