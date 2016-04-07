@@ -50,10 +50,10 @@ sub validate_args {
   # 3. The user has not turned it off by setting --nogit
   if (!defined $opt->{git} or $opt->{git}) {
     try {
+      $opt->{git} = which('git');
       die "Could not find path to git binary. Is git installed?\n"
-        unless defined which('git');
+        unless defined $opt->{git};
       require Git::Repository;
-      $opt->{git} = 1;
     }
     catch {
       warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
