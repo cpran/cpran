@@ -120,7 +120,7 @@ sub run {
 sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
 
-  set_globals($self, $cmd, $opt, @args);
+  set_globals($self, $cmd, $opt);
   make_root() unless (-e CPrAN::root);
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
@@ -221,7 +221,7 @@ re-worked to more closely match the way App::Cmd expects to be used.
 =cut
 
 sub set_globals {
-  my ($self, $cmd, $opt, @args) = @_;
+  my ($self, $cmd, $opt) = @_;
   my $gopt = $self->global_options;
 
   praat     $gopt->{praat}       if (defined $gopt->{praat}      );
@@ -231,7 +231,7 @@ sub set_globals {
   api_group $gopt->{'api-group'} if (defined $gopt->{'api-group'});
   api_url   $gopt->{'api-url'}   if (defined $gopt->{'api-url'}  );
 
-  check_permissions($self, $cmd, $opt, @args) unless ($cmd =~ /(version|help)/);
+  check_permissions($self, $cmd, $opt) unless ($cmd =~ /(version|help)/);
 
 }
 
@@ -246,7 +246,7 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 # readable/writable. What needs to be checked is whether the root could be
 # created.
 sub check_permissions {
-  my ($self, $cmd, $opt, @args) = @_;
+  my ($self, $cmd, $opt) = @_;
 
   if (-e CPrAN::root()) {
     croak "Cannot read from CPrAN root at " . CPrAN::root()
