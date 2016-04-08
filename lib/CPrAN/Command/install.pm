@@ -101,6 +101,8 @@ sub execute {
 
   warn "DEBUG: Running install\n" if $opt->{debug};
 
+  my $app = CPrAN->new();
+
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -141,15 +143,15 @@ sub execute {
     }
   }
 
-  # Get a source dependency tree for the plugins that are to be installed.
-  # The dependencies() subroutine calls itself recursively to include the
-  # dependencies of the dependencies, and so on.
-  my @deps = CPrAN::dependencies( $opt, \@todo );
+  my @ordered;
+  {
+    my $cmd = CPrAN::Command::deps->new({});
 
-  # The source tree is then ordered to get a schedule of plugin installation.
-  # In the resulting list, plugins with no dependencies come first, and those
-  # that depend on them come later.
-  my @ordered = CPrAN::order_dependencies( @deps );
+    my %params = %{$opt};
+    $params{quiet} = 1;
+
+    @ordered = $app->execute_command($cmd, \%params, @todo);
+  }
 
   # Scheduled plugins that are already installed are descheduled
   my @schedule = grep {
@@ -157,7 +159,7 @@ sub execute {
     my $in_args = grep { /$plugin->{name}/ } @{$args};
     if (!$plugin->is_installed or ($opt->{reinstall} and $in_args)) { 1 }
     else { 0 }
-  } map { CPrAN::Plugin->new( $_->{name} ) } @ordered;
+  } @ordered;
 
   # Output and user query modeled after apt's
   if (@schedule) {
@@ -227,7 +229,6 @@ sub execute {
                 warn "Use --force to ignore this warning\n";
               }
 
-              my $app = CPrAN->new();
               my %params = %{$opt};
               $params{yes} = 1;
               $params{force} = 1;
