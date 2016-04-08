@@ -1,5 +1,15 @@
-test:
+devel:
   script:
     - dzil test
   tags:
     - cpran
+  only:
+    - devel
+
+master:
+  script:
+    - prove
+  tags:
+    - cpran
+  only:
+    - master
