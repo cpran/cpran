@@ -84,6 +84,36 @@ B<CPrAN> - A package manager for Praat
   sub api_group { if (@_) { $GROUP  = shift } else { return $GROUP  } }
 }
 
+sub run {
+  my ($self) = @_;
+
+  # We should probably use Class::Default.
+  $self = $self->new unless ref $self;
+
+  # prepare the command we're going to run...
+  my @argv = $self->prepare_args();
+  my ($cmd, $opt, @args) = $self->prepare_command(@argv);
+
+  # If we are not running interactively, and the command's input argument
+  # list is empty, read in arguments from STDIN. If any have been read, then
+  # activate the --yes flag.
+  unless (-t) {
+    my $pre = scalar @args;
+    unless ($pre) {
+      while (<STDIN>) {
+        chomp;
+        push @args, $_;
+      }
+    }
+    my $post = scalar @args;
+
+    $opt->{yes} = 1 if $post > $pre;
+  }
+
+  # ...and then run it
+  $self->execute_command($cmd, $opt, @args);
+}
+
 # By redefining this subroutine, we lightly modify the behaviour of the App::Cmd
 # app. In this case, we process the global options, and pass them to
 # the invoked commands together with their local options.
