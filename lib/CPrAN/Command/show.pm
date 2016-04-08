@@ -123,7 +123,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This program is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -131,7 +131,11 @@ the same terms as Perl itself.
 =head1 SEE ALSO
 
 L<CPrAN|cpran>,
+L<CPrAN::Plugin|plugin>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
 L<CPrAN::Command::install|install>,
+L<CPrAN::Command::list|list>,
 L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
 L<CPrAN::Command::test|test>,
