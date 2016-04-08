@@ -16,8 +16,6 @@ can_ok('CPrAN', (
   'make_root',
   'installed',
   'known',
-  'dependencies',
-  'order_dependencies',
   'yesno',
 ));
 

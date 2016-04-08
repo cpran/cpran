@@ -50,10 +50,10 @@ sub validate_args {
   # 3. The user has not turned it off by setting --nogit
   if (!defined $opt->{git} or $opt->{git}) {
     try {
+      $opt->{git} = which('git');
       die "Could not find path to git binary. Is git installed?\n"
-        unless defined which('git');
+        unless defined $opt->{git};
       require Git::Repository;
-      $opt->{git} = 1;
     }
     catch {
       warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
@@ -160,8 +160,16 @@ sub execute {
               die "No git repository at ", $plugin->root, "\n", ($opt->{debug}) ? $_ : '';
             };
 
+            my $head;
             try {
-              $repo->run( 'fetch', '--quiet', { fatal => '!0' } )
+              $head = $repo->run('rev-parse', 'HEAD', { fatal => '!0' } );
+            }
+            catch {
+              die "Could not locate HEAD.\n", ($opt->{debug}) ? $_ : '';
+            };
+
+            try {
+              $repo->run( 'fetch', '--quiet', { fatal => '!0' } );
             }
             catch {
               die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
@@ -181,6 +189,33 @@ sub execute {
             catch {
               die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or discard them with --force.\n";
             };
+
+            $plugin->update;
+            my $success = 0;
+            try { $success = $plugin->test }
+            catch {
+              chomp;
+              warn "There were errors while testing:\n$_\n";
+            };
+
+            if (defined $success and !$success) {
+              if ($opt->{force}) {
+                warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
+              }
+              else {
+                unless ($opt->{quiet}) {
+                  warn "Tests failed. Rolling back upgrade of $plugin->{name}.\n";
+                  warn "Use --force to ignore this warning\n";
+                }
+                $repo->run('reset', '--hard', '--quiet', $head , { fatal => '!0' });
+
+                my $msg = ($opt->{quiet}) ? "" : "Did not upgrade $plugin->{name}.";
+                die $msg . "\n";
+              }
+            }
+            else {
+              print "$plugin->{name} upgraded successfully.\n" unless $opt->{quiet};
+            }
           }
           catch {
             warn "$_";
@@ -191,12 +226,12 @@ sub execute {
         else {
           $app->execute_command(CPrAN::Command::remove->new({}),  \%params, $plugin->{name});
           $app->execute_command(CPrAN::Command::install->new({}), \%params, $plugin->{name});
+          print "$plugin->{name} upgraded successfully.\n" unless $opt->{quiet};
         }
-        print "Succesfully upgraded $plugin->{name}\n" unless $opt->{quiet};
       }
     }
     else {
-      print "Abort.\n" unless ($opt->{quiet});
+      print "Abort\n" unless ($opt->{quiet});
       exit;
     }
   }
@@ -256,20 +291,21 @@ sub _praat {
   try {
     my $praat = CPrAN::Praat->new();
     print "Querying server for latest version...\n" unless $opt->{quiet};
-    if ($praat->current < $praat->latest) {
+
+    use Sort::Naturally;
+    if (ncmp($praat->latest, $praat->current) > 0) {
       unless ($opt->{quiet}) {
         print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
         print "Do you want to continue?";
       }
-      if (CPrAN::yesno( $opt )) {
 
+      if (CPrAN::yesno( $opt )) {
         my $app = CPrAN->new;
         my %params = %{$opt};
         $params{yes} = $params{reinstall} = 1;
         # TODO(jja) Better verbosity controls
         $params{quiet} = 2; # Silence everything _but_ the download progress bar
         $app->execute_command(CPrAN::Command::install->new({}), \%params, 'praat');
-
       }
     }
     else {
@@ -291,7 +327,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This program is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -300,7 +336,10 @@ the same terms as Perl itself.
 
 L<CPrAN|cpran>,
 L<CPrAN::Plugin|plugin>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
 L<CPrAN::Command::install|install>,
+L<CPrAN::Command::list|list>,
 L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
 L<CPrAN::Command::show|show>,
@@ -309,6 +348,6 @@ L<CPrAN::Command::update|update>
 
 =cut
 
-our $VERSION = '0.02008'; # VERSION
+our $VERSION = '0.02009'; # VERSION
 
 1;

@@ -70,10 +70,10 @@ sub validate_args {
   # 3. The user has not turned it off by setting --nogit
   if (!defined $opt->{git} or $opt->{git}) {
     try {
+      $opt->{git} = which('git');
       die "Could not find path to git binary. Is git installed?\n"
-        unless defined which('git');
+        unless defined $opt->{git};
       require Git::Repository;
-      $opt->{git} = 1;
     }
     catch {
       warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
@@ -100,6 +100,8 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   warn "DEBUG: Running install\n" if $opt->{debug};
+
+  my $app = CPrAN->new();
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
@@ -141,15 +143,15 @@ sub execute {
     }
   }
 
-  # Get a source dependency tree for the plugins that are to be installed.
-  # The dependencies() subroutine calls itself recursively to include the
-  # dependencies of the dependencies, and so on.
-  my @deps = CPrAN::dependencies( $opt, \@todo );
+  my @ordered;
+  {
+    my $cmd = CPrAN::Command::deps->new({});
 
-  # The source tree is then ordered to get a schedule of plugin installation.
-  # In the resulting list, plugins with no dependencies come first, and those
-  # that depend on them come later.
-  my @ordered = CPrAN::order_dependencies( @deps );
+    my %params = %{$opt};
+    $params{quiet} = 1;
+
+    @ordered = $app->execute_command($cmd, \%params, @todo);
+  }
 
   # Scheduled plugins that are already installed are descheduled
   my @schedule = grep {
@@ -157,7 +159,7 @@ sub execute {
     my $in_args = grep { /$plugin->{name}/ } @{$args};
     if (!$plugin->is_installed or ($opt->{reinstall} and $in_args)) { 1 }
     else { 0 }
-  } map { CPrAN::Plugin->new( $_->{name} ) } @ordered;
+  } @ordered;
 
   # Output and user query modeled after apt's
   if (@schedule) {
@@ -194,6 +196,7 @@ sub execute {
               $repo->run( 'checkout', '--quiet', $latest );
             }
             catch {
+              chomp;
               croak "Error: could not clone repository.\n$_\n";
             };
           }
@@ -226,7 +229,6 @@ sub execute {
                 warn "Use --force to ignore this warning\n";
               }
 
-              my $app = CPrAN->new();
               my %params = %{$opt};
               $params{yes} = 1;
               $params{force} = 1;
@@ -593,7 +595,10 @@ sub _praat {
 
       use Path::Class;
       my $file = file($ae->extract_path, $ae->files->[0]);
-      File::Copy::move $file, file($praat->{path}, $praat->{bin})
+      my $bin = file($praat->{path}, $praat->{bin});
+
+      use File::Copy;
+      File::Copy::move $file, $bin
         or die "Could not move file: $!\n";
     }
   }
@@ -612,7 +617,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This program is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -621,6 +626,9 @@ the same terms as Perl itself.
 
 L<CPrAN|cpran>,
 L<CPrAN::Plugin|plugin>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
+L<CPrAN::Command::list|list>,
 L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
 L<CPrAN::Command::show|show>,
@@ -630,6 +638,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02008'; # VERSION
+our $VERSION = '0.02009'; # VERSION
 
 1;

@@ -14,7 +14,8 @@ my %WriteMakefileArgs = (
   },
   "DISTNAME" => "CPrAN",
   "EXE_FILES" => [
-    "bin/cpran"
+    "bin/cpran",
+    "bin/cpran-update-list"
   ],
   "LICENSE" => "perl",
   "MIN_PERL_VERSION" => "5.006",
@@ -29,6 +30,7 @@ my %WriteMakefileArgs = (
     "Cwd" => 0,
     "Data::Dumper" => 0,
     "Encode" => 0,
+    "File::Copy" => 0,
     "File::Path" => 0,
     "File::Temp" => 0,
     "File::Which" => 0,
@@ -38,6 +40,7 @@ my %WriteMakefileArgs = (
     "JSON::Tiny" => 0,
     "LWP::Protocol::https" => 0,
     "LWP::UserAgent" => 0,
+    "POSIX" => 0,
     "Params::Validate" => 0,
     "Path::Class" => "0.35",
     "Sort::Naturally" => 0,
@@ -48,15 +51,15 @@ my %WriteMakefileArgs = (
     "URI" => 0,
     "URI::QueryParam" => 0,
     "YAML::XS" => 0,
+    "diagnostics" => 0,
     "strict" => 0,
     "warnings" => 0
   },
   "TEST_REQUIRES" => {
     "App::Cmd::Tester" => 0,
-    "Data::Printer" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.02008",
+  "VERSION" => "0.02009",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -73,8 +76,8 @@ my %FallbackPrereqs = (
   "Carp" => 0,
   "Cwd" => 0,
   "Data::Dumper" => 0,
-  "Data::Printer" => 0,
   "Encode" => 0,
+  "File::Copy" => 0,
   "File::Path" => 0,
   "File::Temp" => 0,
   "File::Which" => 0,
@@ -84,6 +87,7 @@ my %FallbackPrereqs = (
   "JSON::Tiny" => 0,
   "LWP::Protocol::https" => 0,
   "LWP::UserAgent" => 0,
+  "POSIX" => 0,
   "Params::Validate" => 0,
   "Path::Class" => "0.35",
   "Sort::Naturally" => 0,
@@ -95,6 +99,7 @@ my %FallbackPrereqs = (
   "URI" => 0,
   "URI::QueryParam" => 0,
   "YAML::XS" => 0,
+  "diagnostics" => 0,
   "strict" => 0,
   "warnings" => 0
 );

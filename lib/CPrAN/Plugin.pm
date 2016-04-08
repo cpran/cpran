@@ -33,7 +33,8 @@ plugins, regardless of whether they are on CPrAN or not.
 sub new {
   my ($class, $in) = @_;
 
-  my $self = {};
+  my $self = bless {}, $class;
+
   if (ref $in eq 'HASH') {
     # Assume we received a GitLab project hash ref as input and parse for data
     try {
@@ -43,16 +44,23 @@ sub new {
     }
     catch {
       croak "Unknown hashref as input: $_";
-    }
-  }
-  else {
-    $self = {
-      name => $in,
     };
   }
+  else {
+    # If not a hash, check to see if it is a descriptor
+    my $yaml = $self->_parse( $in );
+    if (!defined $yaml) {
+      # If it is not, assume it is the name of a plugin
+      $self->{name} = $in;
+    }
+    else {
+      # Otherwise, read as the remote descriptor
+      # NOTE Or maybe local?
+      $self->{name} = $yaml->{plugin};
+      $self->{remote} = $yaml;
+    }
+  }
   $self->{name}  =~ s/^plugin_//;
-
-  $self = bless $self, $class;
 
   $self->_init();
 
@@ -72,19 +80,18 @@ sub _init {
 
   $self->{installed} = 1 if ( -e $root );
 
-  my $local = file($self->{root}, 'cpran.yaml');
-  if (-e $local) {
-    $self->{local} = $self->_read( $local );
+  unless (defined $self->{local}) {
+    my $local = file($self->{root}, 'cpran.yaml');
+    if (-e $local) {
+      $self->{local} = $self->_read( $local );
+    }
   }
 
-  my $remote = file(CPrAN::root(), $self->{name});
-  if (-e $remote) {
-    $self->{'remote'} = $self->_read( $remote );
-    $self->fetch unless $self->{remote}->{descriptor};
-  }
-  else {
-    # warn "No known remote descriptor for $self->{name}. Looking online...";
-    $self->fetch;
+  unless (defined $self->{remote}) {
+    my $remote = file(CPrAN::root(), $self->{name});
+    if (-e $remote) {
+      $self->{remote} = $self->_read( $remote );
+    }
   }
 }
 
@@ -296,7 +303,7 @@ sub test {
     or die "Could not change directory";
 
   unless ( -e 't' ) {
-    warn "No tests for $self->{name}\n";
+    # warn "No tests for $self->{name}\n";
     return undef;
   }
 
@@ -374,11 +381,7 @@ sub print {
 }
 
 sub _read {
-  use YAML::XS;
-  use Path::Class;
-
   my ($self, $in) = @_;
-  my $yaml;
 
   if (ref $in eq 'Path::Class::File') {
     return undef unless -e $in;
@@ -386,19 +389,32 @@ sub _read {
     return undef if $in eq '';
   }
 
+  return $self->_parse( $in );
+}
+
+sub _parse {
+  use YAML::XS;
+  use Path::Class;
+  use Encode qw( encode );
+
+  my ($self, $in) = @_;
+  my $yaml;
+
   try {
-    $yaml = YAML::XS::Load( $in );
+    $yaml = YAML::XS::Load( encode('utf-8', $in) );
   }
   catch {
     warn "Could not deserialise descriptor: $in at $self->{name}";
   };
 
   return undef unless defined $yaml;
+  return undef unless ref $yaml eq 'HASH';
 
   _force_lc_hash($yaml);
   $yaml->{descriptor} = $in;
   $yaml->{name} = $yaml->{plugin};
   $self->{cpran} = 1;
+
   return $yaml;
 }
 
@@ -421,7 +437,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This module is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -429,16 +445,19 @@ the same terms as Perl itself.
 =head1 SEE ALSO
 
 L<CPrAN|cpran>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
 L<CPrAN::Command::install|install>,
-L<CPrAN::Command::remove|remove>
-L<CPrAN::Command::show|show>,
+L<CPrAN::Command::list|list>,
+L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
+L<CPrAN::Command::show|show>,
 L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
-L<CPrAN::Command::upgrade|upgrade>,
+L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02008'; # VERSION
+our $VERSION = '0.02009'; # VERSION
 
 1;

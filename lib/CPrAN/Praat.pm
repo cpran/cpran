@@ -214,8 +214,10 @@ sub latest {
       sub { $_[0]->as_text =~ /$package/; }
     );
     $self->{'package'} = $pkglink->as_trimmed_text;
-    $self->{latest} = $+{version} if ($self->{package} =~ /$package/);
-
+    if ($self->{package} =~ /$package/) {
+      $self->{latest} = $+{version};
+      $self->{latest} =~ s/(\d)(\d{2})$/.$1.$2/;
+    }
   }
   else {
     die $response->status_line;
@@ -232,7 +234,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This module is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -240,16 +242,20 @@ the same terms as Perl itself.
 =head1 SEE ALSO
 
 L<CPrAN|cpran>,
+L<CPrAN::Plugin|plugin>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
 L<CPrAN::Command::install|install>,
-L<CPrAN::Command::remove|remove>
-L<CPrAN::Command::show|show>,
+L<CPrAN::Command::list|list>,
+L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
+L<CPrAN::Command::show|show>,
 L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
-L<CPrAN::Command::upgrade|upgrade>,
+L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02008'; # VERSION
+our $VERSION = '0.02009'; # VERSION
 
 1;

@@ -57,54 +57,112 @@ sub execute {
 
   warn "DEBUG: Running update\n" if $opt->{debug};
 
-  my $projects;
-  try {
-    $projects = list_projects($self, $opt, $args);
-  }
-  catch {
-    chomp;
-    warn "Could not connect to the server: $_\n";
-    exit 1;
-  };
-
   use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
   use Path::Class;
+  use YAML::XS;
+  use Encode qw( encode decode );
+
+  my $api = WWW::GitLab::v3->new(
+    url   => CPrAN::api_url(),
+    token => CPrAN::api_token(),
+  );
+
+  $opt->{verbose}-- if defined $opt->{print};
+
+  # The package list lives as a snippet in the plugin_cpran project
+  # To get it, we need the project and snippet ids
+  my $pid = $api->projects( { search => 'plugin_cpran' } )->[0]->{id};
+  my $snippets = $api->snippets($pid);
+  my $sid;
+  foreach (@{$snippets}) { $sid = $_->{id} if $_->{file_name} eq 'cpran.list' }
 
   my @updated;
-  foreach my $source (@{$projects}) {
 
-    next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
-    next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
+  my %requested;
+  $requested{$_} = 1 foreach @{$args};
 
-    my $plugin;
-    try {
-      $plugin = CPrAN::Plugin->new( $source );
-    }
-    catch {
-      warn "Could not initialise plugin \"$source->{name}\"" if $opt->{debug};
-    };
-    next unless defined $plugin;
+  unless (defined $opt->{raw}) {
+    print "Updating plugin data...\n" if $opt->{verbose};
 
-    if ($plugin->is_cpran) {
-      print "Fetching $plugin->{name}...\n" if $opt->{verbose};
-      $plugin->fetch;
+    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
+      next unless $_;
+
+      my $encoded = "---" . encode('utf-8', $_);
+      my $plugin = Load(encode('utf-8', $encoded));
+      next if (scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}};
+      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
+
+      if (defined $opt->{virtual}) {
+        $plugin = CPrAN::Plugin->new( $encoded );
+      }
+      else {
+        my $out = file( CPrAN::root(), $plugin->{Plugin} );
+        my $fh = $out->openw();
+        $fh->print( $encoded );
+        $fh->close;
+        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
+      }
 
       push @updated, $plugin;
+    }
+  }
+  else {
+    print "Contacting remote repositories for latest data...\n" if $opt->{verbose};
 
-      unless (defined $opt->{virtual}) {
-        if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
-          my $out = file( CPrAN::root(), $plugin->{name} );
-          my $fh = $out->openw();
-          $fh->print( $plugin->{remote}->{descriptor} );
-        }
-        else {
-          # warn "Nothing to write for $plugin->{name}";
+    my $projects;
+    try {
+      $projects = list_projects($self, $opt, $args);
+    }
+    catch {
+      chomp;
+      warn "Could not connect to the server: $_\n";
+      exit 1;
+    };
+
+    foreach my $source (@{$projects}) {
+
+      next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
+      next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
+      next if (scalar @{$args} > 1) && !defined $requested{$source->{name}};
+
+      my $plugin;
+      try {
+        $plugin = CPrAN::Plugin->new( $source );
+      }
+      catch {
+        warn "Could not initialise plugin \"$source->{name}\"" if $opt->{debug};
+      };
+      next unless defined $plugin;
+
+      if ($plugin->is_cpran) {
+        $plugin->fetch;
+        next unless defined $plugin->{remote};
+
+        print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
+
+        push @updated, $plugin;
+
+        unless (defined $opt->{virtual}) {
+          if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
+            my $out = file( CPrAN::root(), $plugin->{name} );
+            my $fh = $out->openw();
+            $fh->print( $plugin->{remote}->{descriptor} );
+          }
+          else {
+            warn "Nothing to write for $plugin->{name}" if $opt->{debug};
+          }
         }
       }
     }
   }
+  print "Updated " . scalar @updated . " packages\n" if $opt->{verbose};
+
+  if (defined $opt->{print}) {
+    $_->print('remote') foreach (@updated);
+  }
+
   return \@updated;
 }
 
@@ -160,6 +218,8 @@ Increase verbosity of output.
 sub opt_spec {
   return (
     [ "virtual" => "do not write anything to disk" ],
+    [ "print"   => "print the stream of updated descriptors to STDOUT" ],
+    [ "raw"     => "compute a new list of plugins from scratch" ],
   );
 }
 
@@ -169,7 +229,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This program is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -178,7 +238,10 @@ the same terms as Perl itself.
 
 L<CPrAN|cpran>,
 L<CPrAN::Plugin|plugin>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
 L<CPrAN::Command::install|install>,
+L<CPrAN::Command::list|list>,
 L<CPrAN::Command::remove|remove>,
 L<CPrAN::Command::search|search>,
 L<CPrAN::Command::show|show>,
@@ -187,6 +250,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02008'; # VERSION
+our $VERSION = '0.02009'; # VERSION
 
 1;

@@ -2,11 +2,13 @@ use Test::More tests => 3;
 use App::Cmd::Tester;
 
 use CPrAN;
-use Data::Printer;
 
 my $result = test_app(CPrAN => [qw( --version )]);
 
-like($result->stdout, qr/\w+ \(CPrAN\) version [\d\.]+ \([^)]+\)\n/, 'printed what we expected');
+like($result->stdout,
+  qr/\w+ \(CPrAN\) version [\d\.]+ \([^)]+\)\n/,
+  'printed what we expected'
+);
 
 is($result->stderr, '', 'nothing sent to sderr');
 

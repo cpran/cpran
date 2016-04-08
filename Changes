@@ -1,5 +1,15 @@
 Revision history for CPrAN
 
+0.02009   2016-04-08 23:21:55+01:00 Europe/London
+
+  * Improved speed of update command with precompiled list
+  * Faster startup times using CPrAN::Plugin
+  * update honours argument list
+  * upgrade tests upgraded plugins
+  * Added tests for list, search, and init (latter only without git)
+  * New command: deps, to list the dependencies of plugins
+  * New feature: commands can be piped together
+
 0.02008   2016-03-04 17:41:04+00:00 Europe/London
 
   * Bug fix for plugin print method
@@ -24,6 +34,22 @@ Revision history for CPrAN
   * Separated Perl client from Praat plugin
   * Added init command
   * Incorrectly jumped to next version :(
+  * Experimental management of Praat installations (upgrade, remove, install)
+  * Optional git support for install and upgrade
+  * CPrAN::Plugin used as return value for plugin lists
+  * Tests log results to archive or log directory
+  * Logs enabled by default, disabled if --nolog (needs TAP::Harness::Archive)
+  * Tests supported on Windows
+  * (install) --force now deals exclusively with test results
+  * (install) new option --reinstall takes over remaining uses of --force
+  * Text::FormatTable instead of Text::Table for search output with word wrap
+  * Internal GitLab API renamed to WWW::GitLab::API
+  * Better support for non-standard home directories
+  * CPrAN now prefers lowercase Praat executable on Linux and Mac
+  * Prompts default to "yes"
+  * Changed client shebang to use /usr/bin/env perl
+  * Project list is now fetched from user instead of group
+  * Tests supported for Praat >= 6.0.03 (not 6.0 ~ 6.0.02)
 
 0.0110
 
@@ -42,7 +68,7 @@ Revision history for CPrAN
 
 0.0108
 
-  * Fixed a bug qwith version checking in CPrAN::Plugin
+  * Fixed a bug with version checking in CPrAN::Plugin
 
 0.0107
 

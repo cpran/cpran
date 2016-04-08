@@ -84,13 +84,43 @@ B<CPrAN> - A package manager for Praat
   sub api_group { if (@_) { $GROUP  = shift } else { return $GROUP  } }
 }
 
+sub run {
+  my ($self) = @_;
+
+  # We should probably use Class::Default.
+  $self = $self->new unless ref $self;
+
+  # prepare the command we're going to run...
+  my @argv = $self->prepare_args();
+  my ($cmd, $opt, @args) = $self->prepare_command(@argv);
+
+  # If we are not running interactively, and the command's input argument
+  # list is empty, read in arguments from STDIN. If any have been read, then
+  # activate the --yes flag.
+  unless (-t) {
+    my $pre = scalar @args;
+    unless ($pre) {
+      while (<STDIN>) {
+        chomp;
+        push @args, $_;
+      }
+    }
+    my $post = scalar @args;
+
+    $opt->{yes} = 1 if $post > $pre;
+  }
+
+  # ...and then run it
+  $self->execute_command($cmd, $opt, @args);
+}
+
 # By redefining this subroutine, we lightly modify the behaviour of the App::Cmd
 # app. In this case, we process the global options, and pass them to
 # the invoked commands together with their local options.
 sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
 
-  set_globals($self, $cmd, $opt, @args);
+  set_globals($self, $cmd, $opt);
   make_root() unless (-e CPrAN::root);
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
@@ -191,7 +221,7 @@ re-worked to more closely match the way App::Cmd expects to be used.
 =cut
 
 sub set_globals {
-  my ($self, $cmd, $opt, @args) = @_;
+  my ($self, $cmd, $opt) = @_;
   my $gopt = $self->global_options;
 
   praat     $gopt->{praat}       if (defined $gopt->{praat}      );
@@ -201,7 +231,7 @@ sub set_globals {
   api_group $gopt->{'api-group'} if (defined $gopt->{'api-group'});
   api_url   $gopt->{'api-url'}   if (defined $gopt->{'api-url'}  );
 
-  check_permissions($self, $cmd, $opt, @args) unless ($cmd =~ /(version|help)/);
+  check_permissions($self, $cmd, $opt) unless ($cmd =~ /(version|help)/);
 
 }
 
@@ -216,7 +246,7 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 # readable/writable. What needs to be checked is whether the root could be
 # created.
 sub check_permissions {
-  my ($self, $cmd, $opt, @args) = @_;
+  my ($self, $cmd, $opt) = @_;
 
   if (-e CPrAN::root()) {
     croak "Cannot read from CPrAN root at " . CPrAN::root()
@@ -281,95 +311,6 @@ sub known {
   return map { $_->basename } dir( CPrAN::root() )->children;
 }
 
-=item dependencies()
-
-Query the desired plugins for dependencies.
-
-Takes either the name of a single plugin, or a list of names, and returns
-an array of hashes properly formatted for processing with order_dependencies()
-
-=cut
-
-sub dependencies {
-  my ($opt, $args) = @_;
-
-  use WWW::GitLab::v3;
-  use CPrAN::Plugin;
-
-  # If the argument is a scalar, convert it to a list with it as its single item
-  $args = [ $args ] if (ref $args ne 'ARRAY');
-
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
-
-  my @dependencies;
-  foreach my $plugin (@{$args}) {
-    unless (ref $plugin eq 'CPrAN::Plugin') {
-      $plugin = CPrAN::Plugin->new( $plugin );
-    }
-
-    if (defined $plugin->{remote}->{depends}->{plugins}) {
-      my %raw = %{$plugin->{remote}->{depends}->{plugins}};
-
-      my $depends = {};
-      foreach my $kley (keys %{$plugin->{remote}->{depends}->{plugins}}) {
-        push @dependencies, {
-          name     => $plugin->{name},
-          requires => [ keys %raw   ],
-          version  => [ values %raw ],
-        };
-      }
-      # Recursively query dependencies for all dependencies
-      foreach (keys %raw) {
-        @dependencies = (@dependencies, dependencies($opt, $_));
-      }
-    }
-    else {
-      push @dependencies, {
-        name => $plugin->{name},
-        requires => [],
-        version => [],
-      };
-    }
-  }
-  return @dependencies;
-}
-
-=item order_dependencies()
-
-Order required packages, so that those that are depended upon come up first than
-those that depend on them.
-
-The argument is an array of hashes, each of which needs a "name" key that
-identifies the item, and a "requires" holding the reference to an array with
-the names of the items that are required. See dependencies() for a method to
-generate such an array.
-
-Closely modeled after http://stackoverflow.com/a/12166653/807650
-
-=cut
-
-sub order_dependencies {
-  use Graph 0.96 qw();
-
-   my %recs;
-   my $graph = Graph->new();
-   foreach my $rec (@_) {
-      my ($name, $requires) = @{$rec}{qw( name requires )};
-
-      $graph->add_vertex($name);
-      foreach (@{$requires}) {
-        $graph->add_edge($_, $name);
-      }
-
-      $recs{$name} = $rec;
-   }
-
-   return map $recs{$_}, $graph->topological_sort();
-}
-
 =item yesno()
 
 Gets either a I<yes> or a I<no> answer from STDIN. As arguments, it first
@@ -420,7 +361,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015 José Joaquín Atria
+Copyright 2015-2016 José Joaquín Atria
 
 This module is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -429,16 +370,19 @@ the same terms as Perl itself.
 
 L<CPrAN|cpran>,
 L<CPrAN::Plugin|plugin>,
+L<CPrAN::Command::deps|deps>,
+L<CPrAN::Command::init|init>,
 L<CPrAN::Command::install|install>,
+L<CPrAN::Command::list|list>,
 L<CPrAN::Command::remove|remove>,
-L<CPrAN::Command::show|show>,
 L<CPrAN::Command::search|search>,
+L<CPrAN::Command::show|show>,
 L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02008'; # VERSION
+our $VERSION = '0.02009'; # VERSION
 
 1;
