@@ -6,7 +6,9 @@ Revision history for CPrAN
   * Faster startup times using CPrAN::Plugin
   * update honours argument list
   * upgrade tests upgraded plugins
-  * Added tests for list and init (latter only without git)
+  * Added tests for list, search, and init (latter only without git)
+  * New command: deps, to list the dependencies of plugins
+  * New feature: commands can be piped together
 
 0.02008   2016-03-04 17:41:04+00:00 Europe/London
 
