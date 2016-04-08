@@ -44,7 +44,14 @@ installed plugins, both the local and the remote versions will be displayed.
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("Must provide a search term") unless @{$args};
+  unless (@{$args}) {
+    if (-t) {
+      $self->usage_error("Must provide at least one search term");
+    }
+    else {
+      exit;
+    }
+  }
 
   # Search by default in all fields
   # If any fields are specified, then search in those
