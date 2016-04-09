@@ -21,19 +21,22 @@ cpran init [options]
 
 =head1 DESCRIPTION
 
-Perform the initial setup for CPrAN, to install it as a Praat plugin.
+The [cpran plugin][] serves as a bridge between the actions of the
+[CPrAN client][cprandoc] and Praat. Te plugin on its own does very little, but
+it can be used by other plpugins to e.g. populate a single menu with their
+exposed commands, instead of cluttering the Praat menu.
+
+In the future, modifying its list of dependencies (currently empty) will
+also make it possible to flag certain plugins as "core", and make them available
+in all CPrAN installations.
+
+This command installs the [cpran plugin][] on an otherwise empty system.
 
 =cut
 
 sub description {
   return "Perform the initial setup for CPrAN, to install it as a Praat plugin";
 }
-
-=pod
-
-B<init> will install CPrAN as a Praat plugin.
-
-=cut
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
