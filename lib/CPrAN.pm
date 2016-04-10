@@ -129,7 +129,7 @@ sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
 
   $self->set_globals($cmd, $opt);
-  $self->make_root unless (-e $self->root);
+  $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
@@ -238,9 +238,6 @@ sub set_globals {
   $self->api_token( $gopt->{'api-token'} ) if (defined $gopt->{'api-token'});
   $self->api_group( $gopt->{'api-group'} ) if (defined $gopt->{'api-group'});
   $self->api_url(   $gopt->{'api-url'}   ) if (defined $gopt->{'api-url'}  );
-
-  $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
-
 }
 
 =item check_permissions()
@@ -270,19 +267,6 @@ sub check_permissions {
     unless (-r $self->praat);
   croak "Cannot write to preferences directory at " . $self->praat
     unless (-w $self->praat);
-}
-
-=item make_root()
-
-Makes the B<CPrAN> root directory.
-
-=cut
-
-sub make_root {
-  my ($self) = @_;
-
-  File::Path::make_path( $self->root )
-    or carp "Could not make directory at " . $self->root;
 }
 
 =item yesno()
