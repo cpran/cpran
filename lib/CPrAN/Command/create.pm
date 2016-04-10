@@ -39,7 +39,7 @@ sub validate_args {
     # Create a blank plugin with the default values
     cpran create
     # Create a blank plugin with specified values
-    cpran create --name="myplugin" --author="A. N. Author"
+    cpran create myplugin --author="A. N. Author"
 
 =cut
 
@@ -102,7 +102,6 @@ sub execute {
 
 sub opt_spec {
   return (
-    [ "name"   => "specify the name of the plugin" ],
     [ "author" => "specify the author of the plugin" ],
   );
 }
