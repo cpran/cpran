@@ -119,10 +119,10 @@ sub execute {
   #   b) not already installed (unless the user asks for re-installation)
   my @todo;
   foreach my $plugin (@plugins) {
-    # BUG(jja) What to do here?
-    use Config;
-    if ($plugin->{name} eq 'cpran' && $Config{osname} eq 'MSWin32') {
-      warn "Cannot currently use CPrAN to install CPrAN in Windows\n";
+
+    if ($plugin->{name} eq 'cpran') {
+      warn "Use cpran init to install the cpran plugin\n";
+      next;
     }
 
     if (defined $plugin->{remote}) {
@@ -243,14 +243,6 @@ sub execute {
           }
           else {
             print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
-          }
-
-          if ($plugin->{name} eq 'cpran') {
-            # CPrAN is installing itself!
-            # HACK(jja) currently, a reinstall deletes the original directory
-            # which in the case of CPrAN will likely destroy the CPrAN root.
-            # If that's the case, we rebuild it.
-            rebuild_list($self, $opt) unless (-e CPrAN::root());
           }
         }
       }
