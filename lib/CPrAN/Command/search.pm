@@ -95,10 +95,6 @@ sub execute {
   warn "DEBUG: " . scalar @plugins . " known plugins\n"
     if (!defined $opt->{installed} && $opt->{debug});
 
-  $self->{output} = Text::FormatTable->new('l l l l');
-  $self->{output}->head(
-    "Name", "Local", "Remote", "Description"
-  );
   @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
 
   my %list;
@@ -111,12 +107,16 @@ sub execute {
     }
   }
 
-  my @found = map {
-    $self->_add_output_row($opt, $list{$_});
-    $list{$_}
-  } sort keys %list;
+  my @found = map { $list{$_} } sort keys %list;
 
   unless ($opt->{quiet}) {
+    $self->{output} = Text::FormatTable->new('l l l l');
+    $self->{output}->head(
+      "Name", "Local", "Remote", "Description"
+    );
+
+    $self->_add_output_row($opt, $list{$_}) foreach sort keys %list;
+
     if (@found) {
       use Term::ReadKey;
       my ($wchar, $hchar, $wpixels, $hpixels) = GetTerminalSize();
