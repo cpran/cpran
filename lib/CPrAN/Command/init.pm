@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Path::Class;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -40,6 +41,12 @@ sub description {
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
+
+  my $praatdir = $opt->{praat} // CPrAN::praat({});
+  if (-e dir($praatdir, 'plugin_cpran')) {
+    print "CPrAN is already initialised. Nothing to do here!\n" unless $opt->{quiet};
+    exit 0;
+  }
 }
 
 =head1 EXAMPLES
