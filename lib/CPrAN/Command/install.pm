@@ -206,14 +206,20 @@ sub execute {
           print "Testing $plugin->{name}...\n" unless $opt->{quiet};
           $plugin->update;
 
-          my $success = 0;
-          try {
-            $success = $plugin->test;
+          my $success;
+          if (!defined $opt->{test} or $opt->{test}) {
+            $success = 0;
+            try {
+              $success = $plugin->test;
+            }
+            catch {
+              chomp;
+              warn "There were errors while testing:\n$_\n";
+            };
           }
-          catch {
-            chomp;
-            warn "There were errors while testing:\n$_\n";
-          };
+          else {
+            $success = 1;
+          }
 
           if (defined $success and !$success) {
             if ($opt->{force}) {
@@ -296,6 +302,7 @@ Print debug messages.
 sub opt_spec {
   return (
     [ "yes|y"       => "assume yes for all questions"        ],
+    [ "test|T!"     => "request / disable tests"             ],
     [ "force|F"     => "ignore failing tests"                ],
     [ "reinstall|r" => "re-install requested plugins"        ],
     [ "git|g!"      => "request / disable git support"       ],
