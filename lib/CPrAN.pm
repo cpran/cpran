@@ -94,7 +94,7 @@ sub run {
   # We should probably use Class::Default.
   $self = $self->new unless ref $self;
 
-  # prepare the command we're going to run...
+  # Prepare the command we're going to run
   my @argv = $self->prepare_args();
   my ($cmd, $opt, @args) = $self->prepare_command(@argv);
 
@@ -114,11 +114,11 @@ sub run {
     $opt->{yes} = 1 if $post > $pre;
   }
 
-  # ... remove duplicates ...
+  # Remove duplicate arguments
   my %seen;
   @args = grep { ! $seen{$_}++ } @args;
 
-  # ...and then run it
+  # Run the requested command
   $self->execute_command($cmd, $opt, @args);
 }
 
