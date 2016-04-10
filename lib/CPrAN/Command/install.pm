@@ -313,27 +313,6 @@ sub opt_spec {
 
 =cut
 
-=item B<rebuild_list()>
-
-Rebuild the plugin list. This method is just a wrapper around B<update>, used
-for re-creating the list when CPrAN is used to install itself.
-
-=cut
-
-sub rebuild_list {
-  my ($self, $opt) = @_;
-
-  CPrAN::make_root();
-
-  # We copy the current options, in case custom paths have been passed
-  my %params = %{$opt};
-  $params{verbose} = 0;
-
-  print "Rebuilding plugin list...\n" unless ($opt->{quiet});
-  my ($cmd) = $self->app->prepare_command('update');
-  $self->app->execute_command( $cmd, \%params, () );
-}
-
 =item B<get_archive()>
 
 Downloads a plugin's tarball from the server. Returns the name of the tarball on
