@@ -116,11 +116,6 @@ sub execute {
   my @todo;
   foreach my $plugin (@plugins) {
 
-    if ($plugin->{name} eq 'cpran') {
-      warn "Use `cpran init` to install the cpran plugin\n";
-      next;
-    }
-
     if (defined $plugin->{remote}) {
       my $install = 0;
 
