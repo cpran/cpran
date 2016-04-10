@@ -83,32 +83,7 @@ sub execute {
   my %requested;
   $requested{$_} = 1 foreach @{$args};
 
-  unless (defined $opt->{raw}) {
-    print "Updating plugin data...\n" if $opt->{verbose};
-
-    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
-      next unless $_;
-
-      my $encoded = "---" . encode('utf-8', $_);
-      my $plugin = Load(encode('utf-8', $encoded));
-      next if (scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}};
-      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
-
-      if (defined $opt->{virtual}) {
-        $plugin = CPrAN::Plugin->new( $encoded );
-      }
-      else {
-        my $out = file( CPrAN::root(), $plugin->{Plugin} );
-        my $fh = $out->openw();
-        $fh->print( $encoded );
-        $fh->close;
-        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
-      }
-
-      push @updated, $plugin;
-    }
-  }
-  else {
+  if (defined $opt->{raw}) {
     print "Contacting remote repositories for latest data...\n" if $opt->{verbose};
 
     my $projects;
@@ -146,10 +121,9 @@ sub execute {
       next unless defined $plugin;
 
       if ($plugin->is_cpran) {
-        next unless defined $plugin->{remote};
-
         print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
 
+        next unless defined $plugin->{remote};
         push @updated, $plugin;
 
         unless (defined $opt->{virtual}) {
@@ -163,6 +137,38 @@ sub execute {
           }
         }
       }
+      else {
+        warn "$source->{name} is not a CPrAN plugin\n";
+      }
+    }
+  }
+  else {
+    print "Updating plugin data...\n" if $opt->{verbose};
+
+    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
+      next unless $_;
+
+      my $encoded = "---" . encode('utf-8', $_);
+      my $plugin = Load(encode('utf-8', $encoded));
+      if ((scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}}) {
+        warn "Skipping $plugin->{Plugin}\n";
+        next;
+      }
+
+      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
+
+      if (defined $opt->{virtual}) {
+        $plugin = CPrAN::Plugin->new( $encoded );
+      }
+      else {
+        my $out = file( CPrAN::root(), $plugin->{Plugin} );
+        my $fh = $out->openw();
+        $fh->print( $encoded );
+        $fh->close;
+        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
+      }
+
+      push @updated, $plugin;
     }
   }
   print "Updated " . scalar @updated . " packages\n" if $opt->{verbose};
