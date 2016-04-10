@@ -146,7 +146,6 @@ sub execute {
       next unless defined $plugin;
 
       if ($plugin->is_cpran) {
-        $plugin->fetch;
         next unless defined $plugin->{remote};
 
         print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
