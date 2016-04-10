@@ -60,9 +60,9 @@ B<CPrAN> - A package manager for Praat
       $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
   }
-  $ROOT = dir($PRAAT, '.cpran')->stringify;
+  $ROOT = $ENV{CPRAN_ROOT_NAME} // '.cpran';
 
-  sub root  { shift; if (scalar @_) { $ROOT  = shift } else { return $ROOT  } }
+  sub root  { shift; if (scalar @_) { $ROOT  = shift } else { return dir(praat({}), $ROOT)->stringify } }
   sub praat { shift; if (scalar @_) { $PRAAT = shift } else { return $PRAAT } }
 }
 
