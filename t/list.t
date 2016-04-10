@@ -1,4 +1,4 @@
-use Test::More tests => 14;
+use Test::More tests => 17;
 use App::Cmd::Tester;
 
 use CPrAN;
