@@ -8,12 +8,14 @@ use Cwd;
 
 my $original = cwd;
 my $dir;
-unless (defined $ENV{CPRAN_PRAAT_DIR}) {
+if ($ENV{CPRAN_PRAAT_DIR}) {
+  $dir = $ENV{CPRAN_PRAAT_DIR};
+}
+else {
   $dir = File::Temp->newdir();
-  $ENV{CPRAN_PRAAT_DIR} = $dir;
 }
 
-my $result = test_app(CPrAN => [qw( list )]);
+my $result = test_app(CPrAN => [ "--praat=$dir", 'list' ]);
 
 is($result->stderr, '', 'nothing sent to sderr');
 is($result->error, undef, 'threw no exceptions');
@@ -28,7 +30,7 @@ my $app = CPrAN->new();
 my $cmd = CPrAN::Command::update->new({});
 $app->execute_command($cmd, { quiet => 1 }, 'testsimple');
 
-$result = test_app(CPrAN => [qw( list )]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'list' ]);
 
 is($result->stderr, '', 'nothing sent to sderr');
 is($result->error, undef, 'threw no exceptions');
@@ -39,35 +41,33 @@ like(shift @lines,
   'table has correct heading after update'
 );
 
-$result = test_app(CPrAN => [qw( list --quiet )]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'list', '--quiet' ]);
 
 is($result->stdout, '', 'nothing sent to sdout with --quiet');
 is($result->stderr, '', 'nothing sent to sderr with --quiet');
 is($result->error, undef, '--quiet threw no exceptions');
 
-$result = test_app(CPrAN => [qw( list --installed )]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'list', '--installed' ]);
 
 is($result->stderr, '', 'nothing sent to sderr with --installed');
 is($result->error, undef, '--installed threw no exceptions');
 
-$result = test_app(CPrAN => [qw( list -i )]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'list', '-i' ]);
 
 is($result->stderr, '', 'nothing sent to sderr with -i');
 is($result->error, undef, '-i threw no exceptions');
 
-$result = test_app(CPrAN => [qw( list --wrap )]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'list', '--wrap' ]);
 
 is($result->stderr, '', 'nothing sent to sderr with --wrap');
 is($result->error, undef, '--wrap threw no exceptions');
 
-$result = test_app(CPrAN => [qw( list --nowrap )]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'list', '--nowrap' ]);
 
 is($result->stderr, '', 'nothing sent to sderr with --nowrap');
 is($result->error, undef, '--nowrap threw no exceptions');
 
 END {
   chdir $original;
-  if (defined $dir) {
-    print $dir->rmtree(0, 0) . "\n";
-  }
+  $dir->rmtree(0, 0) unless $ENV{CPRAN_PRAAT_DIR};
 }
