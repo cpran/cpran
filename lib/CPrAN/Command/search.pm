@@ -79,13 +79,13 @@ sub execute {
   use Text::FormatTable;
 
   my @plugins;
-  my @names = CPrAN::installed;
+  my @names = $self->installed($opt);
 
   if (defined $opt->{installed}) {
     warn "DEBUG: " . scalar @names . " installed plugins\n" if $opt->{debug};
   }
   else {
-    @names = (@names, CPrAN::known);
+    @names = (@names, $self->known($opt));
   }
 
   my %names;
@@ -172,6 +172,48 @@ sub opt_spec {
 =over
 
 =cut
+
+
+=item installed()
+
+Returns a list of all installed Praat plugins. See I<is_plugin()> for the
+criteria they need to fulfill.
+
+    my @installed = installed();
+    print "$_\n" foreach (@installed);
+
+=cut
+
+sub installed {
+  use Path::Class;
+
+  my ($self, $opt) = @_;
+
+  my @files = grep {
+    ($_->is_dir && $_->basename =~ /^plugin_\w+/)
+  } dir( $opt->{praat} // CPrAN::praat({}) )->children;
+
+  return map {
+    $1 if $_->basename =~ /^plugin_(\w+)/;
+  } @files;
+}
+
+=item known()
+
+Returns a list of all plugins known by B<CPrAN>. In practice, this is the list
+of plugins whose descriptors have been saved by C<cpran update>
+
+    my @known = known();
+    print "$_\n" foreach (@known);
+
+=cut
+
+sub known {
+  my ($self, $opt) = @_;
+
+  use Path::Class;
+  return map { $_->basename } dir( $opt->{root} // CPrAN::root({}) )->children;
+}
 
 =item B<_match()>
 

@@ -14,8 +14,9 @@ use Carp;
 use POSIX;
 print strftime("%Y-%m-%dT%T%z", localtime) . ' ';
 
+my $app = CPrAN->new;
 my $api = WWW::GitLab::v3->new(
-  url   => CPrAN::api_url(),
+  url   => $app->api_url(),
   token => $ENV{'CPRAN_PUSHER_TOKEN'},
 );
 
@@ -32,7 +33,6 @@ catch {
   exit 1;
 };
 
-my $app = CPrAN->new;
 my $cmd = CPrAN::Command::update->new({});
 
 my ($stdout, $stderr) = capture {

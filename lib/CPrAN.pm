@@ -58,8 +58,8 @@ B<CPrAN> - A package manager for Praat
     $ROOT = dir($PRAAT, '.cpran')->stringify;
   }
 
-  sub root  { if (@_) { $ROOT  = shift } else { return $ROOT  } }
-  sub praat { if (@_) { $PRAAT = shift } else { return $PRAAT } }
+  sub root  { shift; if (scalar @_) { $ROOT  = shift } else { return $ROOT  } }
+  sub praat { shift; if (scalar @_) { $PRAAT = shift } else { return $PRAAT } }
 }
 
 # TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
@@ -79,9 +79,9 @@ B<CPrAN> - A package manager for Praat
   };
   $GROUP  = '133578';
 
-  sub api_token { if (@_) { $TOKEN  = shift } else { return $TOKEN  } }
-  sub api_url   { if (@_) { $APIURL = shift } else { return $APIURL } }
-  sub api_group { if (@_) { $GROUP  = shift } else { return $GROUP  } }
+  sub api_token { shift; if (@_) { $TOKEN  = shift } else { return $TOKEN  } }
+  sub api_url   { shift; if (@_) { $APIURL = shift } else { return $APIURL } }
+  sub api_group { shift; if (@_) { $GROUP  = shift } else { return $GROUP  } }
 }
 
 sub run {
@@ -124,8 +124,8 @@ sub run {
 sub execute_command {
   my ($self, $cmd, $opt, @args) = @_;
 
-  set_globals($self, $cmd, $opt);
-  make_root() unless (-e CPrAN::root);
+  $self->set_globals($cmd, $opt);
+  $self->make_root unless (-e $self->root);
 
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
@@ -228,14 +228,14 @@ sub set_globals {
   my ($self, $cmd, $opt) = @_;
   my $gopt = $self->global_options;
 
-  praat     $gopt->{praat}       if (defined $gopt->{praat}      );
-  root      $gopt->{cpran}       if (defined $gopt->{cpran}      );
+  $self->praat(     $gopt->{praat}       ) if (defined $gopt->{praat}      );
+  $self->root(      $gopt->{cpran}       ) if (defined $gopt->{cpran}      );
 
-  api_token $gopt->{'api-token'} if (defined $gopt->{'api-token'});
-  api_group $gopt->{'api-group'} if (defined $gopt->{'api-group'});
-  api_url   $gopt->{'api-url'}   if (defined $gopt->{'api-url'}  );
+  $self->api_token( $gopt->{'api-token'} ) if (defined $gopt->{'api-token'});
+  $self->api_group( $gopt->{'api-group'} ) if (defined $gopt->{'api-group'});
+  $self->api_url(   $gopt->{'api-url'}   ) if (defined $gopt->{'api-url'}  );
 
-  check_permissions($self, $cmd, $opt) unless ($cmd =~ /(version|help)/);
+  $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
 }
 
@@ -252,19 +252,19 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 sub check_permissions {
   my ($self, $cmd, $opt) = @_;
 
-  if (-e CPrAN::root()) {
-    croak "Cannot read from CPrAN root at " . CPrAN::root()
-      unless (-r CPrAN::root());
-    croak "Cannot write to CPrAN root at " . CPrAN::root()
-      unless (-w CPrAN::root());
+  if (-e $self->root) {
+    croak "Cannot read from CPrAN root at " . $self->root
+      unless (-r $self->root());
+    croak "Cannot write to CPrAN root at " . $self->root
+      unless (-w $self->root());
   }
   else {
-    warn "CPrAN root not found.\nIf this is a fresh install, try running cpran update\n" unless ($cmd =~ /update/);
+    warn "CPrAN root not found.\nIf this is a fresh install, try running cpran init\n" unless ($cmd =~ /(update|init)/);
   }
-  croak "Cannot read from preferences directory at " . CPrAN::praat()
-    unless (-r CPrAN::praat());
-  croak "Cannot write to preferences directory at " . CPrAN::praat()
-    unless (-w CPrAN::praat());
+  croak "Cannot read from preferences directory at " . $self->praat
+    unless (-r $self->praat);
+  croak "Cannot write to preferences directory at " . $self->praat
+    unless (-w $self->praat);
 }
 
 =item make_root()
@@ -274,45 +274,10 @@ Makes the B<CPrAN> root directory.
 =cut
 
 sub make_root {
-  File::Path::make_path( CPrAN::root )
-    or carp "Could not make directory at CPrAN::root";
-}
+  my ($self) = @_;
 
-=item installed()
-
-Returns a list of all installed Praat plugins. See I<is_plugin()> for the
-criteria they need to fulfill.
-
-    my @installed = installed();
-    print "$_\n" foreach (@installed);
-
-=cut
-
-sub installed {
-  use Path::Class;
-
-  my @files = grep {
-    ($_->is_dir && $_->basename =~ /^plugin_\w+/)
-  } dir( CPrAN::praat() )->children;
-
-  return map {
-    $1 if $_->basename =~ /^plugin_(\w+)/;
-  } @files;
-}
-
-=item known()
-
-Returns a list of all plugins known by B<CPrAN>. In practice, this is the list
-of plugins whose descriptors have been saved by C<cpran update>
-
-    my @known = known();
-    print "$_\n" foreach (@known);
-
-=cut
-
-sub known {
-  use Path::Class;
-  return map { $_->basename } dir( CPrAN::root() )->children;
+  File::Path::make_path( $self->root )
+    or carp "Could not make directory at " . $self->root;
 }
 
 =item yesno()

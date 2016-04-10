@@ -64,10 +64,11 @@ sub execute {
   use YAML::XS;
   use Encode qw( encode decode );
 
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
+  $self->{api} = WWW::GitLab::v3->new(
+    url   => $opt->{api_url}   // CPrAN::api_url({}),
+    token => $opt->{api_token} // CPrAN::api_token({}),
   );
+  my $api = $self->{api};
 
   $opt->{verbose}-- if defined $opt->{print};
 
@@ -128,7 +129,7 @@ sub execute {
 
         unless (defined $opt->{virtual}) {
           if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
-            my $out = file( CPrAN::root(), $plugin->{name} );
+            my $out = file( $opt->{cpran} // CPrAN::root({}), $plugin->{name} );
             my $fh = $out->openw();
             $fh->print( $plugin->{remote}->{descriptor} );
           }
@@ -161,7 +162,7 @@ sub execute {
         $plugin = CPrAN::Plugin->new( $encoded );
       }
       else {
-        my $out = file( CPrAN::root(), $plugin->{Plugin} );
+        my $out = file( $opt->{cpran} // CPrAN::root({}), $plugin->{Plugin} );
         my $fh = $out->openw();
         $fh->print( $encoded );
         $fh->close;
@@ -199,10 +200,7 @@ sub list_projects {
 
   my ($self, $opt, $args) = @_;
 
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
+  my $api = $self->{api};
 
   if (@{$args}) {
     my @projects = map {

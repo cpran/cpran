@@ -201,10 +201,10 @@ sub execute {
             };
           }
           else {
-            my $archive = get_archive( $opt, $plugin->{name}, '' );
+            my $archive = $self->get_archive( $opt, $plugin->{name}, '' );
 
             print "Extracting...\n" unless $opt->{quiet};
-            install( $opt, $plugin, $archive );
+            $self->install( $opt, $plugin, $archive );
           }
 
           print "Testing $plugin->{name}...\n" unless $opt->{quiet};
@@ -343,14 +343,14 @@ disk.
 
 # TODO(jja) More testing on Windows: Non-blocking sockets?
 sub get_archive {
-  my ($opt, $name, $version) = @_;
+  my ($self, $opt, $name, $version) = @_;
 
   use WWW::GitLab::v3;
   use Sort::Naturally;
 
   my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
+    url   => $opt->{api_url}   // CPrAN::api_url({}),
+    token => $opt->{api_token} // CPrAN::api_token({}),
   );
 
   print "Downloading archive for $name\n" unless $opt->{quiet};
@@ -398,7 +398,7 @@ Extract the downloaded tarball.
 =cut
 
 sub install {
-  my ($opt, $plugin, $archive) = @_;
+  my ($self, $opt, $plugin, $archive) = @_;
 
   use Archive::Tar;
   use Path::Class qw(file dir foreign_file foreign_dir);
@@ -449,7 +449,7 @@ sub install {
     $components[0] = 'plugin_' . $plugin->{name};
 
     # We place the preferences directory at the beginning of the new path
-    unshift @components, CPrAN::praat();
+    unshift @components, $opt->{praat} // CPrAN::praat({});
 
     # And make a new Path::Class object pointing to it
     my $final_path;

@@ -147,8 +147,8 @@ sub get_dependencies {
   use CPrAN::Plugin;
 
   my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
+    url   => $opt->{api_url}   // CPrAN::api_url({}),
+    token => $opt->{api_token} // CPrAN::api_token({}),
   );
 
   my @dependencies;
