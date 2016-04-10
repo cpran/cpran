@@ -70,7 +70,6 @@ sub execute {
   $params{verbose} = 0;
 
   my $cmd;
-
   $cmd = CPrAN::Command::update->new({});
   my $cpran = $app->execute_command($cmd, \%params, 'cpran');
   $cpran = pop @{$cpran};
