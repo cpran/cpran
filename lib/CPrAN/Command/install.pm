@@ -144,7 +144,7 @@ sub execute {
   }
 
   my @ordered;
-  {
+  if (scalar @todo) {
     my $cmd = CPrAN::Command::deps->new({});
 
     my %params = %{$opt};
