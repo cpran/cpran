@@ -104,12 +104,8 @@ sub execute {
   my $app = CPrAN->new();
 
   my @plugins = map {
-    if (ref $_ eq 'CPrAN::Plugin') {
-      $_;
-    }
-    else {
-      CPrAN::Plugin->new( $_ );
-    }
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( $_ ) }
   } @{$args};
 
   # Plugins that are already installed cannot be installed again (unless the
@@ -121,7 +117,7 @@ sub execute {
   foreach my $plugin (@plugins) {
 
     if ($plugin->{name} eq 'cpran') {
-      warn "Use cpran init to install the cpran plugin\n";
+      warn "Use `cpran init` to install the cpran plugin\n";
       next;
     }
 
