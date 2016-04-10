@@ -123,9 +123,18 @@ sub execute {
 
     foreach my $source (@{$projects}) {
 
-      next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
-      next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
-      next if (scalar @{$args} > 1) && !defined $requested{$source->{name}};
+      unless ((defined $source->{name} && $source->{name} =~ /^plugin_/)) {
+        warn "Not a plugin, ignoring $source->{name}\n" if $opt->{debug};
+        next;
+      }
+      unless ((defined $source->{visibility_level} && $source->{visibility_level} eq 20)) {
+        warn "Not publicly visible, ignoring $source->{name}\n" if $opt->{debug};
+        next;
+      }
+      if ((scalar @{$args} > 1) && !defined $requested{$source->{name}}) {
+        warn "Not in requested plugins, ignoring $source->{name}\n" if $opt->{debug};
+        next;
+      }
 
       my $plugin;
       try {
