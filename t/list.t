@@ -2,6 +2,16 @@ use Test::More tests => 14;
 use App::Cmd::Tester;
 
 use CPrAN;
+use File::Temp;
+use Path::Class;
+use Cwd;
+
+my $original = cwd;
+my $dir;
+unless (defined $ENV{CPRAN_PRAAT_DIR}) {
+  $dir = File::Temp->newdir();
+  $ENV{CPRAN_PRAAT_DIR} = $dir;
+}
 
 my $result = test_app(CPrAN => [qw( list )]);
 
@@ -54,3 +64,10 @@ $result = test_app(CPrAN => [qw( list --nowrap )]);
 
 is($result->stderr, '', 'nothing sent to sderr with --nowrap');
 is($result->error, undef, '--nowrap threw no exceptions');
+
+END {
+  chdir $original;
+  if (defined $dir) {
+    print $dir->rmtree(0, 0) . "\n";
+  }
+}
