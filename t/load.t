@@ -14,8 +14,6 @@ can_ok('CPrAN', (
   'set_globals',
   'check_permissions',
   'make_root',
-  'installed',
-  'known',
   'yesno',
 ));
 
