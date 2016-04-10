@@ -64,8 +64,15 @@ sub new {
 
   $self->_init();
 
-  die "No local or remote plugin named \"$self->{name}\" is known. Maybe try update?\n"
-    unless ($self->{cpran} || $self->{installed});
+  ## We used to test whether the plugin was "known" at this point. But
+  ## since we are trying to avoid fetching unecessarily, we can't tell
+  ## at this point if this is a plugin with a valid remote or not.
+  ## What are the full repercussions of deleting this check here?
+  ## Removing for now.
+  # unless ($self->{cpran} || $self->{installed}) {
+  #   warn "Don't know plugin\n";
+  #   die "No local or remote plugin named \"$self->{name}\" is known. Maybe try update?\n";
+  # }
 
   return $self;
 }
