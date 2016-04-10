@@ -9,9 +9,24 @@ is($result->stderr, '', 'nothing sent to sderr');
 is($result->error, undef, 'threw no exceptions');
 
 my @lines = split /\n/, $result->stdout;
+is(shift @lines,
+  'No matches found',
+  'no matches before update'
+);
+
+my $app = CPrAN->new();
+my $cmd = CPrAN::Command::update->new({});
+$app->execute_command($cmd, { quiet => 1 }, 'testsimple');
+
+$result = test_app(CPrAN => [qw( list )]);
+
+is($result->stderr, '', 'nothing sent to sderr');
+is($result->error, undef, 'threw no exceptions');
+
+my @lines = split /\n/, $result->stdout;
 like(shift @lines,
   qr/^Name\s+Local\s+Remote\s+Description\s*$/,
-  'table has correct heading'
+  'table has correct heading after update'
 );
 
 $result = test_app(CPrAN => [qw( list --quiet )]);
