@@ -263,7 +263,8 @@ sub check_permissions {
       unless (-w $self->root());
   }
   else {
-    warn "CPrAN root not found.\nIf this is a fresh install, try running cpran init\n" unless ($cmd =~ /(update|init)/);
+    File::Path::make_path( $self->root )
+      or carp "Could not make directory at " . $self->root;
   }
   croak "Cannot read from preferences directory at " . $self->praat
     unless (-r $self->praat);
