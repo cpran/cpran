@@ -48,7 +48,14 @@ will likely be of the form C<name-1.0.0>.
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("Missing arguments") unless @{$args};
+  unless (@{$args}) {
+    if (-t) {
+      $self->usage_error("Missing arguments");
+    }
+    else {
+      exit;
+    }
+  }
 
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
