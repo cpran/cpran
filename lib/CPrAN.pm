@@ -37,7 +37,11 @@ B<CPrAN> - A package manager for Praat
   use Path::Class 0.35;
   use Config;
   my ($ROOT, $PRAAT);
-  {
+
+  if (defined $ENV{CPRAN_PRAAT_DIR}) {
+    $PRAAT = $ENV{CPRAN_PRAAT_DIR};
+  }
+  else {
     if ($Config{osname} eq 'darwin') {
       # Mac
       $PRAAT = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
