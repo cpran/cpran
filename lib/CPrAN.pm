@@ -110,6 +110,10 @@ sub run {
     $opt->{yes} = 1 if $post > $pre;
   }
 
+  # ... remove duplicates ...
+  my %seen;
+  @args = grep { ! $seen{$_}++ } @args;
+
   # ...and then run it
   $self->execute_command($cmd, $opt, @args);
 }
