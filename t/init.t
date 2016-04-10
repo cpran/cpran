@@ -9,15 +9,15 @@ use Cwd;
 my $original = cwd;
 my $dir;
 if ($ENV{CPRAN_PRAAT_DIR}) {
-  $dir = $ENV{CPRAN_PRAAT_DIR};
+  $dir = dir($ENV{CPRAN_PRAAT_DIR});
 }
 else {
-  $dir = File::Temp->newdir();
+  $dir = dir(File::Temp->newdir);
 }
 
 my $result = test_app(CPrAN => [ "--praat=$dir", 'init', '--nogit' ]);
 
-ok(-e dir($dir->dirname, 'plugin_cpran'), "created plugin directory");
+ok(-e dir($dir, 'plugin_cpran'), "created plugin directory");
 is($result->stderr, '', 'nothing sent to stderr');
 is($result->error, undef, 'threw no exceptions');
 
