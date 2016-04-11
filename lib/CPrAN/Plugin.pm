@@ -31,7 +31,7 @@ plugins, regardless of whether they are on CPrAN or not.
 =cut
 
 sub new {
-  my ($class, $in) = @_;
+  my ($class, $in, $opt) = @_;
 
   my $self = bless {}, $class;
 
@@ -62,7 +62,7 @@ sub new {
   }
   $self->{name}  =~ s/^plugin_//;
 
-  $self->_init();
+  $self->_init($opt);
 
   ## We used to test whether the plugin was "known" at this point. But
   ## since we are trying to avoid fetching unecessarily, we can't tell
@@ -79,14 +79,19 @@ sub new {
 
 sub _init {
   use Path::Class;
+  use Data::Printer;
 
-  my ($self) = @_;
+  my ($self, $opt) = @_;
 
-  my $root = dir(CPrAN::praat(), 'plugin_' . $self->{name});
+  # We check if it exists on disk. If it does, then we assume it is a plugin,
+  # and we know it is installed.
+  my $root = dir( $opt->{praat} // CPrAN::praat, 'plugin_' . $self->{name});
   $self->{root} = $root->stringify;
-
   $self->{installed} = 1 if ( -e $root );
 
+  # If we don't already have one, we check for a local descriptor
+  # If we find one, and the parsing process suceeds, then we know it is a CPrAN
+  # plugin, and set the corresponding flag.
   unless (defined $self->{local}) {
     my $local = file($self->{root}, 'cpran.yaml');
     if (-e $local) {
@@ -94,8 +99,10 @@ sub _init {
     }
   }
 
+  # We do the same with the remote descriptor. Anything that has a parseable
+  # CPrAN descriptor is a CPrAN plugin.
   unless (defined $self->{remote}) {
-    my $remote = file(CPrAN::root(), $self->{name});
+    my $remote = file( $opt->{root} // CPrAN::root, $self->{name});
     if (-e $remote) {
       $self->{remote} = $self->_read( $remote );
     }
