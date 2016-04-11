@@ -124,7 +124,12 @@ sub execute {
       if ($plugin->is_cpran) {
         print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
 
-        next unless defined $plugin->{remote};
+        $plugin->fetch;
+
+        unless (defined $plugin->{remote}) {
+          warn "Undefined remote for $plugin->{name}, skipping" if $opt->{debug};
+          next;
+        }
         push @updated, $plugin;
 
         unless (defined $opt->{virtual}) {
