@@ -35,8 +35,10 @@ sub new {
 
   my $self = bless {}, $class;
 
+
   if (ref $in eq 'HASH') {
     # Assume we received a GitLab project hash ref as input and parse for data
+    # This could not be a plugin at all!
     try {
       $self->{name}  = $in->{name};
       $self->{id}    = $in->{id};
@@ -54,7 +56,8 @@ sub new {
       $self->{name} = $in;
     }
     else {
-      # Otherwise, read as the remote descriptor
+      # Otherwise, read as the remote descriptor, and we already know
+      # that it parsed correctly, so we know it is a CPrAN plugin
       $self->{name} = $yaml->{plugin};
       $self->{remote} = $yaml;
       $self->{cpran} = 1;
