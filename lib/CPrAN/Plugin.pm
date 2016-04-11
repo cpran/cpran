@@ -81,7 +81,6 @@ sub new {
 
 sub _init {
   use Path::Class;
-  use Data::Printer;
 
   my ($self, $opt) = @_;
 
