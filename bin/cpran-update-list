@@ -45,6 +45,7 @@ my ($stdout, $stderr) = capture {
 
 if ($stderr ne '') {
   print "Errors found during update\n";
+  print $stderr;
   exit 1;
 }
 
