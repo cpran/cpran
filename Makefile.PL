@@ -15,7 +15,6 @@ my %WriteMakefileArgs = (
   "DISTNAME" => "CPrAN",
   "EXE_FILES" => [
     "bin/cpran",
-    "bin/cpran-update-list"
   ],
   "LICENSE" => "perl",
   "MIN_PERL_VERSION" => "5.006",

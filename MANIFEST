@@ -6,7 +6,6 @@ META.yml
 Makefile.PL
 README
 bin/cpran
-bin/cpran-update-list
 dist.ini
 lib/CPrAN.pm
 lib/CPrAN/Command/create.pm
