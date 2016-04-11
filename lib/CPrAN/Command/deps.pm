@@ -151,13 +151,14 @@ sub get_dependencies {
     token => $opt->{api_token} // CPrAN::api_token({}),
   );
 
-  my @dependencies;
+  my @dependencies = ();
   foreach my $plugin (@args) {
     unless (ref $plugin eq 'CPrAN::Plugin') {
       $plugin = CPrAN::Plugin->new( $plugin );
     }
-    if (defined $plugin->{remote}->{depends}->{plugins}) {
-      my %raw = %{$plugin->{remote}->{depends}->{plugins}};
+    my $plugins = $plugin->{remote}->{depends}->{plugins};
+    if (defined $plugins and ref $plugins eq 'HASH') {
+      my %raw = %{$plugins};
 
       foreach my $key (keys %raw) {
         $plugin->{reqname} = [ keys %raw   ];
@@ -165,7 +166,10 @@ sub get_dependencies {
         push @dependencies, $plugin;
       }
       # Recursively query dependencies for all dependencies
-      @dependencies = (@dependencies, $self->get_dependencies($opt, keys %raw));
+      @dependencies = (
+        @dependencies,
+        $self->get_dependencies($opt, keys %raw)
+      );
     }
     else {
       $plugin->{reqname} = [];
