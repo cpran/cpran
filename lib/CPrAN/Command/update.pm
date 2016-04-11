@@ -64,10 +64,11 @@ sub execute {
   use YAML::XS;
   use Encode qw( encode decode );
 
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
+  $self->{api} = WWW::GitLab::v3->new(
+    url   => $opt->{api_url}   // CPrAN::api_url({}),
+    token => $opt->{api_token} // CPrAN::api_token({}),
   );
+  my $api = $self->{api};
 
   $opt->{verbose}-- if defined $opt->{print};
 
@@ -83,32 +84,7 @@ sub execute {
   my %requested;
   $requested{$_} = 1 foreach @{$args};
 
-  unless (defined $opt->{raw}) {
-    print "Updating plugin data...\n" if $opt->{verbose};
-
-    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
-      next unless $_;
-
-      my $encoded = "---" . encode('utf-8', $_);
-      my $plugin = Load(encode('utf-8', $encoded));
-      next if (scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}};
-      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
-
-      if (defined $opt->{virtual}) {
-        $plugin = CPrAN::Plugin->new( $encoded );
-      }
-      else {
-        my $out = file( CPrAN::root(), $plugin->{Plugin} );
-        my $fh = $out->openw();
-        $fh->print( $encoded );
-        $fh->close;
-        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
-      }
-
-      push @updated, $plugin;
-    }
-  }
-  else {
+  if (defined $opt->{raw}) {
     print "Contacting remote repositories for latest data...\n" if $opt->{verbose};
 
     my $projects;
@@ -123,9 +99,18 @@ sub execute {
 
     foreach my $source (@{$projects}) {
 
-      next unless (defined $source->{name} && $source->{name} =~ /^plugin_/);
-      next unless (defined $source->{visibility_level} && $source->{visibility_level} eq 20);
-      next if (scalar @{$args} > 1) && !defined $requested{$source->{name}};
+      unless ((defined $source->{name} && $source->{name} =~ /^plugin_/)) {
+        warn "Not a plugin, ignoring $source->{name}\n" if $opt->{debug};
+        next;
+      }
+      unless ((defined $source->{visibility_level} && $source->{visibility_level} eq 20)) {
+        warn "Not publicly visible, ignoring $source->{name}\n" if $opt->{debug};
+        next;
+      }
+      if ((scalar @{$args} > 1) && !defined $requested{$source->{name}}) {
+        warn "Not in requested plugins, ignoring $source->{name}\n" if $opt->{debug};
+        next;
+      }
 
       my $plugin;
       try {
@@ -137,16 +122,19 @@ sub execute {
       next unless defined $plugin;
 
       if ($plugin->is_cpran) {
-        $plugin->fetch;
-        next unless defined $plugin->{remote};
-
         print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
 
+        $plugin->fetch;
+
+        unless (defined $plugin->{remote}) {
+          warn "Undefined remote for $plugin->{name}, skipping" if $opt->{debug};
+          next;
+        }
         push @updated, $plugin;
 
         unless (defined $opt->{virtual}) {
           if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
-            my $out = file( CPrAN::root(), $plugin->{name} );
+            my $out = file( $opt->{cpran} // CPrAN::root({}), $plugin->{name} );
             my $fh = $out->openw();
             $fh->print( $plugin->{remote}->{descriptor} );
           }
@@ -155,6 +143,38 @@ sub execute {
           }
         }
       }
+      else {
+        warn "$source->{name} is not a CPrAN plugin\n";
+      }
+    }
+  }
+  else {
+    print "Updating plugin data...\n" if $opt->{verbose};
+
+    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
+      next unless $_;
+
+      my $encoded = "---" . encode('utf-8', $_);
+      my $plugin = Load(encode('utf-8', $encoded));
+      if ((scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}}) {
+        warn "Skipping $plugin->{Plugin}\n" if $opt->{debug};
+        next;
+      }
+
+      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
+
+      if (defined $opt->{virtual}) {
+        $plugin = CPrAN::Plugin->new( $encoded );
+      }
+      else {
+        my $out = file( $opt->{cpran} // CPrAN::root({}), $plugin->{Plugin} );
+        my $fh = $out->openw();
+        $fh->print( $encoded );
+        $fh->close;
+        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
+      }
+
+      push @updated, $plugin;
     }
   }
   print "Updated " . scalar @updated . " packages\n" if $opt->{verbose};
@@ -185,10 +205,7 @@ sub list_projects {
 
   my ($self, $opt, $args) = @_;
 
-  my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
-  );
+  my $api = $self->{api};
 
   if (@{$args}) {
     my @projects = map {
@@ -250,6 +267,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02009'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 1;

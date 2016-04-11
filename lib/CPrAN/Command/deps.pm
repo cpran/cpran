@@ -147,8 +147,8 @@ sub get_dependencies {
   use CPrAN::Plugin;
 
   my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
+    url   => $opt->{api_url}   // CPrAN::api_url({}),
+    token => $opt->{api_token} // CPrAN::api_token({}),
   );
 
   my @dependencies;
@@ -240,6 +240,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02009'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 1;

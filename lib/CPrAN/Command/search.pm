@@ -44,7 +44,14 @@ installed plugins, both the local and the remote versions will be displayed.
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("Must provide a search term") unless @{$args};
+  unless (@{$args}) {
+    if (-t) {
+      $self->usage_error("Must provide at least one search term");
+    }
+    else {
+      exit;
+    }
+  }
 
   # Search by default in all fields
   # If any fields are specified, then search in those
@@ -72,13 +79,13 @@ sub execute {
   use Text::FormatTable;
 
   my @plugins;
-  my @names = CPrAN::installed;
+  my @names = $self->installed($opt);
 
   if (defined $opt->{installed}) {
     warn "DEBUG: " . scalar @names . " installed plugins\n" if $opt->{debug};
   }
   else {
-    @names = (@names, CPrAN::known);
+    @names = (@names, $self->known($opt));
   }
 
   my %names;
@@ -88,10 +95,6 @@ sub execute {
   warn "DEBUG: " . scalar @plugins . " known plugins\n"
     if (!defined $opt->{installed} && $opt->{debug});
 
-  $self->{output} = Text::FormatTable->new('l l l l');
-  $self->{output}->head(
-    "Name", "Local", "Remote", "Description"
-  );
   @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
 
   my %list;
@@ -104,12 +107,16 @@ sub execute {
     }
   }
 
-  my @found = map {
-    $self->_add_output_row($opt, $list{$_});
-    $list{$_}
-  } sort keys %list;
+  my @found = map { $list{$_} } sort keys %list;
 
   unless ($opt->{quiet}) {
+    $self->{output} = Text::FormatTable->new('l l l l');
+    $self->{output}->head(
+      "Name", "Local", "Remote", "Description"
+    );
+
+    $self->_add_output_row($opt, $list{$_}) foreach sort keys %list;
+
     if (@found) {
       use Term::ReadKey;
       my ($wchar, $hchar, $wpixels, $hpixels) = GetTerminalSize();
@@ -165,6 +172,48 @@ sub opt_spec {
 =over
 
 =cut
+
+
+=item installed()
+
+Returns a list of all installed Praat plugins. See I<is_plugin()> for the
+criteria they need to fulfill.
+
+    my @installed = installed();
+    print "$_\n" foreach (@installed);
+
+=cut
+
+sub installed {
+  use Path::Class;
+
+  my ($self, $opt) = @_;
+
+  my @files = grep {
+    ($_->is_dir && $_->basename =~ /^plugin_\w+/)
+  } dir( $opt->{praat} // CPrAN::praat({}) )->children;
+
+  return map {
+    $1 if $_->basename =~ /^plugin_(\w+)/;
+  } @files;
+}
+
+=item known()
+
+Returns a list of all plugins known by B<CPrAN>. In practice, this is the list
+of plugins whose descriptors have been saved by C<cpran update>
+
+    my @known = known();
+    print "$_\n" foreach (@known);
+
+=cut
+
+sub known {
+  my ($self, $opt) = @_;
+
+  use Path::Class;
+  return map { $_->basename } dir( $opt->{root} // CPrAN::root({}) )->children;
+}
 
 =item B<_match()>
 
@@ -271,6 +320,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02009'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 1;

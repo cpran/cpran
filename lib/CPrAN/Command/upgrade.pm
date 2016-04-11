@@ -77,6 +77,9 @@ sub execute {
 
   my ($self, $opt, $args) = @_;
 
+  my $app;
+  $app = CPrAN->new();
+
   warn "DEBUG: Running upgrade\n" if $opt->{debug};
 
   if (grep { /praat/i } @{$args}) {
@@ -89,7 +92,14 @@ sub execute {
     }
   }
 
-  $args = [ CPrAN::installed ] unless @{$args};
+  unless (@{$args}) {
+    my $cmd = CPrAN::Command::list->new({});
+    my %params = %{$opt};
+    $params{quiet} = 1;
+    $params{installed} = 1;
+    $args = [ $app->execute_command($cmd, \%params, ()) ];
+  }
+
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -98,11 +108,11 @@ sub execute {
       try   { CPrAN::Plugin->new( $_ ) }
       catch {
         warn $_;
-        warn "Aborting\n";
-        exit 1;
+        croak "Aborting\n";
       };
     }
   } @{$args};
+
   warn scalar @{$args}, " plugins for processing: @{$args}\n" if $opt->{debug};
 
   # Plugins that are not installed cannot be upgraded.
@@ -134,12 +144,9 @@ sub execute {
       print "Do you want to continue?";
     }
     if (CPrAN::yesno( $opt )) {
-      my $app;
+
       my %params;
-
       unless ($opt->{git}) {
-        $app = CPrAN->new();
-
         # We copy the current options, in case custom paths have been passed
         %params = %{$opt};
         $params{quiet} = 1;
@@ -348,6 +355,6 @@ L<CPrAN::Command::update|update>
 
 =cut
 
-our $VERSION = '0.02009'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 1;

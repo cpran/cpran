@@ -1,5 +1,23 @@
 Revision history for CPrAN
 
+0.03      2016-04-11 02:26:04+01:00 Europe/London
+
+  * New commands:
+    * create: make a new plugin from a template
+    * deps: list the dependencies of a plugin
+  * New features:
+    * Commands can now be piped together
+    * Path parameters can be read from environment
+    * New --notest option for install, to skip tests altogether
+    * Removed warnings about non-existing root directory. It is silently
+      created now.
+  * Fixes:
+    * Improvements in test stability, but still more work needed
+    * Duplicate arguments are removed automatically
+    * Numerous code reductions and simplifications. Many of the "global"
+      CPrAN functions have been removed or moved to specific commands.
+    * Many other small bug fixes
+
 0.02009   2016-04-08 23:21:55+01:00 Europe/London
 
   * Improved speed of update command with precompiled list

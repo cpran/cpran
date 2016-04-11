@@ -48,7 +48,14 @@ will likely be of the form C<name-1.0.0>.
 sub validate_args {
   my ($self, $opt, $args) = @_;
 
-  $self->usage_error("Missing arguments") unless @{$args};
+  unless (@{$args}) {
+    if (-t) {
+      $self->usage_error("Missing arguments");
+    }
+    else {
+      exit;
+    }
+  }
 
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
@@ -104,12 +111,8 @@ sub execute {
   my $app = CPrAN->new();
 
   my @plugins = map {
-    if (ref $_ eq 'CPrAN::Plugin') {
-      $_;
-    }
-    else {
-      CPrAN::Plugin->new( $_ );
-    }
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( $_ ) }
   } @{$args};
 
   # Plugins that are already installed cannot be installed again (unless the
@@ -119,11 +122,6 @@ sub execute {
   #   b) not already installed (unless the user asks for re-installation)
   my @todo;
   foreach my $plugin (@plugins) {
-    # BUG(jja) What to do here?
-    use Config;
-    if ($plugin->{name} eq 'cpran' && $Config{osname} eq 'MSWin32') {
-      warn "Cannot currently use CPrAN to install CPrAN in Windows\n";
-    }
 
     if (defined $plugin->{remote}) {
       my $install = 0;
@@ -144,7 +142,7 @@ sub execute {
   }
 
   my @ordered;
-  {
+  if (scalar @todo) {
     my $cmd = CPrAN::Command::deps->new({});
 
     my %params = %{$opt};
@@ -201,23 +199,29 @@ sub execute {
             };
           }
           else {
-            my $archive = get_archive( $opt, $plugin->{name}, '' );
+            my $archive = $self->get_archive( $opt, $plugin->{name}, '' );
 
             print "Extracting...\n" unless $opt->{quiet};
-            install( $opt, $plugin, $archive );
+            $self->install( $opt, $plugin, $archive );
           }
 
           print "Testing $plugin->{name}...\n" unless $opt->{quiet};
           $plugin->update;
 
-          my $success = 0;
-          try {
-            $success = $plugin->test;
+          my $success;
+          if (!defined $opt->{test} or $opt->{test}) {
+            $success = 0;
+            try {
+              $success = $plugin->test;
+            }
+            catch {
+              chomp;
+              warn "There were errors while testing:\n$_\n";
+            };
           }
-          catch {
-            chomp;
-            warn "There were errors while testing:\n$_\n";
-          };
+          else {
+            $success = 1;
+          }
 
           if (defined $success and !$success) {
             if ($opt->{force}) {
@@ -243,14 +247,6 @@ sub execute {
           }
           else {
             print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
-          }
-
-          if ($plugin->{name} eq 'cpran') {
-            # CPrAN is installing itself!
-            # HACK(jja) currently, a reinstall deletes the original directory
-            # which in the case of CPrAN will likely destroy the CPrAN root.
-            # If that's the case, we rebuild it.
-            rebuild_list($self, $opt) unless (-e CPrAN::root());
           }
         }
       }
@@ -308,6 +304,7 @@ Print debug messages.
 sub opt_spec {
   return (
     [ "yes|y"       => "assume yes for all questions"        ],
+    [ "test|T!"     => "request / disable tests"             ],
     [ "force|F"     => "ignore failing tests"                ],
     [ "reinstall|r" => "re-install requested plugins"        ],
     [ "git|g!"      => "request / disable git support"       ],
@@ -321,27 +318,6 @@ sub opt_spec {
 
 =cut
 
-=item B<rebuild_list()>
-
-Rebuild the plugin list. This method is just a wrapper around B<update>, used
-for re-creating the list when CPrAN is used to install itself.
-
-=cut
-
-sub rebuild_list {
-  my ($self, $opt) = @_;
-
-  CPrAN::make_root();
-
-  # We copy the current options, in case custom paths have been passed
-  my %params = %{$opt};
-  $params{verbose} = 0;
-
-  print "Rebuilding plugin list...\n" unless ($opt->{quiet});
-  my ($cmd) = $self->app->prepare_command('update');
-  $self->app->execute_command( $cmd, \%params, () );
-}
-
 =item B<get_archive()>
 
 Downloads a plugin's tarball from the server. Returns the name of the tarball on
@@ -351,14 +327,14 @@ disk.
 
 # TODO(jja) More testing on Windows: Non-blocking sockets?
 sub get_archive {
-  my ($opt, $name, $version) = @_;
+  my ($self, $opt, $name, $version) = @_;
 
   use WWW::GitLab::v3;
   use Sort::Naturally;
 
   my $api = WWW::GitLab::v3->new(
-    url   => CPrAN::api_url(),
-    token => CPrAN::api_token(),
+    url   => $opt->{api_url}   // CPrAN::api_url({}),
+    token => $opt->{api_token} // CPrAN::api_token({}),
   );
 
   print "Downloading archive for $name\n" unless $opt->{quiet};
@@ -406,7 +382,7 @@ Extract the downloaded tarball.
 =cut
 
 sub install {
-  my ($opt, $plugin, $archive) = @_;
+  my ($self, $opt, $plugin, $archive) = @_;
 
   use Archive::Tar;
   use Path::Class qw(file dir foreign_file foreign_dir);
@@ -457,7 +433,7 @@ sub install {
     $components[0] = 'plugin_' . $plugin->{name};
 
     # We place the preferences directory at the beginning of the new path
-    unshift @components, CPrAN::praat();
+    unshift @components, $opt->{praat} // CPrAN::praat({});
 
     # And make a new Path::Class object pointing to it
     my $final_path;
@@ -638,6 +614,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02009'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 1;

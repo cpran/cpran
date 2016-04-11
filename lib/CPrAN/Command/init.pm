@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Path::Class;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -21,7 +22,16 @@ cpran init [options]
 
 =head1 DESCRIPTION
 
-Perform the initial setup for CPrAN, to install it as a Praat plugin.
+The [cpran plugin][] serves as a bridge between the actions of the
+[CPrAN client][cprandoc] and Praat. Te plugin on its own does very little, but
+it can be used by other plpugins to e.g. populate a single menu with their
+exposed commands, instead of cluttering the Praat menu.
+
+In the future, modifying its list of dependencies (currently empty) will
+also make it possible to flag certain plugins as "core", and make them available
+in all CPrAN installations.
+
+This command installs the [cpran plugin][] on an otherwise empty system.
 
 =cut
 
@@ -29,14 +39,9 @@ sub description {
   return "Perform the initial setup for CPrAN, to install it as a Praat plugin";
 }
 
-=pod
-
-B<init> will install CPrAN as a Praat plugin.
-
-=cut
-
 sub validate_args {
   my ($self, $opt, $args) = @_;
+
 }
 
 =head1 EXAMPLES
@@ -51,6 +56,12 @@ sub execute {
 
   warn "DEBUG: Running init\n" if $opt->{debug};
 
+  my $praatdir = $opt->{praat} // CPrAN::praat({});
+  if (-e dir($praatdir, 'plugin_cpran')) {
+    print "CPrAN is already initialised. Nothing to do here!\n" unless $opt->{quiet};
+    return;
+  }
+
   my $app = CPrAN->new();
   my %params;
 
@@ -59,7 +70,6 @@ sub execute {
   $params{verbose} = 0;
 
   my $cmd;
-
   $cmd = CPrAN::Command::update->new({});
   my $cpran = $app->execute_command($cmd, \%params, 'cpran');
   $cpran = pop @{$cpran};
@@ -105,6 +115,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.02009'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 1;
