@@ -60,7 +60,6 @@ sub new {
       # that it parsed correctly, so we know it is a CPrAN plugin
       $self->{name} = $yaml->{plugin};
       $self->{remote} = $yaml;
-      $self->{cpran} = 1;
     }
   }
   $self->{name}  =~ s/^plugin_//;
@@ -124,12 +123,7 @@ Checks if plugin has a descriptor that CPrAN can use.
 
 =cut
 
-sub is_cpran {
-  unless (defined $_[0]->{cpran}) {
-    $_[0]->fetch;
-  }
-  return $_[0]->{cpran};
-}
+sub is_cpran { return $_[0]->{cpran} }
 
 =item B<is_installed()>
 
@@ -188,8 +182,6 @@ Fetches remote CPrAN data for the plugin.
 
 sub fetch {
   my $self = shift;
-
-  $self->{cpran} = 0;
 
   use WWW::GitLab::v3;
   use Sort::Naturally;
