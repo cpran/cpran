@@ -1,5 +1,10 @@
 Revision history for CPrAN
 
+0.0301    2016-04-11 17:11:35+01:00 Europe/London
+
+  * Bug fix:
+    Validate plugin dependencies before assignment in install
+
 0.03      2016-04-11 02:26:04+01:00 Europe/London
 
   * New commands:
