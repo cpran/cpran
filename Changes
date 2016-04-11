@@ -2,6 +2,11 @@ Revision history for CPrAN
 
 {{$NEXT}}
 
+  * Bug fix:
+    Validate plugin dependencies before assignment in install
+
+0.03      2016-04-11 02:26:04+01:00 Europe/London
+
   * New commands:
     * create: make a new plugin from a template
     * deps: list the dependencies of a plugin
