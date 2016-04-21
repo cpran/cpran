@@ -120,6 +120,11 @@ sub execute_command {
   $self->set_globals($cmd, $opt);
   $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
+  if ($opt->{debug}) {
+    warn "DEBUG: Options:\n";
+    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
+  }
+
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
   # will increase verbosity.
