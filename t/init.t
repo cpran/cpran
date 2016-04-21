@@ -15,13 +15,13 @@ else {
   $dir = dir(File::Temp->newdir);
 }
 
-my $result = test_app(CPrAN => [ "--praat=$dir", 'init', '--nogit' ]);
+my $result = test_app(CPrAN => [ "--praat=$dir", 'init', '--nogit', '--notest' ]);
 
 ok(-e dir($dir, 'plugin_cpran'), "created plugin directory");
 is($result->stderr, '', 'nothing sent to stderr');
 is($result->error, undef, 'threw no exceptions');
 
-$result = test_app(CPrAN => [ "--praat=$dir", 'init', '--nogit' ]);
+$result = test_app(CPrAN => [ "--praat=$dir", 'init', '--nogit', '--notest' ]);
 
 is($result->stderr, '', 'nothing sent to stderr');
 is($result->stdout,
