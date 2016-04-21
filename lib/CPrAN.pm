@@ -18,17 +18,6 @@ B<CPrAN> - A package manager for Praat
 
 =cut
 
-{
-  use File::Which;
-  my $praat;
-  for ($^O) {
-    if    (/MSWin32/) { $praat = which('praat') || which('praat.exe') || which('praatcon') }
-    else              { $praat = which('praat') || which('Praat')    }
-  }
-  warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n"
-    unless defined $praat;
-}
-
 # ROOT and PRAAT hold the paths to the preferences directory and the CPrAN root
 # respectively. Being in this enclosure, acces to them is limited to the
 # accessors below.
@@ -201,6 +190,7 @@ used multiple times to increase the number of debug messages that are printed.
 
 sub global_opt_spec {
   return (
+    [ "bin=s"       => "set path to the Praat binary" ],
     [ "praat=s"     => "set path to Praat preferences directory" ],
     [ "cpran=s"     => "set path to CPrAN root" ],
     [ "api-token=s" => "set private token for GitLab API access" ],

@@ -65,9 +65,13 @@ sub new {
   }
 
   use File::Which;
-  $self->{bin} = which('praatcon') || which('praat') || which('Praat');
+  $self->{bin} = $opt->{bin} //
+    which('praat')     ||
+    which('praat.exe') ||
+    which('praatcon')  ||
+    which('Praat');
   unless (defined $self->{bin}) {
-    die "Could not find path to Praat executable. Make sure Praat is available\n";
+    warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n";
   }
 
   $self = bless($self, $class);
