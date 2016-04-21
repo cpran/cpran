@@ -281,6 +281,7 @@ sub opt_spec {
   return (
     [ "git|g!"  => "request / disable git support" ],
     [ "force|F" => "disregard common problems"     ],
+    [ "test|T!" => "request / disable tests"       ],
   );
 }
 

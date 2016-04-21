@@ -76,6 +76,7 @@ sub execute {
 
   %params = %{$opt};
   $params{yes} = 1;
+  $params{test} = $opt->{test} // 1;
   $params{git} = $opt->{git} // 1;
 
   $cmd = CPrAN::Command::install->new({});
@@ -84,7 +85,8 @@ sub execute {
 
 sub opt_spec {
   return (
-    [ "git|g!" => "request / disable git support" ],
+    [ "git|g!"  => "request / disable git support" ],
+    [ "test|T!" => "enable / disable tests while installing" ],
   );
 }
 
