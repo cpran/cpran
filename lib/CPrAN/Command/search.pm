@@ -190,11 +190,11 @@ sub installed {
   my ($self, $opt) = @_;
 
   my @files = grep {
-    ($_->is_dir && $_->basename =~ /^plugin_\w+/)
+    ($_->is_dir && $_->basename =~ /^plugin_[\w\d_-]+/)
   } dir( $opt->{praat} // CPrAN::praat({}) )->children;
 
   return map {
-    $1 if $_->basename =~ /^plugin_(\w+)/;
+    $1 if $_->basename =~ /^plugin_([\w\d_-]+)/;
   } @files;
 }
 
