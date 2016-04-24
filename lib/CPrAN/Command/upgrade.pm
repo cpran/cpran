@@ -137,6 +137,15 @@ sub execute {
   }
   warn scalar @todo, " plugins require upgrading: @todo\n" if $opt->{debug};
 
+  if (scalar @todo) {
+    my $cmd = CPrAN::Command::deps->new({});
+
+    my %params = %{$opt};
+    $params{quiet} = 1;
+
+    @todo = $app->execute_command($cmd, \%params, @todo);
+  }
+
   if (@todo) {
     unless ($opt->{quiet}) {
       print "The following plugins will be UPGRADED:\n";
