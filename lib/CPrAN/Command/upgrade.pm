@@ -185,7 +185,8 @@ sub execute {
             };
 
             try {
-              $repo->run( 'fetch', '--quiet', { fatal => '!0' } );
+              $plugin->fetch unless defined $plugin->{url};
+              $repo->run( 'pull', '--tags', $plugin->{url}, { fatal => '!0' } );
             }
             catch {
               die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
