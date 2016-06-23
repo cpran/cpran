@@ -339,6 +339,9 @@ sub test {
     push @args, ('--exec', "$praat->{bin} --ansi");
   }
 
+  if ($opt->{verbose} > 1) {
+    push @args, '-v';
+  }
 
   if ($opt->{log}) {
     try {
