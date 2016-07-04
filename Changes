@@ -1,5 +1,19 @@
 Revision history for CPrAN
 
+0.0302    2016-07-04 22:37:42+01:00 Europe/London
+
+  * New features:
+    * All install commands take explicit --test (or --notest)
+    * New --bin option to specify path to Praat binary
+    * Plugin names accept hyphens, underscores and digits
+    * upgrade: if using git, pull does not require specific remotes
+    * test: --verbose option now prints additional information on tests
+  * Bug fix:
+    * Improved binary detection in Windows
+    * Improved bit detection in Linux
+    * deps: Better detection of top nodes in dependency tree
+    * upgrade: plugins are updated in order
+
 0.0301    2016-04-11 17:11:35+01:00 Europe/London
 
   * Bug fix:

@@ -18,17 +18,6 @@ B<CPrAN> - A package manager for Praat
 
 =cut
 
-{
-  use File::Which;
-  my $praat;
-  for ($^O) {
-    if    (/MSWin32/) { $praat = which 'praatcon'                 }
-    else              { $praat = which('praat') || which('Praat') }
-  }
-  warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n"
-    unless defined $praat;
-}
-
 # ROOT and PRAAT hold the paths to the preferences directory and the CPrAN root
 # respectively. Being in this enclosure, acces to them is limited to the
 # accessors below.
@@ -131,6 +120,11 @@ sub execute_command {
   $self->set_globals($cmd, $opt);
   $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
+  if ($opt->{debug}) {
+    warn "DEBUG: Options:\n";
+    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
+  }
+
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
   # will increase verbosity.
@@ -201,6 +195,7 @@ used multiple times to increase the number of debug messages that are printed.
 
 sub global_opt_spec {
   return (
+    [ "bin=s"       => "set path to the Praat binary" ],
     [ "praat=s"     => "set path to Praat preferences directory" ],
     [ "cpran=s"     => "set path to CPrAN root" ],
     [ "api-token=s" => "set private token for GitLab API access" ],
@@ -341,6 +336,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0301'; # VERSION
+our $VERSION = '0.0302'; # VERSION
 
 1;

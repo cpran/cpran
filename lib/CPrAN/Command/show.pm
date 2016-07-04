@@ -56,7 +56,6 @@ sub validate_args {
 
 =cut
 
-# TODO(jja) Break execute into smaller chunks
 sub execute {
   my ($self, $opt, $args) = @_;
 
@@ -144,6 +143,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0301'; # VERSION
+our $VERSION = '0.0302'; # VERSION
 
 1;

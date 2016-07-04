@@ -85,30 +85,22 @@ sub execute {
   # dependencies of the dependencies, and so on.
   @plugins = $self->get_dependencies( $opt, @plugins );
 
-  # Remove duplicates
-  my %plugins = map { $_->{name} => $_ } @plugins;
-  @plugins = values %plugins;
+  # The source tree is then ordered to get a schedule of plugin
+  # installation. In the resulting list, plugins with no dependencies
+  # come first, and those that depend on them come later.
+  # Duplicates introduced in the previous step are automatically
+  # removed here.
+  my ($sorted, $top) = $self->order_dependencies( @plugins );
 
-  # The source tree is then ordered to get a schedule of plugin installation.
-  # In the resulting list, plugins with no dependencies come first, and those
-  # that depend on them come later.
-  @plugins = $self->order_dependencies( @plugins );
-  foreach (@plugins) {
-    delete $_->{reqname};
-    delete $_->{reqver};
-  }
-
-  my $top = pop @plugins;
-
-  # The printed list contains all but the one at the top, since we want to
-  # print the dependencies of the plugin set, not the set itself.
+  # The printed list contains all but the elements without dependants,
+  # since we want to print the aggregated dependencies of the plugin set,
+  # and not the set itself.
   unless (defined $opt->{quiet}) {
-    print $_->{name} . "\n" foreach @plugins;
+    print $_->{name} . "\n" foreach @{$sorted};
   }
 
   # We return the full list;
-  push @plugins, $top;
-  return @plugins;
+  return (@{$sorted}, @{$top});
 }
 
 =head1 OPTIONS
@@ -212,7 +204,21 @@ sub order_dependencies {
     $recs{$name} = $rec;
   }
 
-  return map $recs{$_}, $graph->topological_sort;
+  my (@sorted, @top);
+  foreach ($graph->topological_sort) {
+    delete $recs{$_}->{reqname};
+    delete $recs{$_}->{reqver};
+
+    if ($graph->out_degree($_)) {
+
+      push @sorted, $recs{$_};
+    }
+    else {
+      push @top, $recs{$_};
+    }
+  }
+
+  return \@sorted, \@top;
 }
 
 =back
@@ -244,6 +250,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0301'; # VERSION
+our $VERSION = '0.0302'; # VERSION
 
 1;

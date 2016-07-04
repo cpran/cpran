@@ -65,9 +65,13 @@ sub new {
   }
 
   use File::Which;
-  $self->{bin} = which('praatcon') || which('praat') || which('Praat');
+  $self->{bin} = $opt->{bin} //
+    which('praat')     ||
+    which('praat.exe') ||
+    which('praatcon')  ||
+    which('Praat');
   unless (defined $self->{bin}) {
-    die "Could not find path to Praat executable. Make sure Praat is available\n";
+    warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n";
   }
 
   $self = bless($self, $class);
@@ -88,7 +92,7 @@ sub new {
       open CMD, "$cmd 2>&1 |"
         or die ("Could not execute $cmd: $!");
       chomp(my $uname = <CMD>);
-      $self->{bit} = ($uname =~ /b\x86_64$/) ? 64 : 32;
+      $self->{bit} = ($uname =~ /\bx86_64\b/) ? 64 : 32;
     }
     catch {
       warn "Could not determine system bitness. Defaulting to 32bit\n";
@@ -256,6 +260,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0301'; # VERSION
+our $VERSION = '0.0302'; # VERSION
 
 1;
