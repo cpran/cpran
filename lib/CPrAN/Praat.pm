@@ -92,7 +92,7 @@ sub new {
       open CMD, "$cmd 2>&1 |"
         or die ("Could not execute $cmd: $!");
       chomp(my $uname = <CMD>);
-      $self->{bit} = ($uname =~ /b\x86_64$/) ? 64 : 32;
+      $self->{bit} = ($uname =~ /\bx86_64\b/) ? 64 : 32;
     }
     catch {
       warn "Could not determine system bitness. Defaulting to 32bit\n";
