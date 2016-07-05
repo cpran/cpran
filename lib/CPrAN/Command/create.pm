@@ -218,6 +218,46 @@ sub write_descriptor {
   $plugin->_init;
 }
 
+=head1 OPTIONS
+
+=over
+
+=item B<--author>
+
+Specify the name of the plugin's author. Although the field is named "author",
+it is more appropriate if this is the maintainer of the plugin.
+
+=item B<--email>
+
+The current contact email of the plugin's maintainer.
+
+=item B<--url>
+
+The URL of the plugin. This URL is for humans to read more about the plugin.
+By default, it points to the plugins page on the CPrAN website.
+
+=item B<--desc>
+
+The short description of the plugin. This string will is used for the output
+of commands like B<search> and B<list>.
+
+=item B<--version>
+
+The plugin's version. To comply with the CPrAN requirements, this should be a
+string in the style of the semantic version proposal, with three release
+numbers separated by periods.
+
+It defaults to B<0.0.1>.
+
+=item B<--readme>
+
+The path to a file to use as the plugin's README. If not provided, a placeholder
+readme file will be recycled from the "template" CPrAN plugin.
+
+=back
+
+=cut
+
 sub opt_spec {
   return (
     [ "author=s"  => "name of plugin's author" ],
