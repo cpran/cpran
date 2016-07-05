@@ -3,6 +3,18 @@ Revision history for CPrAN
 {{$NEXT}}
 
   * New features:
+    * install: special case allows for Praat installation (Experimental!)
+    * upgrade: special case allows for Praat version upgrade (Experimental!)
+  * Changes:
+    * create: new options to specify plugin metadata
+    * create: plugin metadata propagates through plugin template
+  * Fixes:
+    * Improved documentation of existing and added features
+    * create: random names can no longer have illegal characters
+
+0.0302    2016-07-04 22:37:42+01:00 Europe/London
+
+  * New features:
     * All install commands take explicit --test (or --notest)
     * New --bin option to specify path to Praat binary
     * Plugin names accept hyphens, underscores and digits
