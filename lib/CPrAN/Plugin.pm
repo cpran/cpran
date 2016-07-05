@@ -108,6 +108,8 @@ sub _init {
       $self->{remote} = $self->_read( $remote );
     }
   }
+
+  return $self;
 }
 
 =head1 METHODS
