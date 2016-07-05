@@ -60,6 +60,14 @@ sub execute {
     } until (! -e 'plugin_' . $name);
   }
 
+  $opt->{version} = $opt->{version} // '0.0.1';
+  $opt->{url}     = $opt->{url}     // 'http://cpran.net/plugins/' . $name;
+  $opt->{author}  = $opt->{author}  // 'A. N. Onymous';
+  $opt->{desc}    = $opt->{desc}    // '~';
+  $opt->{readme}  = $opt->{readme}  // '';
+  $opt->{email}   = $opt->{email}   // 'noreply@noserver.com';
+  $opt->{email}   = "<$opt->{email}>" unless $opt->{email} =~ /^<.*>$/;
+
   print 'Creating plugin "', $name, '"...', "\n";
   if (-e 'plugin_' . $name) {
     warn "There is already a plugin by that name! (in 'plugin_$name')\n";
@@ -102,7 +110,12 @@ sub execute {
 
 sub opt_spec {
   return (
-    [ "author" => "specify the author of the plugin" ],
+    [ "author=s"  => "name of plugin's author" ],
+    [ "email=s"   => "email of plugin's author" ],
+    [ "url=s"     => "URL of plugin's homepage" ],
+    [ "desc=s"    => "short description of the plugin" ],
+    [ "version=s" => "starting version of the plugin" ],
+    [ "readme=s"  => "path to a readme file" ],
   );
 }
 
