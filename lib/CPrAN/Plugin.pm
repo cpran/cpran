@@ -161,7 +161,7 @@ sub name { return $_[0]->{name} }
 
 =item B<url()>
 
-Gets the plugin URL, pointing to the clonable git repository
+Gets the plugin URL, pointing to a clonable git repository
 
 =cut
 
