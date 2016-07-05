@@ -163,6 +163,7 @@ sub execute {
     else { 0 }
   } @ordered;
 
+  my @installed;
   # Output and user query modeled after apt's
   if (@schedule) {
     unless ($opt->{quiet}) {
@@ -250,6 +251,7 @@ sub execute {
             }
           }
           else {
+            push @installed, $plugin;
             print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
           }
         }
@@ -263,6 +265,8 @@ sub execute {
       print "Abort.\n" unless $opt->{quiet};
     }
   }
+
+  return @installed;
 }
 
 =head1 OPTIONS
