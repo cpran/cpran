@@ -90,6 +90,7 @@ sub execute {
       my $dict = file( file($INC{'Data/Random/WordList.pm'})->dir, 'dict' );
       my $wl = Data::Random::WordList->new( wordlist => $dict );
       $name = join '-', map { lc } $wl->get_words(2);
+      $name =~ s/[^a-z0-9_-]//g;
     } until (! -e 'plugin_' . $name);
   }
 
