@@ -41,6 +41,9 @@ Plugin names can be appended with a specific version number to request for
 versioned installation, but this is not currently implemented. When it is, names
 will likely be of the form C<name-1.0.0>.
 
+As a special case, if the only argument to B<install> is the
+keyword "praat", the client will install Praat itself.
+
 =cut
 
 sub validate_args {
@@ -97,6 +100,9 @@ sub validate_args {
     cpran install --force
     # Do not ask for confirmation
     cpran install --force -y
+
+    # Special case: install Praat itself
+    cpran install praat
 
 =cut
 
