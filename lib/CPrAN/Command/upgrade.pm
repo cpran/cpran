@@ -283,6 +283,17 @@ git repositories in the plugin directory>.
 
 Attempts to aggresively work around problems. Use at your own risk.
 
+=item B<--test>, B<-T>
+=item B<--notest>
+
+These options control execution of the automated tests in each plugin. The
+B<--test> option is enabled by default, and will cause these tests to be run.
+This can be disabled with the B<--notest> option, which will make the client
+skip tests altogether.
+
+This is different from B<--force> in that B<--force> will still run the tests,
+but will disregard those that fail.
+
 =back
 
 =cut
