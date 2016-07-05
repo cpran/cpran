@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Path::Class;
 use Data::Random::WordList;
 binmode STDOUT, ':utf8';
 
@@ -32,6 +33,40 @@ sub description {
 
 sub validate_args {
   my ($self, $opt, $args) = @_;
+
+  $opt->{author}  = $opt->{author}  // 'A. N. Onymous';
+  $opt->{desc}    = $opt->{desc}    // '~';
+
+  use SemVer;
+  use Try::Tiny;
+  {
+    my $v = '0.0.1';
+    $opt->{version} = $opt->{version} // $v;
+    try {
+      $opt->{version} = SemVer->new($opt->{version});
+      $opt->{version} = $opt->{version}->stringify;
+    }
+    catch {
+      warn "<$opt->{version}> is not a valid version number. Ignoring\n";
+      $opt->{version} = $v;
+    };
+  }
+
+  if (defined $opt->{readme} and !-f $opt->{readme}) {
+    warn "<$opt->{readme}> is not a plain file. Ignoring\n";
+    $opt->{readme} = undef;
+  }
+  $opt->{readme}  = $opt->{readme}  // '';
+
+  use Regexp::Common qw[Email::Address];
+
+  if (defined $opt->{email} and $opt->{email} !~ /^$RE{Email}{Address}$/) {
+    warn "<$opt->{email}> is not a valid email address. Ignoring\n";
+    $opt->{email} = undef;
+  }
+  $opt->{email}   = $opt->{email}   // '';
+  $opt->{email}   = "<$opt->{email}>"
+    if $opt->{email} ne '' and $opt->{email} !~ /^<.*>$/;
 }
 
 =head1 EXAMPLES
@@ -46,8 +81,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use Path::Class;
-
   my $name;
   if (scalar @{$args}) {
     $name = shift @{$args};
@@ -60,13 +93,7 @@ sub execute {
     } until (! -e 'plugin_' . $name);
   }
 
-  $opt->{version} = $opt->{version} // '0.0.1';
   $opt->{url}     = $opt->{url}     // 'http://cpran.net/plugins/' . $name;
-  $opt->{author}  = $opt->{author}  // 'A. N. Onymous';
-  $opt->{desc}    = $opt->{desc}    // '~';
-  $opt->{readme}  = $opt->{readme}  // '';
-  $opt->{email}   = $opt->{email}   // 'noreply@noserver.com';
-  $opt->{email}   = "<$opt->{email}>" unless $opt->{email} =~ /^<.*>$/;
 
   print 'Creating plugin "', $name, '"...', "\n";
   if (-e 'plugin_' . $name) {
@@ -104,8 +131,90 @@ sub execute {
   File::Copy::move $src, $tgt
     or die "Could not rename plugin: $!\n";
 
-  print 'Plugin "', $name, '" succesfully created!', "\n";
+  my $plugin = CPrAN::Plugin->new( $name );
+  $self->write_readme( $opt, $plugin );
+  $self->write_descriptor( $opt, $plugin );
+  $self->write_setup( $opt, $plugin );
 
+  print 'Plugin "', $plugin->{name}, '" succesfully created!', "\n";
+
+  return $plugin->_init;
+}
+
+sub write_setup {
+  my ($self, $opt, $plugin) = @_;
+
+  my ($sec,$min,$hour,$mday,$mon,$year) =
+    localtime(time);
+  $year += 1900;
+
+  my $setup = file($plugin->root, 'setup.praat')->slurp;
+  $setup =~ s/<plugin>/$plugin->{name}/g;
+  $setup =~ s/<author>/$opt->{author}/g;
+  $setup =~ s/<website>/$opt->{url}/g;
+  $setup =~ s/<year>/$year/g;
+
+  my $fh = file($plugin->root, 'setup.praat')->openw();
+  print $fh $setup;
+}
+
+sub write_readme {
+  my ($self, $opt, $plugin) = @_;
+
+  my $default;
+  if (-f $opt->{readme}) {
+    $opt->{readme} = file($opt->{readme});
+    $default = 0;
+  }
+  else {
+    $opt->{readme} = file($plugin->root, 'readme.md');
+    $default = 1;
+  }
+
+  my $readme = $opt->{readme}->slurp;
+
+  if ($default) {
+    $readme =~ s/<plugin>/$plugin->{name}/g;
+
+    my $ul = '=' x length($plugin->{name});
+    $readme =~ s/========/$ul/;
+    $readme =~ s/\* `\S+`/None/;
+    $readme =~ s/\* `\S+`//g;
+  }
+
+  my $fh = file($plugin->root, $opt->{readme}->basename)->openw();
+  print $fh $readme;
+}
+
+sub write_descriptor {
+  my ($self, $opt, $plugin) = @_;
+
+  use Text::Template 'fill_in_string';
+
+  (my $template = <<'  END_DESCRIPTOR') =~ s/^ {4}//gm;
+    ---
+    Plugin: {$name}
+    Homepage: {$url}
+    Version: {$version}
+    Maintainer: { $OUT = $author; $OUT .= (length($email)) ? " $email" : '' }
+    Depends:
+      praat: 5.0.0+
+      Plugins: []
+    Recommends:
+    License: GPL3
+    Readme: {$readme}
+    Description:
+      Short: {$desc}
+      Long: ~
+  END_DESCRIPTOR
+
+  $opt->{name} = $plugin->{name};
+  my $descriptor = fill_in_string( $template, HASH => $opt );
+
+  my $fh = file($plugin->root, 'cpran.yaml')->openw();
+  print $fh $descriptor;
+
+  $plugin->_init;
 }
 
 sub opt_spec {
