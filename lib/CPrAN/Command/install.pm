@@ -28,8 +28,6 @@ of the specified plugins, schedules the installation of plugins needed or
 requested, downloads them from the server, tests them, and finally installs
 them.
 
-Currently, no testing is done, and installation works sometimes in Windows.
-
 =cut
 
 sub description {
