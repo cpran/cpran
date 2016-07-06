@@ -308,7 +308,7 @@ sub test {
   # be case sensitive in some systems.
   # For versions >=6.0 praatcon no longer exists in Windows, and "praat" should
   # be used.
-  # For more obscure cases, an option to specify the path to Praat is needed.
+  # For more obscure cases, the --bin option exists
   my $praat = CPrAN::Praat->new($opt);
 
   croak "$self->{name} is not installed; cannot test"
