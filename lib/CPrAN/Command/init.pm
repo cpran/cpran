@@ -54,8 +54,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running init\n" if $opt->{debug};
-
   my $praatdir = $opt->{praat} // CPrAN::praat({});
   if (-e dir($praatdir, 'plugin_cpran')) {
     print "CPrAN is already initialised. Nothing to do here!\n" unless $opt->{quiet};

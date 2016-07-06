@@ -95,8 +95,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running remove\n" if $opt->{debug};
-
   use Path::Class;
   use CPrAN::Plugin;
 

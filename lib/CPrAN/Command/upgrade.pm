@@ -80,8 +80,6 @@ sub execute {
   my $app;
   $app = CPrAN->new();
 
-  warn "DEBUG: Running upgrade\n" if $opt->{debug};
-
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";

@@ -121,6 +121,8 @@ sub execute_command {
   $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
   if ($opt->{debug}) {
+    my @c = split(/::/, ref $cmd);
+    warn "DEBUG: Running ", pop @c, "\n";
     warn "DEBUG: Options:\n";
     warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
   }

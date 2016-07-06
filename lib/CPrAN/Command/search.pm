@@ -73,8 +73,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running search\n" if $opt->{debug};
-
   use CPrAN::Plugin;
   use Text::FormatTable;
 

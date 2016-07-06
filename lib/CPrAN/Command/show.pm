@@ -59,8 +59,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running show\n" if $opt->{debug};
-
   use CPrAN::Plugin;
   use YAML::XS;
 

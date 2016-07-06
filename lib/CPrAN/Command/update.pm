@@ -55,8 +55,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running update\n" if $opt->{debug};
-
   use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
