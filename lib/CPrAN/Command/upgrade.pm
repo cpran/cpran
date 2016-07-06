@@ -124,13 +124,17 @@ sub execute {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran) {
         if ($plugin->is_latest // 1) {
-          print "$plugin->{name} is already at its latest version\n" if $opt->{verbose} > 1;
+          print "$plugin->{name} is already at its latest version\n"
+            if $opt->{verbose} > 1;
         }
         else {
           push @todo, $plugin;
         }
       }
-      else { warn "$plugin->{name} is not a CPrAN plugin\n" if $opt->{debug} }
+      else {
+        warn 'DEBUG: ', "$plugin->{name} is not a CPrAN plugin\n"
+          if $opt->{debug}
+      }
     }
     else { warn "$plugin->{name} is not installed\n" }
   }
@@ -163,7 +167,9 @@ sub execute {
       }
 
       foreach my $plugin (@todo) {
-        print "Upgrading $plugin->{name} from v$plugin->{local}->{version} to v$plugin->{remote}->{version}...\n" unless $opt->{quiet};
+        print 'Upgrading ', $plugin->{name}, ' from v',
+          $plugin->{local}->{version}, ' to v',
+          $plugin->{remote}->{version}, "...\n" unless $opt->{quiet};
 
         if ($opt->{git}) {
           try {
@@ -173,7 +179,8 @@ sub execute {
               $repo = Git::Repository->new( work_tree => $plugin->root );
             }
             catch {
-              die "No git repository at ", $plugin->root, "\n", ($opt->{debug}) ? $_ : '';
+              die "No git repository at ", $plugin->root, "\n",
+                ($opt->{debug}) ? $_ : '';
             };
 
             my $head;
@@ -181,7 +188,8 @@ sub execute {
               $head = $repo->run('rev-parse', 'HEAD', { fatal => '!0' } );
             }
             catch {
-              die "Could not locate HEAD.\n", ($opt->{debug}) ? $_ : '';
+              die "Could not locate HEAD.\n",
+                ($opt->{debug}) ? $_ : '';
             };
 
             try {
@@ -189,7 +197,8 @@ sub execute {
               $repo->run( 'pull', '--tags', $plugin->{url}, { fatal => '!0' } );
             }
             catch {
-              die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
+              die "Could not fetch from origin.\n",
+                ($opt->{debug}) ? $_ : '';
             };
 
             use Sort::Naturally;
@@ -204,7 +213,8 @@ sub execute {
               }
             }
             catch {
-              die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or discard them with --force.\n";
+              die "Unable to move HEAD. Do you have uncommited local changes? ",
+                "Commit or stash them before upgrade to keep them, or discard them with --force.\n";
             };
 
             $plugin->update;
@@ -217,7 +227,8 @@ sub execute {
 
             if (defined $success and !$success) {
               if ($opt->{force}) {
-                warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
+                warn "Tests failed, but continuing anyway because of --force\n"
+                  unless $opt->{quiet};
               }
               else {
                 unless ($opt->{quiet}) {
