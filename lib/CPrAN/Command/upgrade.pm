@@ -111,7 +111,8 @@ sub execute {
     }
   } @{$args};
 
-  warn scalar @{$args}, " plugins for processing: @{$args}\n" if $opt->{debug};
+  warn 'DEBUG: ', scalar @{$args}, " plugins for processing: ",
+    join(', ', map { $_->{name} } @plugins), "\n" if $opt->{debug};
 
   # Plugins that are not installed cannot be upgraded.
   # @todo will hold the names of the plugins passed as arguments that are
@@ -133,7 +134,8 @@ sub execute {
     }
     else { warn "$plugin->{name} is not installed\n" }
   }
-  warn scalar @todo, " plugins require upgrading: @todo\n" if $opt->{debug};
+  warn 'DEBUG: ', scalar @todo, " plugins require upgrading: ",
+    join(', ', map { $_->{name} } @todo), "\n" if $opt->{debug};
 
   if (scalar @todo) {
     my $cmd = CPrAN::Command::deps->new({});

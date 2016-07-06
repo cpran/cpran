@@ -80,7 +80,8 @@ sub execute {
   my @names = $self->installed($opt);
 
   if (defined $opt->{installed}) {
-    warn "DEBUG: " . scalar @names . " installed plugins\n" if $opt->{debug};
+    warn "DEBUG: " . scalar @names . " installed plugins: ",
+      join(', ', map { $_->{name} } @plugins), "\n" if $opt->{debug};
   }
   else {
     @names = (@names, $self->known($opt));
