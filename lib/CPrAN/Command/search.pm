@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
 binmode STDOUT, ':utf8';
 
 =encoding utf8
@@ -118,7 +119,15 @@ sub execute {
 
     if (@found) {
       use Term::ReadKey;
-      my ($wchar, $hchar, $wpixels, $hpixels) = GetTerminalSize();
+      my ($wchar);
+      try {
+        ($wchar) = GetTerminalSize();
+      }
+      catch {
+        $wchar = 80;
+        warn "DEBUG: Unable to get terminal size: $_\n"
+          if $opt->{debug};
+      };
       my $width = (!defined $opt->{wrap} or $opt->{wrap}) ? $wchar : 1000;
       print $self->{output}->render($width);
     }
