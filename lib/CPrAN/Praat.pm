@@ -173,6 +173,7 @@ sub current {
   die "Could not find path to $self->{bin}\n"
     unless defined $self->{path};
 
+  use SemVer;
   try {
     my $tmpin  = File::Temp->new(TEMPLATE => 'pscXXXXX',  SUFFIX => '.praat' );
     my $tmpout = File::Temp->new(TEMPLATE => 'praat_versionXXXXX' );
@@ -182,7 +183,7 @@ sub current {
 
     use Path::Class;
     system($self->{bin}, $tmpin);
-    $self->{current} = file($tmpout)->slurp;
+    $self->{current} = SemVer->new(file($tmpout)->slurp);
   }
   catch {
     die "Could not get current version of Praat: $_\n";
@@ -204,6 +205,7 @@ sub latest {
 
   use HTML::Tree;
   use LWP::UserAgent;
+  use SemVer;
 
   my $tree    = HTML::Tree->new();
   my $ua      = LWP::UserAgent->new;
@@ -221,6 +223,7 @@ sub latest {
     if ($self->{package} =~ /$package/) {
       $self->{latest} = $+{version};
       $self->{latest} =~ s/(\d)(\d{2})$/.$1.$2/;
+      $self->{latest} = SemVer->new($self->{latest});
     }
   }
   else {

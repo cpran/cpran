@@ -265,25 +265,8 @@ sub is_latest {
 
   return undef unless (defined $self->{remote});
   return 0     unless (defined $self->{local});
-  return 1 if ($self->{remote}->{version} eq $self->{local}->{version});
 
-  die "Incorrectly formatted version number: $a, $b"
-    if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
-        $self->{local}->{version}  !~ /^\d+\.\d+\.\d+$/);
-
-  my @remote = split /\./, $self->{remote}->{version};
-  my @local  = split /\./, $self->{local}->{version};
-
-  if    ($remote[0] > $local[0]) { return 0 }
-  elsif ($remote[0] < $local[0]) { return 1 }
-  elsif ($remote[1] > $local[1]) { return 0 }
-  elsif ($remote[1] < $local[1]) { return 1 }
-  elsif ($remote[2] > $local[2]) { return 0 }
-  elsif ($remote[2] < $local[2]) { return 1 }
-  else {
-    warn "$self->{remote}->{version} <-> $self->{local}->{version}\n";
-    die "Unreachable condition reached. Inconceivable!";
-  }
+  return $self->{local}->{version} >= $self->{remote}->{version};
 }
 
 =item test()
@@ -416,6 +399,7 @@ sub _parse {
   use YAML::XS;
   use Path::Class;
   use Encode qw( encode );
+  use SemVer;
 
   my ($self, $in) = @_;
   my $yaml;
@@ -434,6 +418,13 @@ sub _parse {
   $yaml->{descriptor} = $in;
   $yaml->{name} = $yaml->{plugin};
   $self->{cpran} = 1;
+  try {
+    $yaml->{version} = SemVer->new($yaml->{version});
+  }
+  catch {
+    warn "Not a valid version number for $self->{name}: $yaml->{version}";
+    $yaml->{version} = undef;
+  };
 
   return $yaml;
 }
