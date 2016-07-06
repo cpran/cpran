@@ -8,9 +8,11 @@ Revision history for CPrAN
   * Changes:
     * create: new options to specify plugin metadata
     * create: plugin metadata propagates through plugin template
+    * Version strings are processed by SemVer package
   * Fixes:
     * Improved documentation of existing and added features
     * create: random names can no longer have illegal characters
+    * upgrade: only those plugins that need upgrading are reordered
 
 0.0302    2016-07-04 22:37:42+01:00 Europe/London
 
