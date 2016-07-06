@@ -141,13 +141,16 @@ sub execute {
   warn 'DEBUG: ', scalar @todo, " plugins require upgrading: ",
     join(', ', map { $_->{name} } @todo), "\n" if $opt->{debug};
 
+  # Make sure plugins are upgraded in order
   if (scalar @todo) {
+    use Array::Utils qw( intersect );
     my $cmd = CPrAN::Command::deps->new({});
 
     my %params = %{$opt};
     $params{quiet} = 1;
 
-    @todo = $app->execute_command($cmd, \%params, @todo);
+    my @deps = $app->execute_command($cmd, \%params, @todo);
+    @todo = intersect(@todo, @deps);
   }
 
   if (@todo) {
