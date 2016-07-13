@@ -524,13 +524,16 @@ sub _praat {
       }
     }
     elsif (defined $opt->{path}) {
-      die "Path does not exist"
-        unless -e $opt->{path};
+      use Path::Class;
+      my $path = dir($opt->{path});
 
-      die "Path is not a directory"
-        unless -d $opt->{path};
+      die "Path does not exist: $opt->{path}"
+        unless $path->resolve;
 
-      $praat->{path} = $opt->{path};
+      die "Path is not a directory: $opt->{path}"
+        unless $path->is_dir;
+
+      $praat->{path} = $path;
     }
     else {
       # TODO(jja) Default paths. Where is best?
