@@ -57,7 +57,7 @@ sub execute {
   try {
     foreach my $plugin (@plugins) {
       my $result;
-        $result = $plugin->test($opt);
+      $result = $plugin->test($opt);
       $outcome = $result if defined $result;
     }
   }

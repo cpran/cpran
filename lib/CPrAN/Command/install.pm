@@ -208,15 +208,19 @@ sub execute {
           else {
             my $archive = $self->get_archive( $opt, $plugin->{name}, '' );
 
-            print "Extracting...\n" unless $opt->{quiet};
+            print "Extracting...\n"
+              unless $opt->{quiet};
+
             $self->install( $opt, $plugin, $archive );
           }
 
-          print "Testing $plugin->{name}...\n" unless $opt->{quiet};
           $plugin->update;
 
           my $success;
           if (!defined $opt->{test} or $opt->{test}) {
+            print "Testing $plugin->{name}...\n"
+              unless $opt->{quiet};
+
             $success = 0;
             try {
               $success = $plugin->test;
@@ -560,7 +564,7 @@ sub _praat {
     if (CPrAN::yesno( $opt )) {
 
       print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n"
-        if defined $opt->{quiet} && $opt->{quiet} == 1;
+        unless $opt->{quiet};
 
       my $archive = $praat->download;
 
@@ -574,13 +578,16 @@ sub _praat {
         template => 'praat-XXXXX',
       );
 
-      print "Saving archive to ", $package->filename, "\n" if $opt->{quiet} == 1;
+      print "Saving archive to ", $package->filename, "\n"
+        unless $opt->{quiet};
+
       use Path::Class;
       my $fh = Path::Class::file( $package->filename )->openw();
       binmode($fh);
       $fh->print($archive);
 
-      print "Extracting package to $praat->{path}...\n" if $opt->{quiet} == 1;
+      print "Extracting package to $praat->{path}...\n"
+        unless $opt->{quiet};
 
       # Extract archives
       use Archive::Extract;
@@ -599,10 +606,12 @@ sub _praat {
     }
   }
   catch {
-    die "Could not install Praat", ($opt->{debug}) ? ": $_" : ".\n";
+    chomp;
+    warn "$_\n";
+    die "Could not install Praat\n";
   };
-  print "Praat succesfully installed\n" unless $opt->{quiet};
-  exit 0;
+  print "Praat succesfully installed\n"
+    unless $opt->{quiet};
 }
 
 =back

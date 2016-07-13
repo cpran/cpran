@@ -359,7 +359,10 @@ sub _praat {
     }
   }
   catch {
-    die "Could not upgrade Praat", ($opt->{debug}) ? ": $_" : ".\n";
+    chomp;
+    warn "$_\n";
+    warn "Could not upgrade Praat";
+    exit 1;
   };
   exit 0;
 }
