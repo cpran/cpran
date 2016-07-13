@@ -13,6 +13,8 @@ Revision history for CPrAN
     * Improved documentation of existing and added features
     * create: random names can no longer have illegal characters
     * upgrade: only those plugins that need upgrading are reordered
+    * Fixed some inconsistencies with handling of global --bin option
+    * Fixed inconsistencies in return values for commands
 
 0.0302    2016-07-04 22:37:42+01:00 Europe/London
 
