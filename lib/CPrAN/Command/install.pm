@@ -28,8 +28,6 @@ of the specified plugins, schedules the installation of plugins needed or
 requested, downloads them from the server, tests them, and finally installs
 them.
 
-Currently, no testing is done, and installation works sometimes in Windows.
-
 =cut
 
 sub description {
@@ -42,6 +40,9 @@ Arguments to B<install> must be at least one and optionally more plugin names.
 Plugin names can be appended with a specific version number to request for
 versioned installation, but this is not currently implemented. When it is, names
 will likely be of the form C<name-1.0.0>.
+
+As a special case, if the only argument to B<install> is the
+keyword "praat", the client will install Praat itself.
 
 =cut
 
@@ -57,14 +58,8 @@ sub validate_args {
     }
   }
 
-  if (grep { /praat/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      $self->_praat($opt);
-    }
-  }
+  use File::Glob ':bsd_glob';
+  $opt->{path} = bsd_glob($opt->{path}) if $opt->{path};
 
   # Users might be tempted to input the names of plugin as "plugin_name", but
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
@@ -100,13 +95,24 @@ sub validate_args {
     # Do not ask for confirmation
     cpran install --force -y
 
+    # Special case: install Praat itself
+    cpran install praat
+
 =cut
 
 # TODO(jja) Break execute into smaller subroutines.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running install\n" if $opt->{debug};
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      $self->_praat($opt);
+      return;
+    }
+  }
 
   my $app = CPrAN->new();
 
@@ -159,6 +165,7 @@ sub execute {
     else { 0 }
   } @ordered;
 
+  my @installed;
   # Output and user query modeled after apt's
   if (@schedule) {
     unless ($opt->{quiet}) {
@@ -201,15 +208,19 @@ sub execute {
           else {
             my $archive = $self->get_archive( $opt, $plugin->{name}, '' );
 
-            print "Extracting...\n" unless $opt->{quiet};
+            print "Extracting...\n"
+              unless $opt->{quiet};
+
             $self->install( $opt, $plugin, $archive );
           }
 
-          print "Testing $plugin->{name}...\n" unless $opt->{quiet};
           $plugin->update;
 
           my $success;
           if (!defined $opt->{test} or $opt->{test}) {
+            print "Testing $plugin->{name}...\n"
+              unless $opt->{quiet};
+
             $success = 0;
             try {
               $success = $plugin->test;
@@ -246,6 +257,7 @@ sub execute {
             }
           }
           else {
+            push @installed, $plugin;
             print "$plugin->{name} installed successfully.\n" unless $opt->{quiet};
           }
         }
@@ -259,6 +271,8 @@ sub execute {
       print "Abort.\n" unless $opt->{quiet};
     }
   }
+
+  return @installed;
 }
 
 =head1 OPTIONS
@@ -268,6 +282,17 @@ sub execute {
 =item B<--yes, -y>
 
 Assume yes for all questions.
+
+=item B<--test>, B<-T>
+=item B<--notest>
+
+These options control execution of the automated tests in each plugin. The
+B<--test> option is enabled by default, and will cause these tests to be run.
+This can be disabled with the B<--notest> option, which will make the client
+skip tests altogether.
+
+This is different from B<--force> in that B<--force> will still run the tests,
+but will disregard those that fail.
 
 =item B<--force>, B<-F>
 
@@ -433,7 +458,7 @@ sub install {
     $components[0] = 'plugin_' . $plugin->{name};
 
     # We place the preferences directory at the beginning of the new path
-    unshift @components, $opt->{praat} // CPrAN::praat({});
+    unshift @components, $opt->{praat} // CPrAN->praat_prefs($opt);
 
     # And make a new Path::Class object pointing to it
     my $final_path;
@@ -484,13 +509,12 @@ sub strip_prefix {
 }
 
 sub _praat {
-  use CPrAN::Praat;
   use Path::Class;
 
   my ($self, $opt) = @_;
 
   try {
-    my $praat = CPrAN::Praat->new($opt);
+    my $praat = CPrAN::praat($opt);
     $praat->latest;
 
     if (defined $praat->{path}) {
@@ -500,13 +524,16 @@ sub _praat {
       }
     }
     elsif (defined $opt->{path}) {
-      die "Path does not exist"
-        unless -e $opt->{path};
+      use Path::Class;
+      my $path = dir($opt->{path});
 
-      die "Path is not a directory"
-        unless -d $opt->{path};
+      die "Path does not exist: $opt->{path}"
+        unless $path->resolve;
 
-      $praat->{path} = $opt->{path};
+      die "Path is not a directory: $opt->{path}"
+        unless $path->is_dir;
+
+      $praat->{path} = $path;
     }
     else {
       # TODO(jja) Default paths. Where is best?
@@ -540,7 +567,7 @@ sub _praat {
     if (CPrAN::yesno( $opt )) {
 
       print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n"
-        if defined $opt->{quiet} && $opt->{quiet} == 1;
+        unless $opt->{quiet};
 
       my $archive = $praat->download;
 
@@ -554,13 +581,16 @@ sub _praat {
         template => 'praat-XXXXX',
       );
 
-      print "Saving archive to ", $package->filename, "\n" if $opt->{quiet} == 1;
+      print "Saving archive to ", $package->filename, "\n"
+        unless $opt->{quiet};
+
       use Path::Class;
       my $fh = Path::Class::file( $package->filename )->openw();
       binmode($fh);
       $fh->print($archive);
 
-      print "Extracting package to $praat->{path}...\n" if $opt->{quiet} == 1;
+      print "Extracting package to $praat->{path}...\n"
+        unless $opt->{quiet};
 
       # Extract archives
       use Archive::Extract;
@@ -571,18 +601,19 @@ sub _praat {
 
       use Path::Class;
       my $file = file($ae->extract_path, $ae->files->[0]);
-      my $bin = file($praat->{path}, $praat->{bin});
 
       use File::Copy;
-      File::Copy::move $file, $bin
+      File::Copy::move $file, $praat->{path}
         or die "Could not move file: $!\n";
     }
   }
   catch {
-    die "Could not install Praat", ($opt->{debug}) ? ": $_" : ".\n";
+    chomp;
+    warn "$_\n";
+    die "Could not install Praat\n";
   };
-  print "Praat succesfully installed\n" unless $opt->{quiet};
-  exit 0;
+  print "Praat succesfully installed\n"
+    unless $opt->{quiet};
 }
 
 =back
@@ -614,6 +645,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

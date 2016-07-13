@@ -47,10 +47,9 @@ sub validate_args {
       die "Praat must be the only argument for processing\n";
     }
     else {
-      use CPrAN::Praat;
-      my $praat = CPrAN::Praat->new;
+      my $praat = CPrAN::praat($opt);
 
-      unless (defined $praat->{path}) {
+      unless (defined $praat->current) {
         warn "Praat is not installed. Use 'cpran install praat' to install it\n";
         exit 0;
       }
@@ -60,7 +59,7 @@ sub validate_args {
         print "Do you want to continue?";
       }
       if (CPrAN::yesno( $opt )) {
-        $praat->remove;
+        $praat->remove($opt);
 
         print "Done.\n" unless $opt->{quiet};
         exit 0;
@@ -94,8 +93,6 @@ sub validate_args {
 
 sub execute {
   my ($self, $opt, $args) = @_;
-
-  warn "DEBUG: Running remove\n" if $opt->{debug};
 
   use Path::Class;
   use CPrAN::Plugin;
@@ -217,6 +214,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

@@ -80,8 +80,6 @@ sub execute {
   my $app;
   $app = CPrAN->new();
 
-  warn "DEBUG: Running upgrade\n" if $opt->{debug};
-
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
@@ -113,7 +111,8 @@ sub execute {
     }
   } @{$args};
 
-  warn scalar @{$args}, " plugins for processing: @{$args}\n" if $opt->{debug};
+  warn 'DEBUG: ', scalar @{$args}, " plugins for processing: ",
+    join(', ', map { $_->{name} } @plugins), "\n" if $opt->{debug};
 
   # Plugins that are not installed cannot be upgraded.
   # @todo will hold the names of the plugins passed as arguments that are
@@ -125,25 +124,33 @@ sub execute {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran) {
         if ($plugin->is_latest // 1) {
-          print "$plugin->{name} is already at its latest version\n" if $opt->{verbose} > 1;
+          print "$plugin->{name} is already at its latest version\n"
+            if $opt->{verbose} > 1;
         }
         else {
           push @todo, $plugin;
         }
       }
-      else { warn "$plugin->{name} is not a CPrAN plugin\n" if $opt->{debug} }
+      else {
+        warn 'DEBUG: ', "$plugin->{name} is not a CPrAN plugin\n"
+          if $opt->{debug}
+      }
     }
     else { warn "$plugin->{name} is not installed\n" }
   }
-  warn scalar @todo, " plugins require upgrading: @todo\n" if $opt->{debug};
+  warn 'DEBUG: ', scalar @todo, " plugins require upgrading: ",
+    join(', ', map { $_->{name} } @todo), "\n" if $opt->{debug};
 
+  # Make sure plugins are upgraded in order
   if (scalar @todo) {
+    use Array::Utils qw( intersect );
     my $cmd = CPrAN::Command::deps->new({});
 
     my %params = %{$opt};
     $params{quiet} = 1;
 
-    @todo = $app->execute_command($cmd, \%params, @todo);
+    my @deps = $app->execute_command($cmd, \%params, @todo);
+    @todo = intersect(@todo, @deps);
   }
 
   if (@todo) {
@@ -163,7 +170,9 @@ sub execute {
       }
 
       foreach my $plugin (@todo) {
-        print "Upgrading $plugin->{name} from v$plugin->{local}->{version} to v$plugin->{remote}->{version}...\n" unless $opt->{quiet};
+        print 'Upgrading ', $plugin->{name}, ' from v',
+          $plugin->{local}->{version}, ' to v',
+          $plugin->{remote}->{version}, "...\n" unless $opt->{quiet};
 
         if ($opt->{git}) {
           try {
@@ -173,7 +182,8 @@ sub execute {
               $repo = Git::Repository->new( work_tree => $plugin->root );
             }
             catch {
-              die "No git repository at ", $plugin->root, "\n", ($opt->{debug}) ? $_ : '';
+              die "No git repository at ", $plugin->root, "\n",
+                ($opt->{debug}) ? $_ : '';
             };
 
             my $head;
@@ -181,7 +191,8 @@ sub execute {
               $head = $repo->run('rev-parse', 'HEAD', { fatal => '!0' } );
             }
             catch {
-              die "Could not locate HEAD.\n", ($opt->{debug}) ? $_ : '';
+              die "Could not locate HEAD.\n",
+                ($opt->{debug}) ? $_ : '';
             };
 
             try {
@@ -189,7 +200,8 @@ sub execute {
               $repo->run( 'pull', '--tags', $plugin->{url}, { fatal => '!0' } );
             }
             catch {
-              die "Could not fetch from origin.\n", ($opt->{debug}) ? $_ : '';
+              die "Could not fetch from origin.\n",
+                ($opt->{debug}) ? $_ : '';
             };
 
             use Sort::Naturally;
@@ -204,7 +216,8 @@ sub execute {
               }
             }
             catch {
-              die "Unable to move HEAD. Do you have uncommited local changes? Commit or stash them before upgrade to keep them, or discard them with --force.\n";
+              die "Unable to move HEAD. Do you have uncommited local changes? ",
+                "Commit or stash them before upgrade to keep them, or discard them with --force.\n";
             };
 
             $plugin->update;
@@ -217,7 +230,8 @@ sub execute {
 
             if (defined $success and !$success) {
               if ($opt->{force}) {
-                warn "Tests failed, but continuing anyway because of --force\n" unless $opt->{quiet};
+                warn "Tests failed, but continuing anyway because of --force\n"
+                  unless $opt->{quiet};
               }
               else {
                 unless ($opt->{quiet}) {
@@ -283,6 +297,17 @@ git repositories in the plugin directory>.
 
 Attempts to aggresively work around problems. Use at your own risk.
 
+=item B<--test>, B<-T>
+=item B<--notest>
+
+These options control execution of the automated tests in each plugin. The
+B<--test> option is enabled by default, and will cause these tests to be run.
+This can be disabled with the B<--notest> option, which will make the client
+skip tests altogether.
+
+This is different from B<--force> in that B<--force> will still run the tests,
+but will disregard those that fail.
+
 =back
 
 =cut
@@ -302,13 +327,15 @@ sub opt_spec {
 =cut
 
 sub _praat {
-  use CPrAN::Praat;
-
   my ($self, $opt) = @_;
 
   try {
-    my $praat = CPrAN::Praat->new();
-    print "Querying server for latest version...\n" unless $opt->{quiet};
+    my $praat = CPrAN->praat($opt);
+    die "Could not find " . ( $opt->{bin} // 'praat' )
+      unless defined $praat->current;
+
+    print "Querying server for latest version...\n"
+      unless $opt->{quiet};
 
     use Sort::Naturally;
     if (ncmp($praat->latest, $praat->current) > 0) {
@@ -332,7 +359,10 @@ sub _praat {
     }
   }
   catch {
-    die "Could not upgrade Praat", ($opt->{debug}) ? ": $_" : ".\n";
+    chomp;
+    warn "$_\n";
+    warn "Could not upgrade Praat";
+    exit 1;
   };
   exit 0;
 }
@@ -366,6 +396,6 @@ L<CPrAN::Command::update|update>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

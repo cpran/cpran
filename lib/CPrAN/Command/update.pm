@@ -55,8 +55,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running update\n" if $opt->{debug};
-
   use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
@@ -134,7 +132,7 @@ sub execute {
 
         unless (defined $opt->{virtual}) {
           if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
-            my $out = file( $opt->{cpran} // CPrAN::root({}), $plugin->{name} );
+            my $out = file( $opt->{cpran} // CPrAN::cpran_root({}), $plugin->{name} );
             my $fh = $out->openw();
             $fh->print( $plugin->{remote}->{descriptor} );
           }
@@ -167,7 +165,7 @@ sub execute {
         $plugin = CPrAN::Plugin->new( $encoded );
       }
       else {
-        my $out = file( $opt->{cpran} // CPrAN::root({}), $plugin->{Plugin} );
+        my $out = file( $opt->{cpran} // CPrAN::cpran_root({}), $plugin->{Plugin} );
         my $fh = $out->openw();
         $fh->print( $encoded );
         $fh->close;
@@ -183,7 +181,7 @@ sub execute {
     $_->print('remote') foreach (@updated);
   }
 
-  return \@updated;
+  return @updated;
 }
 
 =head1 METHODS
@@ -267,6 +265,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

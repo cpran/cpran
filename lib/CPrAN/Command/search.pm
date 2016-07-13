@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
 binmode STDOUT, ':utf8';
 
 =encoding utf8
@@ -73,8 +74,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running search\n" if $opt->{debug};
-
   use CPrAN::Plugin;
   use Text::FormatTable;
 
@@ -82,7 +81,8 @@ sub execute {
   my @names = $self->installed($opt);
 
   if (defined $opt->{installed}) {
-    warn "DEBUG: " . scalar @names . " installed plugins\n" if $opt->{debug};
+    warn "DEBUG: " . scalar @names . " installed plugins: ",
+      join(', ', map { $_->{name} } @plugins), "\n" if $opt->{debug};
   }
   else {
     @names = (@names, $self->known($opt));
@@ -119,7 +119,15 @@ sub execute {
 
     if (@found) {
       use Term::ReadKey;
-      my ($wchar, $hchar, $wpixels, $hpixels) = GetTerminalSize();
+      my ($wchar);
+      try {
+        ($wchar) = GetTerminalSize();
+      }
+      catch {
+        $wchar = 80;
+        warn "DEBUG: Unable to get terminal size: $_\n"
+          if $opt->{debug};
+      };
       my $width = (!defined $opt->{wrap} or $opt->{wrap}) ? $wchar : 1000;
       print $self->{output}->render($width);
     }
@@ -191,7 +199,7 @@ sub installed {
 
   my @files = grep {
     ($_->is_dir && $_->basename =~ /^plugin_[\w\d_-]+/)
-  } dir( $opt->{praat} // CPrAN::praat({}) )->children;
+  } dir( $opt->{praat} // CPrAN::praat_prefs($opt) )->children;
 
   return map {
     $1 if $_->basename =~ /^plugin_([\w\d_-]+)/;
@@ -212,7 +220,7 @@ sub known {
   my ($self, $opt) = @_;
 
   use Path::Class;
-  return map { $_->basename } dir( $opt->{root} // CPrAN::root({}) )->children;
+  return map { $_->basename } dir( $opt->{root} // CPrAN::cpran_root({}) )->children;
 }
 
 =item B<_match()>
@@ -320,6 +328,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

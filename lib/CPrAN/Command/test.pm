@@ -49,8 +49,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running test\n" if $opt->{debug};
-
   use CPrAN::Plugin;
 
   my $outcome = 1;
@@ -59,7 +57,7 @@ sub execute {
   try {
     foreach my $plugin (@plugins) {
       my $result;
-        $result = $plugin->test($opt);
+      $result = $plugin->test($opt);
       $outcome = $result if defined $result;
     }
   }
@@ -103,6 +101,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

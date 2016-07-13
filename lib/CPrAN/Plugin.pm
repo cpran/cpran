@@ -86,7 +86,7 @@ sub _init {
 
   # We check if it exists on disk. If it does, then we assume it is a plugin,
   # and we know it is installed.
-  my $root = dir( $opt->{praat} // CPrAN::praat, 'plugin_' . $self->{name});
+  my $root = dir( $opt->{praat} // CPrAN::praat_prefs, 'plugin_' . $self->{name});
   $self->{root} = $root->stringify;
   $self->{installed} = 1 if ( -e $root );
 
@@ -103,11 +103,13 @@ sub _init {
   # We do the same with the remote descriptor. Anything that has a parseable
   # CPrAN descriptor is a CPrAN plugin.
   unless (defined $self->{remote}) {
-    my $remote = file( $opt->{root} // CPrAN::root, $self->{name});
+    my $remote = file( $opt->{root} // CPrAN::cpran_root({}), $self->{name});
     if (-e $remote) {
       $self->{remote} = $self->_read( $remote );
     }
   }
+
+  return $self;
 }
 
 =head1 METHODS
@@ -159,7 +161,7 @@ sub name { return $_[0]->{name} }
 
 =item B<url()>
 
-Gets the plugin URL, pointing to the clonable git repository
+Gets the plugin URL, pointing to a clonable git repository
 
 =cut
 
@@ -263,25 +265,8 @@ sub is_latest {
 
   return undef unless (defined $self->{remote});
   return 0     unless (defined $self->{local});
-  return 1 if ($self->{remote}->{version} eq $self->{local}->{version});
 
-  die "Incorrectly formatted version number: $a, $b"
-    if ($self->{remote}->{version} !~ /^\d+\.\d+\.\d+$/ ||
-        $self->{local}->{version}  !~ /^\d+\.\d+\.\d+$/);
-
-  my @remote = split /\./, $self->{remote}->{version};
-  my @local  = split /\./, $self->{local}->{version};
-
-  if    ($remote[0] > $local[0]) { return 0 }
-  elsif ($remote[0] < $local[0]) { return 1 }
-  elsif ($remote[1] > $local[1]) { return 0 }
-  elsif ($remote[1] < $local[1]) { return 1 }
-  elsif ($remote[2] > $local[2]) { return 0 }
-  elsif ($remote[2] < $local[2]) { return 1 }
-  else {
-    warn "$self->{remote}->{version} <-> $self->{local}->{version}\n";
-    die "Unreachable condition reached. Inconceivable!";
-  }
+  return $self->{local}->{version} >= $self->{remote}->{version};
 }
 
 =item test()
@@ -306,11 +291,13 @@ sub test {
   # be case sensitive in some systems.
   # For versions >=6.0 praatcon no longer exists in Windows, and "praat" should
   # be used.
-  # For more obscure cases, an option to specify the path to Praat is needed.
+  # For more obscure cases, the --bin option exists
   my $praat = CPrAN::Praat->new($opt);
 
-  croak "$self->{name} is not installed; cannot test"
-    unless ($self->is_installed);
+  croak "Praat not installed; cannot test"
+    unless defined $praat->current;
+
+  return undef unless ($self->is_installed);
 
   use Cwd;
   my $oldwd = getcwd;
@@ -333,10 +320,10 @@ sub test {
     return undef;
   }
   elsif ($version >= 6.003) {
-    push @args, ('--exec', "$praat->{bin} --ansi --run");
+    push @args, ('--exec', "$praat->{path} --ansi --run");
   }
   else {
-    push @args, ('--exec', "$praat->{bin} --ansi");
+    push @args, ('--exec', "$praat->{path} --ansi");
   }
 
   if ($opt->{verbose} > 1) {
@@ -414,6 +401,7 @@ sub _parse {
   use YAML::XS;
   use Path::Class;
   use Encode qw( encode );
+  use SemVer;
 
   my ($self, $in) = @_;
   my $yaml;
@@ -432,6 +420,13 @@ sub _parse {
   $yaml->{descriptor} = $in;
   $yaml->{name} = $yaml->{plugin};
   $self->{cpran} = 1;
+  try {
+    $yaml->{version} = SemVer->new($yaml->{version});
+  }
+  catch {
+    warn "Not a valid version number for $self->{name}: $yaml->{version}";
+    $yaml->{version} = undef;
+  };
 
   return $yaml;
 }
@@ -476,6 +471,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

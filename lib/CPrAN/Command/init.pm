@@ -54,9 +54,7 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running init\n" if $opt->{debug};
-
-  my $praatdir = $opt->{praat} // CPrAN::praat({});
+  my $praatdir = $opt->{praat} // CPrAN::praat_prefs($opt);
   if (-e dir($praatdir, 'plugin_cpran')) {
     print "CPrAN is already initialised. Nothing to do here!\n" unless $opt->{quiet};
     return;
@@ -71,8 +69,7 @@ sub execute {
 
   my $cmd;
   $cmd = CPrAN::Command::update->new({});
-  my $cpran = $app->execute_command($cmd, \%params, 'cpran');
-  $cpran = pop @{$cpran};
+  my @cpran = $app->execute_command($cmd, \%params, 'cpran');
 
   %params = %{$opt};
   $params{yes} = 1;
@@ -80,7 +77,7 @@ sub execute {
   $params{git} = $opt->{git} // 1;
 
   $cmd = CPrAN::Command::install->new({});
-  $app->execute_command($cmd, \%params, $cpran);
+  $app->execute_command($cmd, \%params, pop @cpran);
 }
 
 sub opt_spec {
@@ -117,6 +114,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

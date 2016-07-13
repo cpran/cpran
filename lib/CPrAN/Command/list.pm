@@ -49,8 +49,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  warn "DEBUG: Running list\n" if $opt->{debug};
-
   my $app = CPrAN->new();
   my %params = %{$opt};
 
@@ -92,6 +90,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;

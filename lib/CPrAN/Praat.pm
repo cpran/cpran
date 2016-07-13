@@ -64,24 +64,26 @@ sub new {
     }
   }
 
-  use File::Which;
-  $self->{bin} = $opt->{bin} //
-    which('praat')     ||
-    which('praat.exe') ||
-    which('praatcon')  ||
-    which('Praat');
-  unless (defined $self->{bin}) {
-    warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n";
-  }
+  {
+    use File::Which;
 
-  $self = bless($self, $class);
+    if (defined $opt->{bin}) {
+      $self->{path} = which($opt->{bin});
+    }
+    else {
+      $self->{path} =
+        which('praat.exe') ||
+        which('praatcon')  ||
+        which('Praat')     ||
+        which('praat');
+    }
 
-  use Path::Class;
-  $self->{path} = which($self->{bin});
-  if (defined $self->{path}) {
-    my @parts = file($self->{path})->components;
-    $self->{bin} = pop @parts;
-    $self->{path} = dir(@parts)->stringify;
+    $self = bless($self, $class);
+
+    use Path::Class;
+    if (defined $self->{path}) {
+      $self->{path} = file($self->{path});
+    }
   }
 
   $self->current;
@@ -117,17 +119,15 @@ Removes praat from disk
 =cut
 
 sub remove {
-  my ($self) = @_;
+  my ($self, $opt) = @_;
 
   use Path::Class;
 
-  die "Could not find path to $self->{bin}\n"
+  die "Could not find path to " . ( $opt->{bin} // 'praat' ) . "\n"
     unless defined $self->{path};
 
-  my $full = file($self->{path}, $self->{bin})->stringify;
-
-  my $removed = unlink($full)
-    or die "Could not remove $full: $!\n";
+  my $removed = unlink($self->{path})
+    or die "Could not remove $self->{path}: $!\n";
 
   return $removed;
 }
@@ -168,11 +168,10 @@ Gets the current version of Praat
 sub current {
   my ($self) = @_;
 
+  return undef unless defined $self->{path};
   return $self->{current} if defined $self->{current};
 
-  die "Could not find path to $self->{bin}\n"
-    unless defined $self->{path};
-
+  use SemVer;
   try {
     my $tmpin  = File::Temp->new(TEMPLATE => 'pscXXXXX',  SUFFIX => '.praat' );
     my $tmpout = File::Temp->new(TEMPLATE => 'praat_versionXXXXX' );
@@ -181,8 +180,8 @@ sub current {
     print $tmpin $script;
 
     use Path::Class;
-    system($self->{bin}, $tmpin);
-    $self->{current} = file($tmpout)->slurp;
+    system($self->{path}, $tmpin);
+    $self->{current} = SemVer->new(file($tmpout)->slurp);
   }
   catch {
     die "Could not get current version of Praat: $_\n";
@@ -204,6 +203,7 @@ sub latest {
 
   use HTML::Tree;
   use LWP::UserAgent;
+  use SemVer;
 
   my $tree    = HTML::Tree->new();
   my $ua      = LWP::UserAgent->new;
@@ -221,6 +221,7 @@ sub latest {
     if ($self->{package} =~ /$package/) {
       $self->{latest} = $+{version};
       $self->{latest} =~ s/(\d)(\d{2})$/.$1.$2/;
+      $self->{latest} = SemVer->new($self->{latest});
     }
   }
   else {
@@ -260,6 +261,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0302'; # VERSION
+our $VERSION = '0.0303'; # VERSION
 
 1;
