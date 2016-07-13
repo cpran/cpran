@@ -58,14 +58,8 @@ sub validate_args {
     }
   }
 
-  if (grep { /praat/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      $self->_praat($opt);
-    }
-  }
+  use File::Glob ':bsd_glob';
+  $opt->{path} = bsd_glob($opt->{path}) if $opt->{path};
 
   # Users might be tempted to input the names of plugin as "plugin_name", but
   # this is not correct. The "plugin_" prefix is not part of the plugin's name,
@@ -109,6 +103,16 @@ sub validate_args {
 # TODO(jja) Break execute into smaller subroutines.
 sub execute {
   my ($self, $opt, $args) = @_;
+
+  if (grep { /praat/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      $self->_praat($opt);
+      return;
+    }
+  }
 
   my $app = CPrAN->new();
 
