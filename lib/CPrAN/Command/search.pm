@@ -220,8 +220,6 @@ sub known {
   my ($self, $opt) = @_;
 
   use Path::Class;
-
-  use Data::Printer;
   return map { $_->basename } dir( $opt->{root} // CPrAN::cpran_root({}) )->children;
 }
 

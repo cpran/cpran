@@ -133,9 +133,6 @@ sub run {
 
   my $praat = $self->praat($opt);
   unless (defined $praat->current) {
-    use Data::Printer;
-    p $cmd;
-    p @args;
     print "Praat not found. Some features will be disabled\n"
       unless (ref($cmd) =~ /(install|remove)$/ and $args[0] eq 'praat') or $opt->{quiet};
     $opt->{test} = 0;
