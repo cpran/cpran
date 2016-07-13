@@ -199,7 +199,7 @@ sub installed {
 
   my @files = grep {
     ($_->is_dir && $_->basename =~ /^plugin_[\w\d_-]+/)
-  } dir( $opt->{praat} // CPrAN::praat({}) )->children;
+  } dir( $opt->{praat} // CPrAN::praat_prefs($opt) )->children;
 
   return map {
     $1 if $_->basename =~ /^plugin_([\w\d_-]+)/;
@@ -220,7 +220,7 @@ sub known {
   my ($self, $opt) = @_;
 
   use Path::Class;
-  return map { $_->basename } dir( $opt->{root} // CPrAN::root({}) )->children;
+  return map { $_->basename } dir( $opt->{root} // CPrAN::cpran_root({$opt}) )->children;
 }
 
 =item B<_match()>

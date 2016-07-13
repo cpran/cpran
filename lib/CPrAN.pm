@@ -25,34 +25,43 @@ B<CPrAN> - A package manager for Praat
 {
   use Path::Class 0.35;
   use Config;
-  my ($ROOT, $PRAAT);
+  my ($CPRANROOT, $PRAATPREF);
 
   if (defined $ENV{CPRAN_PRAAT_DIR}) {
-    $PRAAT = $ENV{CPRAN_PRAAT_DIR};
+    $PRAATPREF = $ENV{CPRAN_PRAAT_DIR};
   }
   else {
     if ($Config{osname} eq 'darwin') {
       # Mac
-      $PRAAT = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
+      $PRAATPREF = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
     }
     elsif ($Config{osname} eq 'MSWin32') {
       # Windows
-      $PRAAT = dir('', $ENV{HOMEPATH}, 'Praat')->stringify;
+      $PRAATPREF = dir('', $ENV{HOMEPATH}, 'Praat')->stringify;
     }
     elsif ($Config{osname} eq 'cygwin') {
       # cygwin
       warn "Cygwin not tested. Treating as if GNU/Linux\n";
-      $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
+      $PRAATPREF = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
     else {
       # GNU/Linux
-      $PRAAT = dir('', $ENV{HOME}, '.praat-dir')->stringify;
+      $PRAATPREF = dir('', $ENV{HOME}, '.praat-dir')->stringify;
     }
   }
-  $ROOT = $ENV{CPRAN_ROOT_NAME} // '.cpran';
+  $CPRANROOT = $ENV{CPRAN_ROOT_NAME} // '.cpran';
 
-  sub root  { shift; if (scalar @_) { $ROOT  = shift } else { return dir(praat({}), $ROOT)->stringify } }
-  sub praat { shift; if (scalar @_) { $PRAAT = shift } else { return $PRAAT } }
+  sub cpran_root  {
+    shift;
+    if (scalar @_) { $CPRANROOT = shift }
+    else { return dir(praat_prefs({}), $CPRANROOT)->stringify }
+  }
+
+  sub praat_prefs {
+    shift;
+    if (scalar @_) { $PRAATPREF = shift }
+    else { return $PRAATPREF }
+  }
 }
 
 # TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
@@ -229,12 +238,12 @@ sub set_globals {
   my ($self, $cmd, $opt) = @_;
   my $gopt = $self->global_options;
 
-  $self->praat(     $gopt->{praat}       ) if (defined $gopt->{praat}      );
-  $self->root(      $gopt->{cpran}       ) if (defined $gopt->{cpran}      );
+  $self->praat_prefs ($gopt->{praat})     if defined $gopt->{praat};
+  $self->cpran_root        ($gopt->{cpran})     if defined $gopt->{cpran};
 
-  $self->api_token( $gopt->{'api-token'} ) if (defined $gopt->{'api-token'});
-  $self->api_group( $gopt->{'api-group'} ) if (defined $gopt->{'api-group'});
-  $self->api_url(   $gopt->{'api-url'}   ) if (defined $gopt->{'api-url'}  );
+  $self->api_token   ($gopt->{api-token}) if defined $gopt->{'api-token'};
+  $self->api_group   ($gopt->{api-group}) if defined $gopt->{'api-group'};
+  $self->api_url     ($gopt->{api-url})   if defined $gopt->{'api-url'};
 }
 
 =item check_permissions()
@@ -250,20 +259,21 @@ CPrAN needs read and write access to the path set as root, and to Praat's
 sub check_permissions {
   my ($self, $cmd, $opt) = @_;
 
-  if (-e $self->root) {
-    croak "Cannot read from CPrAN root at " . $self->root
-      unless (-r $self->root());
-    croak "Cannot write to CPrAN root at " . $self->root
-      unless (-w $self->root());
+  if (-e $self->cpran_root) {
+    croak "Cannot read from CPrAN root at " . $self->cpran_root
+      unless (-r $self->cpran_root());
+    croak "Cannot write to CPrAN root at " . $self->cpran_root
+      unless (-w $self->cpran_root());
   }
   else {
-    File::Path::make_path( $self->root )
-      or carp "Could not make directory at " . $self->root;
+    File::Path::make_path( $self->cpran_root )
+      or carp "Could not make directory at " . $self->cpran_root;
   }
-  croak "Cannot read from preferences directory at " . $self->praat
-    unless (-r $self->praat);
-  croak "Cannot write to preferences directory at " . $self->praat
-    unless (-w $self->praat);
+
+  croak "Cannot read from preferences directory at " . $self->praat_prefs
+    unless (-r $self->praat_prefs);
+  croak "Cannot write to preferences directory at " . $self->praat_prefs
+    unless (-w $self->praat_prefs);
 }
 
 =item yesno()

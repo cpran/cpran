@@ -54,7 +54,7 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  my $praatdir = $opt->{praat} // CPrAN::praat({});
+  my $praatdir = $opt->{praat} // CPrAN::praat_prefs($opt);
   if (-e dir($praatdir, 'plugin_cpran')) {
     print "CPrAN is already initialised. Nothing to do here!\n" unless $opt->{quiet};
     return;
