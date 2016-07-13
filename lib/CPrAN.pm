@@ -280,7 +280,7 @@ sub set_globals {
   my $gopt = $self->global_options;
 
   $self->praat_prefs ($gopt->{praat})     if defined $gopt->{praat};
-  $self->cpran_root        ($gopt->{cpran})     if defined $gopt->{cpran};
+  $self->cpran_root  ($gopt->{cpran})     if defined $gopt->{cpran};
 
   $self->api_token   ($gopt->{api-token}) if defined $gopt->{'api-token'};
   $self->api_group   ($gopt->{api-group}) if defined $gopt->{'api-group'};
@@ -302,9 +302,9 @@ sub check_permissions {
 
   if (-e $self->cpran_root) {
     croak "Cannot read from CPrAN root at " . $self->cpran_root
-      unless (-r $self->cpran_root());
+      unless (-r $self->cpran_root);
     croak "Cannot write to CPrAN root at " . $self->cpran_root
-      unless (-w $self->cpran_root());
+      unless (-w $self->cpran_root);
   }
   else {
     File::Path::make_path( $self->cpran_root )
