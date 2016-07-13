@@ -64,24 +64,33 @@ sub new {
     }
   }
 
-  use File::Which;
-  $self->{bin} = $opt->{bin} //
-    which('praat')     ||
-    which('praat.exe') ||
-    which('praatcon')  ||
-    which('Praat');
-  unless (defined $self->{bin}) {
-    warn "Could not find path to Praat executable! Some CPrAN features will be disabled\n";
-  }
+  {
+    use File::Which;
 
-  $self = bless($self, $class);
+    if (defined $opt->{bin}) {
+      $self->{bin} = $opt->{bin};
+      $self->{path} = which($self->{bin});
+    }
+    else {
+      $self->{bin} =
+        which('praat.exe') ||
+        which('praatcon')  ||
+        which('Praat')     ||
+        which('praat');
+      $self->{path} = $self->{bin};
+    }
 
-  use Path::Class;
-  $self->{path} = which($self->{bin});
-  if (defined $self->{path}) {
-    my @parts = file($self->{path})->components;
-    $self->{bin} = pop @parts;
-    $self->{path} = dir(@parts)->stringify;
+    $self = bless($self, $class);
+
+    use Path::Class;
+    if (defined $self->{path}) {
+      my @parts = file($self->{path})->components;
+      $self->{bin} = pop @parts;
+      $self->{path} = dir(@parts)->stringify;
+    }
+    else {
+      $self->{bin} = 'praat'
+    }
   }
 
   $self->current;
@@ -168,10 +177,8 @@ Gets the current version of Praat
 sub current {
   my ($self) = @_;
 
+  return undef unless defined $self->{path};
   return $self->{current} if defined $self->{current};
-
-  die "Could not find path to $self->{bin}\n"
-    unless defined $self->{path};
 
   use SemVer;
   try {
