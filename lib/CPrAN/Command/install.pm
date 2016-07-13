@@ -501,13 +501,12 @@ sub strip_prefix {
 }
 
 sub _praat {
-  use CPrAN::Praat;
   use Path::Class;
 
   my ($self, $opt) = @_;
 
   try {
-    my $praat = CPrAN::Praat->new($opt);
+    my $praat = CPrAN::praat($opt);
     $praat->latest;
 
     if (defined $praat->{path}) {

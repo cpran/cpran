@@ -47,10 +47,9 @@ sub validate_args {
       die "Praat must be the only argument for processing\n";
     }
     else {
-      use CPrAN::Praat;
-      my $praat = CPrAN::Praat->new;
+      my $praat = CPrAN::praat($opt);
 
-      unless (defined $praat->{path}) {
+      unless (defined $praat->current) {
         warn "Praat is not installed. Use 'cpran install praat' to install it\n";
         exit 0;
       }

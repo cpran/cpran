@@ -69,8 +69,7 @@ sub execute {
 
   my $cmd;
   $cmd = CPrAN::Command::update->new({});
-  my $cpran = $app->execute_command($cmd, \%params, 'cpran');
-  $cpran = pop @{$cpran};
+  my @cpran = $app->execute_command($cmd, \%params, 'cpran');
 
   %params = %{$opt};
   $params{yes} = 1;
@@ -78,7 +77,7 @@ sub execute {
   $params{git} = $opt->{git} // 1;
 
   $cmd = CPrAN::Command::install->new({});
-  $app->execute_command($cmd, \%params, $cpran);
+  $app->execute_command($cmd, \%params, pop @cpran);
 }
 
 sub opt_spec {

@@ -86,6 +86,21 @@ B<CPrAN> - A package manager for Praat
   sub api_group { shift; if (@_) { $GROUP  = shift } else { return $GROUP  } }
 }
 
+# A reference to a global CPrAN::Praat instance
+{
+  my $PRAAT;
+
+  sub praat {
+    shift;
+    unless (defined $PRAAT) {
+      my $opt = shift;
+      use CPrAN::Praat;
+      $PRAAT = CPrAN::Praat->new($opt);
+    }
+    return $PRAAT;
+  }
+}
+
 sub run {
   my ($self) = @_;
 
@@ -115,6 +130,16 @@ sub run {
   # Remove duplicate arguments
   my %seen;
   @args = grep { ! $seen{$_}++ } @args;
+
+  my $praat = $self->praat($opt);
+  unless (defined $praat->current) {
+    use Data::Printer;
+    p $cmd;
+    p @args;
+    print "Praat not found. Some features will be disabled\n"
+      unless (ref($cmd) =~ /(install|remove)$/ and $args[0] eq 'praat') or $opt->{quiet};
+    $opt->{test} = 0;
+  }
 
   # Run the requested command
   $self->execute_command($cmd, $opt, @args);
@@ -147,8 +172,24 @@ sub execute_command {
     $opt->{verbose} = ++$opt->{verbose};
   }
 
+  use File::Glob ':bsd_glob';
+  $opt->{praat} = bsd_glob($opt->{praat}) if $opt->{praat};
+  $opt->{cpran} = bsd_glob($opt->{cpran}) if $opt->{cpran};
+
   $cmd->validate_args($opt, \@args);
-  $cmd->execute($opt, \@args);
+  my @result = $cmd->execute($opt, \@args);
+
+  if (ref $cmd eq 'App::Cmd::Command::version') {
+    my $praat = $self->praat($opt);
+    if (defined $praat->current) {
+      print 'Using Praat ', $praat->current, "\n";
+    }
+    else {
+      print "Praat not found on PATH\n";
+    }
+  }
+
+  return @result;
 }
 
 =head1 DESCRIPTION

@@ -294,8 +294,10 @@ sub test {
   # For more obscure cases, the --bin option exists
   my $praat = CPrAN::Praat->new($opt);
 
-  croak "$self->{name} is not installed; cannot test"
-    unless ($self->is_installed);
+  croak "Praat not installed; cannot test"
+    unless defined $praat->current;
+
+  return undef unless ($self->is_installed);
 
   use Cwd;
   my $oldwd = getcwd;

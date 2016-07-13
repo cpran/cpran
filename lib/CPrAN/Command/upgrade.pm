@@ -327,13 +327,15 @@ sub opt_spec {
 =cut
 
 sub _praat {
-  use CPrAN::Praat;
-
   my ($self, $opt) = @_;
 
   try {
-    my $praat = CPrAN::Praat->new();
-    print "Querying server for latest version...\n" unless $opt->{quiet};
+    my $praat = CPrAN->praat($opt);
+    die "Could not find $praat->{bin}"
+      unless defined $praat->current;
+
+    print "Querying server for latest version...\n"
+      unless $opt->{quiet};
 
     use Sort::Naturally;
     if (ncmp($praat->latest, $praat->current) > 0) {

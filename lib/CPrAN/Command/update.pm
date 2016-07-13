@@ -181,7 +181,7 @@ sub execute {
     $_->print('remote') foreach (@updated);
   }
 
-  return \@updated;
+  return @updated;
 }
 
 =head1 METHODS
