@@ -160,13 +160,6 @@ sub execute_command {
   $self->set_globals($cmd, $opt);
   $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
-  if ($opt->{debug}) {
-    my @c = split(/::/, ref $cmd);
-    warn "DEBUG: Running ", pop @c, "\n";
-    warn "DEBUG: Options:\n";
-    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
-  }
-
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
   # will increase verbosity.
@@ -178,6 +171,16 @@ sub execute_command {
     $opt->{verbose} = ++$opt->{verbose};
   }
 
+  if ($opt->{debug}) {
+    my @c = split(/::/, ref $cmd);
+    warn "DEBUG: Running ", pop @c, "\n";
+    warn "DEBUG: Arguments:\n";
+    warn "DEBUG:   $_\n" foreach @args;
+    warn "DEBUG:\n";
+    warn "DEBUG: Options:\n";
+    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
+    warn "DEBUG:\n";
+  }
 
   $cmd->validate_args($opt, \@args);
   my @result = $cmd->execute($opt, \@args);
