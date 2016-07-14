@@ -132,6 +132,52 @@ sub remove {
   return $removed;
 }
 
+=item B<release()>
+
+List available releases of Praat
+
+=cut
+
+sub releases {
+  my ($self, $opt) = @_;
+
+  return @{$self->{releases}} if defined $self->{releases};
+
+  use Path::Class;
+  use JSON::Tiny q(decode_json);
+
+  my @releases;
+
+  my $ua = LWP::UserAgent->new();
+  my ($next, $response);
+
+  $next = 'https://api.github.com/repos/praat/praat/releases';
+  do {
+    $response = $ua->get($next);
+    die $response->status_line unless $response->is_success;
+
+    my $tags = decode_json $response->decoded_content;
+    foreach my $tag (@{$tags}) {
+      try { $tag->{semver} = SemVer->new($tag->{tag_name}) }
+      finally {
+        push @releases , $tag unless @_;
+      };
+    };
+
+    ($next) = split /,/, $response->header('link');
+    if ($next =~ /rel="next"/) {
+      $next =~ s/.*<([^>]+)>.*/$1/;
+    }
+    else {
+      $next = undef;
+    }
+  } until !defined $next;
+
+  @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
+  $self->{releases} = \@releases;
+  return @{$self->{releases}};
+}
+
 =item B<download(VERSION)>
 
 Downloads a specific archived version of Praat, or the latest version.

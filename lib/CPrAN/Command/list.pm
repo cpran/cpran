@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Try::Tiny;
 binmode STDOUT, ':utf8';
 
 =head1 NAME
@@ -49,6 +50,15 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  if (grep { /\bpraat\b/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      return $self->_praat($opt);
+    }
+  }
+
   my $app = CPrAN->new();
   my %params = %{$opt};
 
@@ -61,6 +71,30 @@ sub opt_spec {
     [ "installed|i"   => "search on installed plugins" ],
     [ "wrap!"         => "enable / disable line wrap for result table" ],
   );
+}
+
+=item _praat()
+
+Process praat
+
+=cut
+
+sub _praat {
+  use Path::Class;
+
+  my ($self, $opt) = @_;
+
+  try {
+    my $praat = $self->{app}->praat;
+    my @releases = $praat->releases($opt);
+
+    print "$_->{semver}\n" foreach @releases;
+  }
+  catch {
+    chomp;
+    warn "$_\n";
+    die "Could not list Praat releases\n";
+  };
 }
 
 =head1 AUTHOR
