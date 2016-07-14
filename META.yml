@@ -42,6 +42,7 @@ requires:
   Params::Validate: '0'
   Path::Class: '0.35'
   Regexp::Common: '0'
+  Regexp::Common::Email::Address: '1.01'
   SemVer: '0'
   TAP::Harness::Archive: '0'
   Term::ReadKey: '0'
@@ -55,4 +56,4 @@ requires:
   overload: '0'
   strict: '0'
   warnings: '0'
-version: '0.0303'
+version: '0.0304'

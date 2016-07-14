@@ -46,6 +46,7 @@ my %WriteMakefileArgs = (
     "Params::Validate" => 0,
     "Path::Class" => "0.35",
     "Regexp::Common" => 0,
+    "Regexp::Common::Email::Address" => "1.01",
     "SemVer" => 0,
     "TAP::Harness::Archive" => 0,
     "Term::ReadKey" => 0,
@@ -64,7 +65,7 @@ my %WriteMakefileArgs = (
     "App::Cmd::Tester" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.0303",
+  "VERSION" => "0.0304",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -99,6 +100,7 @@ my %FallbackPrereqs = (
   "Params::Validate" => 0,
   "Path::Class" => "0.35",
   "Regexp::Common" => 0,
+  "Regexp::Common::Email::Address" => "1.01",
   "SemVer" => 0,
   "TAP::Harness::Archive" => 0,
   "Term::ReadKey" => 0,
