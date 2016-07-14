@@ -331,7 +331,7 @@ sub _praat {
 
   try {
     my $praat = CPrAN->praat($opt);
-    die "Could not find $praat->{bin}"
+    die "Could not find " . ( $opt->{bin} // 'praat' )
       unless defined $praat->current;
 
     print "Querying server for latest version...\n"

@@ -59,7 +59,7 @@ sub validate_args {
         print "Do you want to continue?";
       }
       if (CPrAN::yesno( $opt )) {
-        $praat->remove;
+        $praat->remove($opt);
 
         print "Done.\n" unless $opt->{quiet};
         exit 0;

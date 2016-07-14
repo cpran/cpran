@@ -68,28 +68,21 @@ sub new {
     use File::Which;
 
     if (defined $opt->{bin}) {
-      $self->{bin} = $opt->{bin};
-      $self->{path} = which($self->{bin});
+      $self->{path} = which($opt->{bin});
     }
     else {
-      $self->{bin} =
+      $self->{path} =
         which('praat.exe') ||
         which('praatcon')  ||
         which('Praat')     ||
         which('praat');
-      $self->{path} = $self->{bin};
     }
 
     $self = bless($self, $class);
 
     use Path::Class;
     if (defined $self->{path}) {
-      my @parts = file($self->{path})->components;
-      $self->{bin} = pop @parts;
-      $self->{path} = dir(@parts)->stringify;
-    }
-    else {
-      $self->{bin} = 'praat'
+      $self->{path} = file($self->{path});
     }
   }
 
@@ -126,17 +119,15 @@ Removes praat from disk
 =cut
 
 sub remove {
-  my ($self) = @_;
+  my ($self, $opt) = @_;
 
   use Path::Class;
 
-  die "Could not find path to $self->{bin}\n"
+  die "Could not find path to " . ( $opt->{bin} // 'praat' ) . "\n"
     unless defined $self->{path};
 
-  my $full = file($self->{path}, $self->{bin})->stringify;
-
-  my $removed = unlink($full)
-    or die "Could not remove $full: $!\n";
+  my $removed = unlink($self->{path})
+    or die "Could not remove $self->{path}: $!\n";
 
   return $removed;
 }
@@ -189,7 +180,7 @@ sub current {
     print $tmpin $script;
 
     use Path::Class;
-    system($self->{bin}, $tmpin);
+    system($self->{path}, $tmpin);
     $self->{current} = SemVer->new(file($tmpout)->slurp);
   }
   catch {

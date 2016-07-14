@@ -320,10 +320,10 @@ sub test {
     return undef;
   }
   elsif ($version >= 6.003) {
-    push @args, ('--exec', "$praat->{bin} --ansi --run");
+    push @args, ('--exec', "$praat->{path} --ansi --run");
   }
   else {
-    push @args, ('--exec', "$praat->{bin} --ansi");
+    push @args, ('--exec', "$praat->{path} --ansi");
   }
 
   if ($opt->{verbose} > 1) {

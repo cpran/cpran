@@ -601,10 +601,9 @@ sub _praat {
 
       use Path::Class;
       my $file = file($ae->extract_path, $ae->files->[0]);
-      my $bin = file($praat->{path}, $praat->{bin});
 
       use File::Copy;
-      File::Copy::move $file, $bin
+      File::Copy::move $file, $praat->{path}
         or die "Could not move file: $!\n";
     }
   }
