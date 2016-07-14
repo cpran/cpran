@@ -42,35 +42,6 @@ sub validate_args {
 
   $self->usage_error("Missing arguments") unless @{$args};
 
-  if (grep { /praat/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      my $praat = CPrAN::praat($opt);
-
-      unless (defined $praat->current) {
-        warn "Praat is not installed. Use 'cpran install praat' to install it\n";
-        exit 0;
-      }
-
-      unless ($opt->{quiet}) {
-        print "Praat will be permanently REMOVED:\n";
-        print "Do you want to continue?";
-      }
-      if (CPrAN::yesno( $opt )) {
-        $praat->remove($opt);
-
-        print "Done.\n" unless $opt->{quiet};
-        exit 0;
-      }
-      else {
-        print "Abort.\n" unless $opt->{quiet};
-        exit 0;
-      }
-    }
-  }
-
   my $prefix_warning = 0;
   foreach (0..$#{$args}) {
     if ($args->[$_] =~ /^plugin_/) {
@@ -93,6 +64,15 @@ sub validate_args {
 
 sub execute {
   my ($self, $opt, $args) = @_;
+
+  if (grep { /\bpraat\b/i } @{$args}) {
+    if (scalar @{$args} > 1) {
+      die "Praat must be the only argument for processing\n";
+    }
+    else {
+      return $self->_praat($opt);
+    }
+  }
 
   use Path::Class;
   use CPrAN::Plugin;
@@ -144,6 +124,33 @@ sub execute {
     else {
       print "Abort.\n" unless ($opt->{quiet});
     }
+  }
+}
+
+sub _praat {
+  my ($self, $opt) = @_;
+
+  my $praat = $self->{app}->praat;
+
+  unless (defined $praat->current) {
+    warn "Praat is not installed. Use 'cpran install praat' to install it\n";
+    return undef;
+  }
+
+  unless ($opt->{quiet}) {
+    print "Praat will be permanently REMOVED:\n";
+    print "Do you want to continue?";
+  }
+
+  if (CPrAN::yesno( $opt )) {
+    $praat->remove($opt);
+
+    print "Done.\n" unless $opt->{quiet};
+    return 1;
+  }
+  else {
+    print "Abort.\n" unless $opt->{quiet};
+    return 0;
   }
 }
 
