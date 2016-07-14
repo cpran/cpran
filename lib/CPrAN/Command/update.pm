@@ -154,10 +154,8 @@ sub execute {
 
       my $encoded = "---" . encode('utf-8', $_);
       my $plugin = Load(encode('utf-8', $encoded));
-      if ((scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}}) {
-        warn "Skipping $plugin->{Plugin}\n" if $opt->{debug};
-        next;
-      }
+
+      next if (scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}};
 
       warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
 
