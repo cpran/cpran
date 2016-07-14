@@ -91,9 +91,9 @@ B<CPrAN> - A package manager for Praat
   my $PRAAT;
 
   sub praat {
-    shift;
+    my ($self, $opt) = @_;
+
     unless (defined $PRAAT) {
-      my $opt = shift;
       use CPrAN::Praat;
       $PRAAT = CPrAN::Praat->new($opt);
     }
