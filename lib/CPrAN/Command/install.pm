@@ -61,11 +61,6 @@ sub validate_args {
   use File::Glob ':bsd_glob';
   $opt->{path} = bsd_glob($opt->{path}) if $opt->{path};
 
-  # Users might be tempted to input the names of plugin as "plugin_name", but
-  # this is not correct. The "plugin_" prefix is not part of the plugin's name,
-  # but a (clumsy) way for Praat to recognize plugin directories.
-  $args = strip_prefix($args, $opt);
-
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
@@ -478,34 +473,6 @@ sub install {
   }
   $archive->remove();
   return $retval;
-}
-
-=item B<strip_prefix()>
-
-Praat uses a rather clumsy method to identify plugins: it looks for directories
-in the preferences directory whose name begins with the strnig "plugin_".
-However, this is conceptually I<not> part of the name.
-
-Since user's might be tempted to include it in the name of the plugin, we remove
-it, and issue a warning to slowly teach them to Do The Right Thing™
-
-The method takes the reference to a list of plugin names, and returns a
-reference to the same list, without the prefix.
-
-=cut
-
-sub strip_prefix {
-  my ($args, $opt) = @_;
-
-  my $prefix_warning = 0;
-  foreach (@{$args}) {
-    $prefix_warning = 1 if (/^plugin_/);
-    s/^plugin_//;
-  };
-  warn "Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
-    if ($prefix_warning and !$opt->{quiet});
-
-  return $args;
 }
 
 sub _praat {
