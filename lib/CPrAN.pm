@@ -131,7 +131,16 @@ sub run {
   my %seen;
   @args = grep { ! $seen{$_}++ } @args;
 
-  my $praat = $self->praat($opt);
+  # Glob global optional paths
+  use File::Glob ':bsd_glob';
+  my $gopt = $self->global_options;
+  $gopt->{bin}   = bsd_glob($gopt->{bin})   if $gopt->{bin};
+  $gopt->{praat} = bsd_glob($gopt->{praat}) if $gopt->{praat};
+  $gopt->{cpran} = bsd_glob($gopt->{cpran}) if $gopt->{cpran};
+
+  # Make a global reference to Praat
+  my $praat = $self->praat($gopt);
+
   unless (defined $praat->current) {
     print "Praat not found. Some features will be disabled\n"
       unless (ref($cmd) =~ /(install|remove)$/ and $args[0] eq 'praat') or $opt->{quiet};
@@ -169,9 +178,6 @@ sub execute_command {
     $opt->{verbose} = ++$opt->{verbose};
   }
 
-  use File::Glob ':bsd_glob';
-  $opt->{praat} = bsd_glob($opt->{praat}) if $opt->{praat};
-  $opt->{cpran} = bsd_glob($opt->{cpran}) if $opt->{cpran};
 
   $cmd->validate_args($opt, \@args);
   my @result = $cmd->execute($opt, \@args);
