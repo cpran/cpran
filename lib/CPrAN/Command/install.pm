@@ -99,13 +99,12 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (grep { /praat/i } @{$args}) {
+  if (grep { /\bpraat\b/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
     }
     else {
-      $self->_praat($opt);
-      return;
+      return $self->_praat($opt);
     }
   }
 
