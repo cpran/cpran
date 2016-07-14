@@ -186,7 +186,7 @@ sub execute_command {
   my @result = $cmd->execute($opt, \@args);
 
   if (ref $cmd eq 'App::Cmd::Command::version') {
-    my $praat = $self->praat($opt);
+    my $praat = $self->praat;
     if (defined $praat->current) {
       print 'Using Praat ', $praat->current, ' (', $praat->{path}, ")\n";
     }
