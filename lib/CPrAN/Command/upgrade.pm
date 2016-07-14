@@ -204,10 +204,8 @@ sub execute {
                 ($opt->{debug}) ? $_ : '';
             };
 
-            use Sort::Naturally;
-            my @tags = split /\n/, $repo->run( 'tag', { fatal => '!0' } );
-            @tags = sort { ncmp($a, $b) } @tags;
-            my @args = ( 'checkout', '--quiet', $tags[-1] );
+            my $latest = $plugin->latest;
+            my @args = ( 'checkout', '--quiet', $latest->{commit}->{id} );
             push @args, '--force' if defined $opt->{force};
 
             try {
@@ -330,15 +328,14 @@ sub _praat {
   my ($self, $opt) = @_;
 
   try {
-    my $praat = CPrAN->praat($opt);
+    my $praat = $self->{app}->praat;
     die "Could not find " . ( $opt->{bin} // 'praat' )
       unless defined $praat->current;
 
     print "Querying server for latest version...\n"
       unless $opt->{quiet};
 
-    use Sort::Naturally;
-    if (ncmp($praat->latest, $praat->current) > 0) {
+    if ($praat->latest > $praat->current) {
       unless ($opt->{quiet}) {
         print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
         print "Do you want to continue?";

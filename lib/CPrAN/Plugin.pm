@@ -175,6 +175,22 @@ Fetches the CPrAN remote id for the plugin.
 
 sub id { return $_[0]->{id} }
 
+=item releases()
+
+Returns the list of known releases, as GitLab tag objects.
+
+=cut
+
+sub releases { return $_[0]->{releases} }
+
+=item latest()
+
+Returns the latest known release, as a GitLab tag object.
+
+=cut
+
+sub latest { return $_[0]->{releases}->[-1] }
+
 =item fetch()
 
 Fetches remote CPrAN data for the plugin.
@@ -185,7 +201,6 @@ sub fetch {
   my $self = shift;
 
   use WWW::GitLab::v3;
-  use Sort::Naturally;
   use YAML::XS;
   use Encode qw(encode decode);
 
@@ -210,21 +225,28 @@ sub fetch {
     return undef;
   }
 
+  use SemVer;
   my $tags = $api->tags( $id );
-  my @releases = grep { $_->{name} =~ /^v?\d+\.\d+\.\d+/ } @{$tags};
-  @releases = sort { ncmp($a->{name}, $b->{name}) } @releases;
+  my @releases;
+  foreach my $tag (@{$tags}) {
+    try { $tag->{semver} = SemVer->new($tag->{name}) }
+    catch { next };
+    push @releases , $tag;
+  };
+
+  @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
+  $self->{releases} = \@releases;
 
   # Ignore projects with no tags
-  unless (@releases) {
+  unless ($self->{releases}) {
     # warn "No releases for $self->{name}";
     return undef;
   }
 
-  $latest = pop @releases;
-  $latest = $latest->{commit}->{id};
+  $latest = $self->latest;
 
   $remote = encode('utf-8', $api->blob(
-    $id, $latest,
+    $id, $latest->{commit}->{id},
     { filepath => 'cpran.yaml' }
   ), Encode::FB_CROAK );
 
@@ -243,7 +265,6 @@ sub fetch {
   $self->{id}     = $id;
   $self->{url}    = $url;
   $self->{remote} = $self->_read( $remote );
-  $self->{latest} = $latest;
   $self->{cpran}  = 1;
 
   return 1;

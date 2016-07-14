@@ -55,7 +55,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use Sort::Naturally;
   use WWW::GitLab::v3;
   use CPrAN::Plugin;
   use Path::Class;
@@ -133,6 +132,7 @@ sub execute {
         unless (defined $opt->{virtual}) {
           if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
             my $out = file( $opt->{cpran} // CPrAN::cpran_root({}), $plugin->{name} );
+
             my $fh = $out->openw();
             $fh->print( $plugin->{remote}->{descriptor} );
           }
@@ -166,6 +166,7 @@ sub execute {
       }
       else {
         my $out = file( $opt->{cpran} // CPrAN::cpran_root({}), $plugin->{Plugin} );
+
         my $fh = $out->openw();
         $fh->print( $encoded );
         $fh->close;
