@@ -2,6 +2,11 @@ Revision history for CPrAN
 
 {{$NEXT}}
 
+  * Fixes:
+    * Fixed an issue with outdated API calls breaking create
+    * Improved detection of "praat-mode" for install
+    * Fixed inconsistencies in praat-modes for remove
+
 0.0304    2016-07-14 14:22:46+01:00 Europe/London
 
   * Fixes:
