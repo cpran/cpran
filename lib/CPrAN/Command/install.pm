@@ -99,13 +99,12 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (grep { /praat/i } @{$args}) {
+  if (grep { /\bpraat\b/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
     }
     else {
-      $self->_praat($opt);
-      return;
+      return $self->_praat($opt);
     }
   }
 
@@ -459,7 +458,7 @@ sub install {
     $components[0] = 'plugin_' . $plugin->{name};
 
     # We place the preferences directory at the beginning of the new path
-    unshift @components, $opt->{praat} // CPrAN->praat_prefs($opt);
+    unshift @components, $opt->{praat} // CPrAN::praat_prefs();
 
     # And make a new Path::Class object pointing to it
     my $final_path;
@@ -618,6 +617,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0304'; # VERSION
+our $VERSION = '0.0305'; # VERSION
 
 1;

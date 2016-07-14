@@ -94,7 +94,7 @@ sub execute {
     } until (! -e 'plugin_' . $name);
   }
 
-  $opt->{url}     = $opt->{url}     // 'http://cpran.net/plugins/' . $name;
+  $opt->{url} = $opt->{url} // 'http://cpran.net/plugins/' . $name;
 
   print 'Creating plugin "', $name, '"...', "\n";
   if (-e 'plugin_' . $name) {
@@ -115,7 +115,9 @@ sub execute {
 
   print 'Finding template...', "\n";
   my $cmd = CPrAN::Command::update->new({});
-  my $template = shift @{$app->execute_command($cmd, \%params, 'template')};
+  my @result = $app->execute_command($cmd, \%params, 'template');
+  my $template = shift @result;
+
 
   %params = %{$opt};
   $params{git} = 0;
@@ -130,13 +132,14 @@ sub execute {
   use File::Copy;
   my $src = dir($template->{root});
   my $tgt = dir($src->parent, 'plugin_' . $name);
+
   File::Copy::move $src, $tgt
     or die "Could not rename plugin: $!\n";
 
   my $plugin = CPrAN::Plugin->new( $name );
-  $self->write_readme( $opt, $plugin );
-  $self->write_descriptor( $opt, $plugin );
-  $self->write_setup( $opt, $plugin );
+  $self->write_readme     ($opt, $plugin);
+  $self->write_descriptor ($opt, $plugin);
+  $self->write_setup      ($opt, $plugin);
 
   print 'Plugin "', $plugin->{name}, '" succesfully created!', "\n";
 
@@ -146,8 +149,7 @@ sub execute {
 sub write_setup {
   my ($self, $opt, $plugin) = @_;
 
-  my ($sec,$min,$hour,$mday,$mon,$year) =
-    localtime(time);
+  my ($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
   $year += 1900;
 
   my $setup = file($plugin->root, 'setup.praat')->slurp;
@@ -298,6 +300,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0304'; # VERSION
+our $VERSION = '0.0305'; # VERSION
 
 1;

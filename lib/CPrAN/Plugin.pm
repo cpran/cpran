@@ -90,8 +90,9 @@ sub _init {
   # We check if it exists on disk. If it does, then we assume it is a plugin,
   # and we know it is installed.
   my $root = dir( $opt->{praat} // CPrAN::praat_prefs, 'plugin_' . $self->{name});
-  $self->{root} = $root->stringify;
-  $self->{installed} = 1 if ( -e $root );
+
+  $self->{root} = $root;
+  $self->{installed} = 1 if (-e $root);
 
   # If we don't already have one, we check for a local descriptor
   # If we find one, and the parsing process suceeds, then we know it is a CPrAN
@@ -106,7 +107,7 @@ sub _init {
   # We do the same with the remote descriptor. Anything that has a parseable
   # CPrAN descriptor is a CPrAN plugin.
   unless (defined $self->{remote}) {
-    my $remote = file( $opt->{root} // CPrAN::cpran_root({}), $self->{name});
+    my $remote = file( $opt->{root} // CPrAN::cpran_root, $self->{name});
     if (-e $remote) {
       $self->{remote} = $self->_read( $remote );
     }
@@ -495,6 +496,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0304'; # VERSION
+our $VERSION = '0.0305'; # VERSION
 
 1;

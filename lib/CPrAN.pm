@@ -54,13 +54,13 @@ B<CPrAN> - A package manager for Praat
   sub cpran_root  {
     shift;
     if (scalar @_) { $CPRANROOT = shift }
-    else { return dir(praat_prefs({}), $CPRANROOT)->stringify }
+    return dir( CPrAN::praat_prefs(), $CPRANROOT )->stringify;
   }
 
   sub praat_prefs {
     shift;
     if (scalar @_) { $PRAATPREF = shift }
-    else { return $PRAATPREF }
+    return $PRAATPREF;
   }
 }
 
@@ -395,6 +395,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0304'; # VERSION
+our $VERSION = '0.0305'; # VERSION
 
 1;
