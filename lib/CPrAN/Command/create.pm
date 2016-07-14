@@ -103,9 +103,10 @@ sub execute {
   }
 
   use Cwd;
+
   my $app = CPrAN->new();
   my $here = cwd;
-  $app->praat( $here );
+  $app->praat_prefs( $here );
 
   my %params;
   %params = %{$opt};
