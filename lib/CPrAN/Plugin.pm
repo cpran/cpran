@@ -90,8 +90,9 @@ sub _init {
   # We check if it exists on disk. If it does, then we assume it is a plugin,
   # and we know it is installed.
   my $root = dir( $opt->{praat} // CPrAN::praat_prefs, 'plugin_' . $self->{name});
-  $self->{root} = $root->stringify;
-  $self->{installed} = 1 if ( -e $root );
+
+  $self->{root} = $root;
+  $self->{installed} = 1 if (-e $root);
 
   # If we don't already have one, we check for a local descriptor
   # If we find one, and the parsing process suceeds, then we know it is a CPrAN
