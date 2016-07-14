@@ -1,6 +1,6 @@
 Revision history for CPrAN
 
-{{$NEXT}}
+0.0303    2016-07-14 13:28:49+01:00 Europe/London
 
   * New features:
     * install: special case allows for Praat installation (Experimental!)
