@@ -61,11 +61,6 @@ sub validate_args {
   use File::Glob ':bsd_glob';
   $opt->{path} = bsd_glob($opt->{path}) if $opt->{path};
 
-  # Users might be tempted to input the names of plugin as "plugin_name", but
-  # this is not correct. The "plugin_" prefix is not part of the plugin's name,
-  # but a (clumsy) way for Praat to recognize plugin directories.
-  $args = strip_prefix($args, $opt);
-
   # Git support is enabled if
   # 1. git is available
   # 2. Git::Repository is installed
@@ -182,23 +177,24 @@ sub execute {
 
           if ($opt->{git}) {
             try {
-              use Sort::Naturally;
               unless ($plugin->is_installed) {
                 print "Contacting server...\n" unless $opt->{quiet};
+
                 unless ($plugin->url) {
                   print "Querying repository URL...\n" unless $opt->{quiet};
                   $plugin->fetch
                 }
+
                 print "Cloning from ", $plugin->url, "\n";
                 Git::Repository->run( clone => $plugin->url, $plugin->root );
               }
 
               my $repo = Git::Repository->new( work_tree => $plugin->root );
-              my @tags = $repo->run( 'tag' );
-              @tags = sort { ncmp($a, $b) } @tags;
-              my $latest = pop @tags;
-              print "Checking out '$latest'\n" unless $opt->{quiet};
-              $repo->run( 'checkout', '--quiet', $latest );
+              my $latest = $plugin->latest;
+
+              print "Checking out '$latest->{name}'\n" unless $opt->{quiet};
+
+              $repo->run( 'checkout', '--quiet', $latest->{name} );
             }
             catch {
               chomp;
@@ -355,7 +351,6 @@ sub get_archive {
   my ($self, $opt, $name, $version) = @_;
 
   use WWW::GitLab::v3;
-  use Sort::Naturally;
 
   my $api = WWW::GitLab::v3->new(
     url   => $opt->{api_url}   // CPrAN::api_url({}),
@@ -367,12 +362,18 @@ sub get_archive {
   my $archive;
   try {
     my $project = shift @{$api->projects({ search => 'plugin_' . $name })};
-    my $tag;
+
     # TODO(jja) Enable installation of specific versions
     my @tags = @{$api->tags($project->{id})};
     croak "No tags for $name" unless (@tags);
-    @tags = sort { ncmp($a->{name}, $b->{name}) } @tags;
-    $tag = pop @tags;
+
+    my @releases;
+    foreach my $tag (@tags) {
+      try { $tag->{semver} = SemVer->new($tag->{name}) }
+      catch { next };
+      push @releases , $tag;
+    };
+    my $tag = pop @releases;
 
     $archive = $api->archive(
       $project->{id},
@@ -478,34 +479,6 @@ sub install {
   }
   $archive->remove();
   return $retval;
-}
-
-=item B<strip_prefix()>
-
-Praat uses a rather clumsy method to identify plugins: it looks for directories
-in the preferences directory whose name begins with the strnig "plugin_".
-However, this is conceptually I<not> part of the name.
-
-Since user's might be tempted to include it in the name of the plugin, we remove
-it, and issue a warning to slowly teach them to Do The Right Thing™
-
-The method takes the reference to a list of plugin names, and returns a
-reference to the same list, without the prefix.
-
-=cut
-
-sub strip_prefix {
-  my ($args, $opt) = @_;
-
-  my $prefix_warning = 0;
-  foreach (@{$args}) {
-    $prefix_warning = 1 if (/^plugin_/);
-    s/^plugin_//;
-  };
-  warn "Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
-    if ($prefix_warning and !$opt->{quiet});
-
-  return $args;
 }
 
 sub _praat {

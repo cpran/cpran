@@ -91,9 +91,9 @@ B<CPrAN> - A package manager for Praat
   my $PRAAT;
 
   sub praat {
-    shift;
+    my ($self, $opt) = @_;
+
     unless (defined $PRAAT) {
-      my $opt = shift;
       use CPrAN::Praat;
       $PRAAT = CPrAN::Praat->new($opt);
     }
@@ -131,7 +131,16 @@ sub run {
   my %seen;
   @args = grep { ! $seen{$_}++ } @args;
 
-  my $praat = $self->praat($opt);
+  # Glob global optional paths
+  use File::Glob ':bsd_glob';
+  my $gopt = $self->global_options;
+  $gopt->{bin}   = bsd_glob($gopt->{bin})   if $gopt->{bin};
+  $gopt->{praat} = bsd_glob($gopt->{praat}) if $gopt->{praat};
+  $gopt->{cpran} = bsd_glob($gopt->{cpran}) if $gopt->{cpran};
+
+  # Make a global reference to Praat
+  my $praat = $self->praat($gopt);
+
   unless (defined $praat->current) {
     print "Praat not found. Some features will be disabled\n"
       unless (ref($cmd) =~ /(install|remove)$/ and $args[0] eq 'praat') or $opt->{quiet};
@@ -151,13 +160,6 @@ sub execute_command {
   $self->set_globals($cmd, $opt);
   $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
 
-  if ($opt->{debug}) {
-    my @c = split(/::/, ref $cmd);
-    warn "DEBUG: Running ", pop @c, "\n";
-    warn "DEBUG: Options:\n";
-    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
-  }
-
   # A verbose level of 1 prints default messages to STDOUT. --quiet
   # sets verbosity to 0, omitting all output. Higher values of verbose
   # will increase verbosity.
@@ -169,15 +171,22 @@ sub execute_command {
     $opt->{verbose} = ++$opt->{verbose};
   }
 
-  use File::Glob ':bsd_glob';
-  $opt->{praat} = bsd_glob($opt->{praat}) if $opt->{praat};
-  $opt->{cpran} = bsd_glob($opt->{cpran}) if $opt->{cpran};
+  if ($opt->{debug}) {
+    my @c = split(/::/, ref $cmd);
+    warn "DEBUG: Running ", pop @c, "\n";
+    warn "DEBUG: Arguments:\n";
+    warn "DEBUG:   $_\n" foreach @args;
+    warn "DEBUG:\n";
+    warn "DEBUG: Options:\n";
+    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
+    warn "DEBUG:\n";
+  }
 
   $cmd->validate_args($opt, \@args);
   my @result = $cmd->execute($opt, \@args);
 
   if (ref $cmd eq 'App::Cmd::Command::version') {
-    my $praat = $self->praat($opt);
+    my $praat = $self->praat;
     if (defined $praat->current) {
       print 'Using Praat ', $praat->current, ' (', $praat->{path}, ")\n";
     }
