@@ -26,12 +26,12 @@ can_ok('CPrAN::Plugin', (
   'name',
   'id',
   'url',
+  'releases',
+  'latest',
   'is_latest',
   'test',
   'fetch',
   'print',
-  '_read',
-  '_force_lc_hash',
 ));
 
 can_ok('CPrAN::Praat', (
