@@ -459,7 +459,7 @@ sub install {
     $components[0] = 'plugin_' . $plugin->{name};
 
     # We place the preferences directory at the beginning of the new path
-    unshift @components, $opt->{praat} // CPrAN->praat_prefs($opt);
+    unshift @components, $opt->{praat} // CPrAN::praat_prefs();
 
     # And make a new Path::Class object pointing to it
     my $final_path;

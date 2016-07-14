@@ -106,7 +106,7 @@ sub _init {
   # We do the same with the remote descriptor. Anything that has a parseable
   # CPrAN descriptor is a CPrAN plugin.
   unless (defined $self->{remote}) {
-    my $remote = file( $opt->{root} // CPrAN::cpran_root({}), $self->{name});
+    my $remote = file( $opt->{root} // CPrAN::cpran_root, $self->{name});
     if (-e $remote) {
       $self->{remote} = $self->_read( $remote );
     }
