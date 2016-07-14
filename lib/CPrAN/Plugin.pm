@@ -30,6 +30,9 @@ plugins, regardless of whether they are on CPrAN or not.
 
 =cut
 
+use overload fallback => 1,
+  '""' => sub { $_[0]->{name} };
+
 sub new {
   my ($class, $in, $opt) = @_;
 
