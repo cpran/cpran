@@ -12,6 +12,7 @@ requires 'File::Glob', 1.24;
 requires 'File::Path', 2.09;
 requires 'File::Temp', 0.2304;
 requires 'File::Which', 1.21;
+requires 'FindBin', '1.51';
 requires 'Git::Repository', 1.318;
 requires 'Graph', 0.9704;
 requires 'HTML::Tree', 5.03;
