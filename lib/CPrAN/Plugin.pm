@@ -38,7 +38,6 @@ sub new {
 
   my $self = bless {}, $class;
 
-
   if (ref $in eq 'HASH') {
     # Assume we received a GitLab project hash ref as input and parse for data
     # This could not be a plugin at all!
@@ -338,17 +337,17 @@ sub test {
   my $prove = App::Prove->new;
   my @args;
 
-  my $version = $praat->{current};
+  my $version = $praat->current;
   $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   if ($version >= 6 and $version < 6.003) {
     warn "Automated tests not supported for this version of Praat\n";
     return undef;
   }
   elsif ($version >= 6.003) {
-    push @args, ('--exec', "$praat->{path} --ansi --run");
+    push @args, ('--exec', "$praat->bin --ansi --run");
   }
   else {
-    push @args, ('--exec', "$praat->{path} --ansi");
+    push @args, ('--exec', "$praat->bin --ansi");
   }
 
   if ($opt->{verbose} > 1) {
