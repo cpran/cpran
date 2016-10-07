@@ -3,6 +3,7 @@
 *.orig
 .cpran
 wiki
+local
 
 .build
 CPrAN*.tar.gz
