@@ -4,6 +4,8 @@ package CPrAN::Praat;
 use strict;
 use warnings;
 
+use Moose;
+
 use Carp;
 use Try::Tiny;
 binmode STDOUT, ':utf8';
@@ -34,76 +36,192 @@ A pseudo-class to encapsulate CPrAN's handling of Praat itself.
 
 =cut
 
-sub new {
-  my ($class, $opt) = @_;
+# Set during first call to latest
+has _package => (
+  is => 'rw',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    $self->latest;
+    return $self->_package;
+  },
+);
 
-  my $self = {
-    home    => 'http://www.fon.hum.uva.nl/praat/',
-    options => $opt // {},
-  };
+has [qw( _os _ext _bit )] => (
+  is => 'ro',
+  init_arg => undef,
+);
+
+has [qw( _options )] => (
+  is => 'ro',
+);
+
+has upstream => (
+  is => 'ro',
+  lazy => 1,
+  default => 'http://www.fon.hum.uva.nl/praat/',
+);
+
+has pref_dir => (
+  is => 'ro',
+  isa => 'Path::Class::Dir',
+  lazy => 1,
+  default => sub {
+    use Path::Class;
+
+    for ($^O) {
+      if (/darwin/) {
+        return dir '', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs';
+      }
+      elsif (/MSWin32/) {
+        return dir '', $ENV{HOMEPATH}, 'Praat';
+      }
+      else {
+        return dir '', $ENV{HOME}, '.praat-dir';
+      }
+    }
+  }
+);
+
+has bin => (
+  is => 'ro',
+  isa => 'Path::Class::File',
+  lazy => 1,
+  default => sub {
+    use Path::Class;
+    use File::Which;
+    file(which('praat')     ||
+         which('praat.exe') ||
+         which('Praat')     ||
+         which('praatcon'));
+  }
+);
+
+has current => (
+  is => 'ro',
+  lazy => 1,
+  isa => 'SemVer',
+  default => sub {
+    my ($self) = @_;
+
+    return undef unless defined $self->bin;
+
+    use SemVer;
+    use Capture::Tiny qw( capture );
+
+    use File::Temp;
+    my $script  = File::Temp->new(
+      TEMPLATE => 'pscXXXXX',
+      SUFFIX   => '.praat'
+    );
+    print $script "echo 'praatVersion\$'";
+    my ($stdout, $stderr, @result) = $self->execute($script);
+    chomp $stdout;
+
+    use Path::Class;
+    use Try::Tiny;
+
+    try {
+      SemVer->new($stdout);
+    }
+    catch {
+      die "Could not get current version of Praat: $_\n";
+    };
+  },
+);
+
+has latest => (
+  is => 'ro',
+  lazy => 1,
+  isa => 'SemVer',
+  default => sub {
+    my ($self) = @_;
+
+    use HTML::Tree;
+    use LWP::UserAgent;
+    use SemVer;
+
+    my $tree     = HTML::Tree->new;
+    my $ua       = LWP::UserAgent->new;
+    my $pkgregex = qr/^praat(?'version'[0-9]{4})_$self->{os}$self->{bit}$self->{ext}/;
+
+    my $response = $ua->get(
+      $self->upstream . 'download_' . $self->{_os} . '.html'
+    );
+
+    if ($response->is_success) {
+      $tree->parse( $response->decoded_content );
+      $tree->elementify;
+      my $pkglink = $tree->look_down(
+        '_tag', 'a',
+        sub { $_[0]->as_text =~ /$pkgregex/; }
+      );
+
+      $self->package($pkglink->as_trimmed_text);
+
+      if ($self->package =~ /$pkgregex/) {
+        my $v = $+{version};
+        $v =~ s/(\d)(\d{2})$/.$1.$2/;
+        return SemVer->new($v);
+      }
+    }
+    else {
+      die $response->status_line;
+    }
+  },
+);
+
+sub BUILDARGS {
+  my $class = shift;
+  my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
   for ($^O) {
     if (/darwin/) {
-      $self->{os}  = "mac";
-      $self->{ext} = "\.dmg";
+      $args->{_os}  = "mac";
+      $args->{_ext} = "\.dmg";
     }
     elsif (/MSWin32/) {
-      $self->{os}  = "win";
-      $self->{ext} = "\.zip";
+      $args->{_os}  = "win";
+      $args->{_ext} = "\.zip";
       if (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ and
           uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) {
-        $self->{bit} = 64;
+        $args->{_bit} = 64;
       }
       else {
-        $self->{bit} = 32;
+        $args->{_bit} = 32;
       }
     }
     else {
-      $self->{os}  = "linux";
-      $self->{ext} = "\.tar\.gz";
+      $args->{_os}  = "linux";
+      $args->{_ext} = "\.tar\.gz";
     }
   }
 
-  {
-    use File::Which;
-
-    if (defined $opt->{bin}) {
-      $self->{path} = which($opt->{bin});
-    }
-    else {
-      $self->{path} =
-        which('praat.exe') ||
-        which('praatcon')  ||
-        which('Praat')     ||
-        which('praat');
-    }
-
-    $self = bless($self, $class);
-
-    use Path::Class;
-    if (defined $self->{path}) {
-      $self->{path} = file($self->{path});
-    }
-  }
-
-  $self->current;
-
-  if (!defined $self->{bit}) {
+  unless (defined $args->{_bit}) {
     try {
       my $cmd = 'uname -a';
       open CMD, "$cmd 2>&1 |"
         or die ("Could not execute $cmd: $!");
       chomp(my $uname = <CMD>);
-      $self->{bit} = ($uname =~ /\bx86_64\b/) ? 64 : 32;
+      if ($uname =~ /\bx86_64\b/) {
+        $args->{_bit} = 64;
+      }
+      else {
+        $args->{_bit} = 32;
+      }
     }
     catch {
       warn "Could not determine system bitness. Defaulting to 32bit\n";
-      $self->{bit} = 32;
+      $args->{_bit} = 32;
     };
   }
 
-  return $self;
+  return $args;
+}
 
+sub BUILD {
+  $_[0]->current;
 }
 
 =head1 METHODS
@@ -123,11 +241,11 @@ sub remove {
 
   use Path::Class;
 
-  die "Could not find path to " . ( $opt->{bin} // 'praat' ) . "\n"
-    unless defined $self->{path};
+  (defined $self->bin)
+    or die sprintf("Could not find path to %s\n", $self->bin->basename);
 
-  my $removed = unlink($self->{path})
-    or die "Could not remove $self->{path}: $!\n";
+  my $removed = $self->bin->remove
+    or warn sprintf("Could not remove %s: %s\n", $self->bin, $!);
 
   return $removed;
 }
@@ -185,96 +303,46 @@ Downloads a specific archived version of Praat, or the latest version.
 =cut
 
 sub download {
-  my ($self, $version) = @_;
+  my $self = shift;
+  my $version = shift // $self->latest;
 
-  $version = $version // $self->latest;
-  my $opt = $self->{options};
+  my $opt = $self->_options;
   $opt->{quiet} = $opt->{quiet} // 0;
 
   use LWP::UserAgent;
-  my $ua = LWP::UserAgent->new();
+  my $ua = LWP::UserAgent->new;
   $ua->show_progress( 1 - $opt->{quiet} );
 
-  my $response = $ua->get( $self->{home} . $self->{package} );
+  my $response = $ua->get( $self->upstream . $self->_package );
   if ($response->is_success) {
     return $response->decoded_content;
   }
   else {
     die $response->status_line;
   }
-
 }
 
-=item B<current()>
+=item B<execute(SCRIPT)>
 
-Gets the current version of Praat
+Reads instructions from file and executes them with Praat.
 
 =cut
 
-sub current {
-  my ($self) = @_;
+sub execute {
+  my ($self, $script, @args) = @_;
 
-  return undef unless defined $self->{path};
-  return $self->{current} if defined $self->{current};
-
-  use SemVer;
-  try {
-    my $tmpin  = File::Temp->new(TEMPLATE => 'pscXXXXX',  SUFFIX => '.praat' );
-    my $tmpout = File::Temp->new(TEMPLATE => 'praat_versionXXXXX' );
-
-    my $script = "praatVersion\$ > $tmpout";
-    print $tmpin $script;
-
-    use Path::Class;
-    system($self->{path}, $tmpin);
-    $self->{current} = SemVer->new(file($tmpout)->slurp);
-  }
-  catch {
-    die "Could not get current version of Praat: $_\n";
-  };
-
-  return $self->{current};
-}
-
-=item B<latest()>
-
-Gets the latest version of Praat
-
-=cut
-
-sub latest {
-  my ($self) = @_;
-
-  return $self->{latest} if defined $self->{latest};
-
-  use HTML::Tree;
-  use LWP::UserAgent;
-  use SemVer;
-
-  my $tree    = HTML::Tree->new();
-  my $ua      = LWP::UserAgent->new;
-  my $package = qr/^praat(?'version'[0-9]{4})_$self->{os}$self->{bit}$self->{ext}/;
-
-  my $response = $ua->get( $self->{home} . "download_$self->{os}.html" );
-  if ($response->is_success) {
-    $tree->parse( $response->decoded_content );
-    $tree->elementify;
-    my $pkglink = $tree->look_down(
-      '_tag', 'a',
-      sub { $_[0]->as_text =~ /$package/; }
+  use Capture::Tiny qw( capture );
+  return capture {
+    local $ENV{PATH} = '';
+    system(
+      $self->bin,
+      '--pref-dir=' . $self->pref_dir,
+      '--ansi',
+      '--run',
+      $script,
+      @args
     );
-    $self->{'package'} = $pkglink->as_trimmed_text;
-    if ($self->{package} =~ /$package/) {
-      $self->{latest} = $+{version};
-      $self->{latest} =~ s/(\d)(\d{2})$/.$1.$2/;
-      $self->{latest} = SemVer->new($self->{latest});
-    }
-  }
-  else {
-    die $response->status_line;
-  }
-
-  return $self->{latest};
+  };
 }
 
 =back

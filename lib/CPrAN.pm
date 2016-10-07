@@ -188,7 +188,7 @@ sub execute_command {
   if (ref $cmd eq 'App::Cmd::Command::version') {
     my $praat = $self->praat;
     if (defined $praat->current) {
-      print 'Using Praat ', $praat->current, ' (', $praat->{path}, ")\n";
+      print 'Using Praat ', $praat->current, ' (', $praat->bin, ")\n";
     }
     else {
       print "Praat not found on PATH\n";
