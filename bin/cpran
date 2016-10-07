@@ -3,6 +3,11 @@
 
 our $VERSION = '0.0305'; # VERSION
 
+use FindBin;
+BEGIN {
+  unshift @INC, "$FindBin::Bin/../lib";
+}
+
 use CPrAN;
 CPrAN->run;
 
