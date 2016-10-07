@@ -28,9 +28,15 @@ requires 'Regexp::Common::Email::Address', 1.01;
 requires 'SemVer', '0.6.0';
 requires 'TAP::Harness::Archive', 0.18;
 requires 'Term::ReadKey', 2.33;
-requires 'Test::More', 1.302052;
 requires 'Text::FormatTable', 1.03;
 requires 'Text::Template', 1.46;
 requires 'Try::Tiny', 0.24;
 requires 'URI', 1.71;
 requires 'YAML::XS', 0.62;
+
+on 'test' => sub {
+  requires 'Test::More', 1.302052;
+};
+
+recommends 'Data::Dumper', 2.158;
+recommends 'Term::ReadKey', 2.33;
