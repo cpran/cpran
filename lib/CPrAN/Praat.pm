@@ -1,14 +1,14 @@
 package CPrAN::Praat;
 # ABSTRACT: A Praat pseudo-class for CPrAN
 
-use strict;
-use warnings;
+# use uni::perl;
 
 use Moose;
+use MooseX::Types::Path::Class;
+use CPrAN::Types;
 
 use Carp;
 use Try::Tiny;
-binmode STDOUT, ':utf8';
 
 =head1 NAME
 
@@ -42,18 +42,12 @@ has _package => (
   init_arg => undef,
   lazy => 1,
   default => sub {
-    my $self = shift;
-    $self->latest;
-    return $self->_package;
+    $_[0]->latest;
+    return $_[0]->_package;
   },
 );
 
 has [qw( _os _ext _bit )] => (
-  is => 'ro',
-  init_arg => undef,
-);
-
-has [qw( _options )] => (
   is => 'ro',
 );
 
@@ -67,27 +61,15 @@ has pref_dir => (
   is => 'ro',
   isa => 'Path::Class::Dir',
   lazy => 1,
-  default => sub {
-    use Path::Class;
-
-    for ($^O) {
-      if (/darwin/) {
-        return dir '', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs';
-      }
-      elsif (/MSWin32/) {
-        return dir '', $ENV{HOMEPATH}, 'Praat';
-      }
-      else {
-        return dir '', $ENV{HOME}, '.praat-dir';
-      }
-    }
-  }
+  coerce => 1,
+  builder => '_default_pref_dir',
 );
 
 has bin => (
   is => 'ro',
   isa => 'Path::Class::File',
   lazy => 1,
+  coerce => 1,
   default => sub {
     use Path::Class;
     use File::Which;
@@ -95,81 +77,34 @@ has bin => (
          which('praat.exe') ||
          which('Praat')     ||
          which('praatcon'));
-  }
+  },
 );
+around bin => sub {
+  my ($orig, $self, $path) = @_;
+  use File::Glob ':bsd_glob';
+
+  if (defined $path) {
+    return $self->$orig(bsd_glob($path));
+  }
+  else {
+    return $self->$orig;
+  }
+};
 
 has current => (
   is => 'ro',
+  init_arg => undef,
   lazy => 1,
   isa => 'SemVer',
-  default => sub {
-    my ($self) = @_;
-
-    return undef unless defined $self->bin;
-
-    use SemVer;
-    use Capture::Tiny qw( capture );
-
-    use File::Temp;
-    my $script  = File::Temp->new(
-      TEMPLATE => 'pscXXXXX',
-      SUFFIX   => '.praat'
-    );
-    print $script "echo 'praatVersion\$'";
-    my ($stdout, $stderr, @result) = $self->execute($script);
-    chomp $stdout;
-
-    use Path::Class;
-    use Try::Tiny;
-
-    try {
-      SemVer->new($stdout);
-    }
-    catch {
-      die "Could not get current version of Praat: $_\n";
-    };
-  },
+  builder => '_get_current'
 );
 
 has latest => (
   is => 'ro',
+  init_arg => undef,
   lazy => 1,
   isa => 'SemVer',
-  default => sub {
-    my ($self) = @_;
-
-    use HTML::Tree;
-    use LWP::UserAgent;
-    use SemVer;
-
-    my $tree     = HTML::Tree->new;
-    my $ua       = LWP::UserAgent->new;
-    my $pkgregex = qr/^praat(?'version'[0-9]{4})_$self->{os}$self->{bit}$self->{ext}/;
-
-    my $response = $ua->get(
-      $self->upstream . 'download_' . $self->{_os} . '.html'
-    );
-
-    if ($response->is_success) {
-      $tree->parse( $response->decoded_content );
-      $tree->elementify;
-      my $pkglink = $tree->look_down(
-        '_tag', 'a',
-        sub { $_[0]->as_text =~ /$pkgregex/; }
-      );
-
-      $self->package($pkglink->as_trimmed_text);
-
-      if ($self->package =~ /$pkgregex/) {
-        my $v = $+{version};
-        $v =~ s/(\d)(\d{2})$/.$1.$2/;
-        return SemVer->new($v);
-      }
-    }
-    else {
-      die $response->status_line;
-    }
-  },
+  builder => '_get_latest',
 );
 
 sub BUILDARGS {
@@ -184,7 +119,11 @@ sub BUILDARGS {
     elsif (/MSWin32/) {
       $args->{_os}  = "win";
       $args->{_ext} = "\.zip";
-      if (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ and
+
+      $ENV{PROCESSOR_ARCHITECTURE} //= '';
+      $ENV{PROCESSOR_ARCHITEW6432} //= '';
+
+      if (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ or
           uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) {
         $args->{_bit} = 64;
       }
@@ -217,11 +156,12 @@ sub BUILDARGS {
     };
   }
 
-  return $args;
-}
+  use File::Glob qw( :bsd_glob );
+  foreach (qw( bin pref_dir )) {
+    $args->{$_} = bsd_glob($args->{$_}) if defined $args->{$_};
+  }
 
-sub BUILD {
-  $_[0]->current;
+  return $args;
 }
 
 =head1 METHODS
@@ -270,7 +210,9 @@ sub releases {
   my ($next, $response);
 
   $next = 'https://api.github.com/repos/praat/praat/releases';
-  do {
+  # Repeat block is commented out to prevent
+  # busting through the API request limit
+  # do {
     $response = $ua->get($next);
     die $response->status_line unless $response->is_success;
 
@@ -289,7 +231,7 @@ sub releases {
     else {
       $next = undef;
     }
-  } until !defined $next;
+  # } until !defined $next;
 
   @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
   $self->{releases} = \@releases;
@@ -303,11 +245,11 @@ Downloads a specific archived version of Praat, or the latest version.
 =cut
 
 sub download {
-  my $self = shift;
+  my $self    = shift;
+  my $opt     = (ref $_[-1] eq 'HASH') ? pop @_ : {};
   my $version = shift // $self->latest;
 
-  my $opt = $self->_options;
-  $opt->{quiet} = $opt->{quiet} // 0;
+  $opt->{quiet} //= 0;
 
   use LWP::UserAgent;
   my $ua = LWP::UserAgent->new;
@@ -331,19 +273,113 @@ Reads instructions from file and executes them with Praat.
 sub execute {
   my ($self, $script, @args) = @_;
 
+  return undef unless defined $script;
+
+  my @opts = (ref $args[-1] eq 'ARRAY') ? @{pop @args} : (
+    '--pref-dir=' . $self->pref_dir,
+    '--ansi',
+    '--run'
+  );
+
   use Capture::Tiny qw( capture );
   return capture {
     local $ENV{PATH} = '';
     system(
       $self->bin,
-      '--pref-dir=' . $self->pref_dir,
-      '--ansi',
-      '--run',
+      @opts,
       $script,
       @args
     );
   };
 }
+
+sub _get_latest {
+  my ($self) = @_;
+
+  use HTML::Tree;
+  use LWP::UserAgent;
+  use SemVer;
+
+  my $tree = HTML::Tree->new;
+  my $ua   = LWP::UserAgent->new;
+
+  my ($os, $bit, $ext) = ($self->_os, $self->_bit, $self->_ext);
+  my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${ext}/;
+
+  my $response = $ua->get(
+    $self->upstream . 'download_' . $self->{_os} . '.html'
+  );
+
+  if ($response->is_success) {
+    $tree->parse( $response->decoded_content );
+    $tree->elementify;
+    my $pkglink = $tree->look_down(
+      '_tag', 'a',
+      sub { $_[0]->as_text =~ /$pkgregex/; }
+    );
+
+    if (defined $pkglink) {
+      $self->_package($pkglink->as_trimmed_text);
+
+      $pkglink->as_trimmed_text =~ /$pkgregex/;
+      my $v = $+{version};
+      $v =~ s/(\d)(\d{2})$/.$1.$2/;
+      return SemVer->new($v);
+    }
+    else {
+      croak 'Did not find Praat package link';
+    }
+  }
+  else {
+    croak $response->status_line;
+  }
+}
+
+sub _default_pref_dir {
+  use Path::Class;
+
+  for ($^O) {
+    if (/darwin/) {
+      return dir $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs';
+    }
+    elsif (/MSWin32/) {
+      return dir $ENV{HOMEPATH}, 'Praat';
+    }
+    else {
+      return dir $ENV{HOME}, '.praat-dir';
+    }
+  }
+}
+
+sub _get_current {
+  my ($self) = @_;
+
+  return undef unless defined $self->bin;
+
+  use SemVer;
+  use Capture::Tiny qw( capture );
+
+  use File::Temp;
+  my $script  = File::Temp->new(
+    TEMPLATE => 'pscXXXXX',
+    SUFFIX   => '.praat'
+  );
+  print $script "echo 'praatVersion\$'";
+  # Use no command-line options to check for current version of
+  # Praat, since pre-6.0 versions had different ones.
+  my ($stdout, $stderr, @result) = $self->execute($script, []);
+  chomp $stdout;
+
+  use Path::Class;
+  use Try::Tiny;
+
+  try {
+    SemVer->new($stdout);
+  }
+  catch {
+    die "Could not get current version of Praat: $_\n";
+  };
+};
 
 =back
 
