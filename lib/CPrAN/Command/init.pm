@@ -1,14 +1,49 @@
 package CPrAN::Command::init;
-# ABSTRACT: Initialise a CPrAN installation
+# ABSTRACT: initialise a CPrAN installation
 
-use CPrAN -command;
+use Moose;
+use uni::perl;
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
 use Carp;
 use Path::Class;
-binmode STDOUT, ':utf8';
+
+has git => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  documentation => 'request / disable git support',
+  default => 1,
+);
+
+has test => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 1,
+  documentation => 'request / disable tests',
+);
+
+has log => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 1,
+  documentation => 'request / disable log of tests',
+);
+
+has force => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 0,
+  documentation => 'ignore failing tests',
+);
 
 =head1 NAME
 
@@ -34,15 +69,6 @@ in all CPrAN installations.
 This command installs the [cpran plugin][] on an otherwise empty system.
 
 =cut
-
-sub description {
-  return "Perform the initial setup for CPrAN, to install it as a Praat plugin";
-}
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-
-}
 
 =head1 EXAMPLES
 
@@ -80,12 +106,6 @@ sub execute {
   $app->execute_command($cmd, \%params, pop @cpran);
 }
 
-sub opt_spec {
-  return (
-    [ "git|g!"  => "request / disable git support" ],
-    [ "test|T!" => "enable / disable tests while installing" ],
-  );
-}
 
 =head1 AUTHOR
 

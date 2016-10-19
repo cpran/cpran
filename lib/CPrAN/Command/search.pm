@@ -1,14 +1,81 @@
 package CPrAN::Command::search;
 # ABSTRACT: search among available CPrAN plugins
 
-use CPrAN -command;
+use Moose;
+use uni::perl;
 
-use strict;
-use warnings;
+with 'MooseX::Getopt';
+
+extends qw( MooseX::App::Cmd::Command );
 
 use Carp;
 use Try::Tiny;
-binmode STDOUT, ':utf8';
+
+has installed => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in installed plugins',
+  cmd_aliases => 'i',
+);
+
+has wrap => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'wrap output table when printing',
+  lazy => 1,
+  default => 1,
+  cmd_aliases => 'w',
+);
+
+has in_name => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in name of plugin',
+  cmd_aliases => 'N',
+);
+
+has in_description => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in description of plugin',
+  cmd_aliases => 'D',
+);
+
+has in_short => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in short description of plugin',
+  cmd_aliases => 'S',
+);
+
+has in_long => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in long description of plugin',
+  cmd_aliases => 'L',
+);
+
+has in_author => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in name of plugin\'s author',
+  cmd_aliases => 'A',
+);
+
+has invert => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'perform a negative search',
+  cmd_aliases => 'x',
+);
 
 =encoding utf8
 
@@ -26,41 +93,21 @@ Searches both the local and remote catalogs of CPrAN plugins.
 
 =cut
 
-sub description {
-  return "Perform searches among CPrAN plugins";
-}
-
 =pod
 
-The argument to B<search> must be a single regular expression. Currently,
-B<search> tries to match it on the plugni's name, and returns a list of all
-those who do.
+The argument to B<search> must be a series of regular expression patterns. The
+patterns are matched sequentially, such that the second pattern is only tried
+on the matches of the first pattern, and so on. Results show the entries that
+matched all provided patterns.
+
+By default, the patterns are checked against the plugin name, description (both
+short and long, if provided) and the author's name, although these fields can
+be turned on or off for finer control.
 
 When executed directly, it will print information on the matched plugins,
-including their name, version, and a short description. If searching the locally
-installed plugins, both the local and the remote versions will be displayed.
+including their name, local and remote versions, and a short description.
 
 =cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-
-  unless (@{$args}) {
-    if (-t) {
-      $self->usage_error("Must provide at least one search term");
-    }
-    else {
-      exit;
-    }
-  }
-
-  # Search by default in all fields
-  # If any fields are specified, then search in those
-  if (!(defined $opt->{name} || defined $opt->{description})) {
-    $opt->{name} = 1;
-    $opt->{description} = 1;
-  }
-}
 
 =head1 EXAMPLES
 
@@ -77,59 +124,55 @@ sub execute {
   use CPrAN::Plugin;
   use Text::FormatTable;
 
-  my @plugins;
-  my @names = $self->installed($opt);
-
-  if (defined $opt->{installed}) {
-    warn "DEBUG: " . scalar @names . " installed plugins: ",
-      join(', ', map { $_->{name} } @plugins), "\n" if $opt->{debug};
-  }
-  else {
-    @names = (@names, $self->known($opt));
-  }
-
   my %names;
-  $names{$_} = 1 foreach @names;
-  @plugins = map { CPrAN::Plugin->new($_) } keys %names;
-
-  warn "DEBUG: " . scalar @plugins . " known plugins\n"
-    if (!defined $opt->{installed} && $opt->{debug});
-
-  @plugins = sort { "\L$a->{name}" cmp "\L$b->{name}" } @plugins;
-
-  my %list;
-  $list{$_->{name}} = $_ foreach @plugins;
-  foreach my $query (@{$args}) {
-    foreach my $name (keys %list) {
-      unless ($self->_match($opt, $list{$name}, $query)) {
-        delete $list{$name};
-      }
+  if (defined $self->installed) {
+    if ($self->installed) {
+      # User specified installed
+      $names{$_} = 1 foreach $self->list_installed;
+    }
+    else {
+      # User specified not installed
+      $names{$_} = 1 foreach $self->list_known;
+      delete $names{$_} foreach $self->list_installed;
     }
   }
+  else {
+    # User did not specify
+    $names{$_} = 1 foreach $self->list_known;
+    $names{$_} = 1 foreach $self->list_installed;
+  }
 
-  my @found = map { $list{$_} } sort keys %list;
+  my @found = grep {
+    my $plugin = $_;
+    my $match = 0;
+    $match = $self->_match($plugin, $_) foreach @{$args};
+    $match = 1 - $match if $self->invert;
+    $match;
+  } sort {
+    "\L$a->{name}" cmp "\L$b->{name}"
+  } map {
+    CPrAN::Plugin->new( name => $_, cpran => $self->app )
+  } keys %names;
 
-  unless ($opt->{quiet}) {
+  unless ($self->app->quiet) {
     $self->{output} = Text::FormatTable->new('l l l l');
     $self->{output}->head(
       "Name", "Local", "Remote", "Description"
     );
 
-    $self->_add_output_row($opt, $list{$_}) foreach sort keys %list;
+    $self->_add_output_row($_) foreach @found;
 
     if (@found) {
       use Term::ReadKey;
-      my ($wchar);
-      try {
-        ($wchar) = GetTerminalSize();
+      my ($wchar) = try {
+        GetTerminalSize();
       }
       catch {
-        $wchar = 80;
         warn "DEBUG: Unable to get terminal size: $_\n"
-          if $opt->{debug};
+          if $self->debug;
+        80;
       };
-      my $width = (!defined $opt->{wrap} or $opt->{wrap}) ? $wchar : 1000;
-      print $self->{output}->render($width);
+      print $self->{output}->render($self->wrap ? $wchar : 1000);
     }
     else { print "No matches found\n" }
   }
@@ -166,14 +209,14 @@ Print debug messages.
 
 =cut
 
-sub opt_spec {
-  return (
-    [ "name|n"        => "search in plugin name" ],
-    [ "description|d" => "search in plugin description" ],
-    [ "installed|i"   => "search on installed plugins" ],
-    [ "wrap!"         => "enable / disable line wrap for result table" ],
-  );
-}
+# sub opt_spec {
+#   return (
+#     [ "name|n"        => "search in plugin name" ],
+#     [ "description|d" => "search in plugin description" ],
+#     [ "installed|i"   => "search on installed plugins" ],
+#     [ "wrap!"         => "enable / disable line wrap for result table" ],
+#   );
+# }
 
 =head1 METHODS
 
@@ -182,45 +225,38 @@ sub opt_spec {
 =cut
 
 
-=item installed()
+=item list_installed()
 
 Returns a list of all installed Praat plugins. See I<is_plugin()> for the
 criteria they need to fulfill.
 
-    my @installed = installed();
+    my @installed = list_installed();
     print "$_\n" foreach (@installed);
 
 =cut
 
-sub installed {
-  use Path::Class;
-
-  my ($self, $opt) = @_;
-
-  my @files = grep {
-    ($_->is_dir && $_->basename =~ /^plugin_[\w\d_-]+/)
-  } dir( $opt->{praat} // CPrAN::praat_prefs($opt) )->children;
+sub list_installed {
+  my ($self) = @_;
 
   return map {
     $1 if $_->basename =~ /^plugin_([\w\d_-]+)/;
-  } @files;
+  } grep {
+    ($_->is_dir && $_->basename =~ /^plugin_[\w\d_-]+/)
+  } $self->app->praat->pref_dir->children;
 }
 
-=item known()
+=item list_known()
 
 Returns a list of all plugins known by B<CPrAN>. In practice, this is the list
 of plugins whose descriptors have been saved by C<cpran update>
 
-    my @known = known();
+    my @known = list_known();
     print "$_\n" foreach (@known);
 
 =cut
 
-sub known {
-  my ($self, $opt) = @_;
-
-  use Path::Class;
-  return map { $_->basename } dir( $opt->{root} // CPrAN::cpran_root({}) )->children;
+sub list_known {
+  return map { $_->basename } $_[0]->app->root->children;
 }
 
 =item B<_match()>
@@ -230,24 +266,43 @@ Performs the search agains the specified fields of the plugin.
 =cut
 
 sub _match {
-  my ($self, $opt, $plugin, $search) = @_;
+  my ($self, $plugin, $search) = @_;
 
-  if (defined $opt->{name}) {
-    return 1 if ($plugin->{name} =~ /$search/i);
+  if (!defined $self->in_name or $self->in_name) {
+    return 1 if ($plugin->name =~ /$search/i);
   }
 
-  if (defined $opt->{description} && $plugin->{cpran}) {
-    if (defined $plugin->{'remote'}) {
-      return 1 if ($plugin->{'remote'}->{description}->{long} =~ /$search/i);
-      return 1 if ($plugin->{'remote'}->{description}->{short} =~ /$search/i);
-    }
-    if (defined $plugin->{'local'}) {
-      return 1 if ($plugin->{'local'}->{description}->{long} =~ /$search/i);
-      return 1 if ($plugin->{'local'}->{description}->{short} =~ /$search/i);
+  if (!defined $self->in_author or $self->in_author) {
+    return 1 if defined $plugin->_remote
+      and $plugin->_remote->{maintainer} =~ /$search/i;
+
+    return 1 if defined $plugin->_local
+      and $plugin->_local->{maintainer} =~ /$search/i;
+  }
+
+  if ($plugin->is_cpran) {
+    if (!defined $self->in_description or $self->in_description) {
+      if (defined $plugin->_remote) {
+        return 1 if !defined $self->in_short or $self->in_short
+          and $plugin->_remote->{description}->{short}  =~ /$search/i;
+
+        return 1 if !defined $self->in_long or $self->in_long
+          and $plugin->_remote->{description}->{long} =~ /$search/i;
+      }
+
+      if (defined $plugin->_local) {
+        return 1 if !defined $self->in_short or $self->in_short
+          and $plugin->_local->{description}->{short}  =~ /$search/i;
+
+        return 1 if !defined $self->in_long or $self->in_long
+          and $plugin->_local->{description}->{long} =~ /$search/i;
+      }
     }
   }
+
   return 0;
 }
+
 
 =item B<_add_output_row()>
 
@@ -275,7 +330,7 @@ returned list will have both the local and the remote versions.
 =cut
 
 sub _make_output_row {
-  my ($self, $opt, $plugin) = @_;
+  my ($self, $plugin) = @_;
 
   use YAML::XS;
 
@@ -284,12 +339,12 @@ sub _make_output_row {
 
   if ($plugin->is_cpran) {
     if ($plugin->is_installed) {
-      $local = $plugin->{'local'}->{version};
-      $description = $plugin->{'local'}->{description}->{short};
+      $local = $plugin->_local->{version};
+      $description = $plugin->_local->{description}->{short};
     }
-    if (defined $plugin->{remote}) {
-      $remote = $plugin->{'remote'}->{version};
-      $description = $plugin->{'remote'}->{description}->{short};
+    if (defined $plugin->_remote) {
+      $remote = $plugin->_remote->{version};
+      $description = $plugin->_remote->{description}->{short};
     }
   }
   else {

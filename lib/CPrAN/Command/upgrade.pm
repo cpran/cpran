@@ -1,16 +1,53 @@
 package CPrAN::Command::upgrade;
-# ABSTRACT: upgrade installed plugin to its latest version
+# ABSTRACT: upgrade plugins to their latest version
 
-use CPrAN -command;
+use Moose;
+use uni::perl;
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
+
+with 'MooseX::Getopt';
 
 use Carp;
 use Try::Tiny;
 use Capture::Tiny 'capture';
 use File::Which;
-binmode STDOUT, ':utf8';
+
+has git => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  documentation => 'request / disable git support',
+  default => 1,
+);
+
+has test => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 1,
+  documentation => 'request / disable tests',
+);
+
+has log => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 1,
+  documentation => 'request / disable log of tests',
+);
+
+has force => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 0,
+  documentation => 'ignore failing tests',
+);
 
 =head1 NAME
 
@@ -27,10 +64,6 @@ cpran upgrade [options] [arguments]
 Upgrades the specified CPrAN plugins to their latest known versions.
 
 =cut
-
-sub description {
-  return "Upgrade installed plugins to their latest versions";
-}
 
 =pod
 
@@ -309,14 +342,6 @@ but will disregard those that fail.
 =back
 
 =cut
-
-sub opt_spec {
-  return (
-    [ "git|g!"  => "request / disable git support" ],
-    [ "force|F" => "disregard common problems"     ],
-    [ "test|T!" => "request / disable tests"       ],
-  );
-}
 
 =head1 METHODS
 

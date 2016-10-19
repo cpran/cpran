@@ -1,14 +1,23 @@
 package CPrAN::Command::test;
-# ABSTRACT: run tests for the given plugin
+# ABSTRACT: run tests for the given plugins
 
-use CPrAN -command;
+use Moose;
+use uni::perl;
+
+extends qw( MooseX::App::Cmd::Command );
+
+with 'MooseX::Getopt';
+
 use Carp;
 use Try::Tiny;
 
-use strict;
-use warnings;
-
-binmode STDOUT, ':utf8';
+has log => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'enable / disable test logs',
+  cmd_aliases => 'l',
+);
 
 =head1 NAME
 
@@ -29,16 +38,6 @@ will only report success if all tests for all given plugins were successful.
 
 =cut
 
-sub description {
-  return "Run tests for a single plugin";
-}
-
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-  $opt->{log} = 1 unless defined $opt->{log};
-}
-
 =head1 EXAMPLES
 
     # Run tests for the specified plugin
@@ -52,7 +51,9 @@ sub execute {
   use CPrAN::Plugin;
 
   my $outcome = 1;
-  my @plugins = map { CPrAN::Plugin->new( $_ ) } @{$args};
+  my @plugins = map {
+    CPrAN::Plugin->new( name => $_, cpran => $self->app ) unless ref $_
+  } @{$args};
 
   try {
     foreach my $plugin (@plugins) {
@@ -65,13 +66,8 @@ sub execute {
     chomp;
     die "There were errors while testing:\n$_\n";
   };
-  return $outcome;
-}
 
-sub opt_spec {
-  return (
-    [ "log|l!" => "enable / disable test logs" ],
-  );
+  return $outcome;
 }
 
 =head1 AUTHOR

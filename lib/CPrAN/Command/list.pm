@@ -1,76 +1,57 @@
 package CPrAN::Command::list;
 # ABSTRACT: list all available plugins
 
-use CPrAN -command;
+use Moose;
+use uni::perl;
 
-use strict;
-use warnings;
+with 'MooseX::Getopt';
+
+extends qw( MooseX::App::Cmd::Command );
 
 use Carp;
 use Try::Tiny;
-binmode STDOUT, ':utf8';
 
-=head1 NAME
+has installed => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in installed plugins',
+  cmd_aliases => 'i',
+);
 
-=encoding utf8
-
-B<list> - List all known CPrAN plugins
-
-=head1 SYNOPSIS
-
-cpran list [options]
-
-=head1 DESCRIPTION
-
-List plugins available through the CPrAN catalog.
-
-=cut
-
-sub description {
-  return "List plugins available through the CPrAN catalog";
-}
-
-=pod
-
-B<list> will show a list of all plugins available to CPrAN.
-
-=cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-}
-
-=head1 EXAMPLES
-
-    # Show all available plugins
-    cpran list
-
-=cut
+has wrap => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'wrap output table when printing',
+  lazy => 1,
+  default => 1,
+  cmd_aliases => 'w',
+);
 
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (grep { /\bpraat\b/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      return $self->_praat($opt);
-    }
+#   if (grep { /\bpraat\b/i } @{$args}) {
+#     if (scalar @{$args} > 1) {
+#       die "Praat must be the only argument for processing\n";
+#     }
+#     else {
+#       return $self->_praat;
+#     }
+#   }
+
+  {
+    local @ARGV = qw( search .* );
+    my @argv = $self->app->prepare_args;
+    my ($cmd, $opt, @args) = $self->app->prepare_command(@argv);
+
+    # Child command inherits options from parent
+    $cmd->installed($self->installed);
+    $cmd->wrap($self->wrap);
+
+    return $self->app->execute_command($cmd, $opt, @args);
   }
-
-  my $app = CPrAN->new();
-  my %params = %{$opt};
-
-  my $cmd = CPrAN::Command::search->new({});
-  return $app->execute_command($cmd, \%params, '.*');
-}
-
-sub opt_spec {
-  return (
-    [ "installed|i"   => "search on installed plugins" ],
-    [ "wrap!"         => "enable / disable line wrap for result table" ],
-  );
 }
 
 =item _praat()
@@ -79,23 +60,23 @@ Process praat
 
 =cut
 
-sub _praat {
-  use Path::Class;
-
-  my ($self, $opt) = @_;
-
-  try {
-    my $praat = $self->{app}->praat;
-    my @releases = $praat->releases($opt);
-
-    print "$_->{semver}\n" foreach @releases;
-  }
-  catch {
-    chomp;
-    warn "$_\n";
-    die "Could not list Praat releases\n";
-  };
-}
+# sub _praat {
+#   use Path::Class;
+#
+#   my ($self) = @_;
+#
+#   try {
+#     my $praat = $self->{app}->praat;
+#     my @releases = $praat->releases($opt);
+#
+#     print "$_->{semver}\n" foreach @releases;
+#   }
+#   catch {
+#     chomp;
+#     warn "$_\n";
+#     die "Could not list Praat releases\n";
+#   };
+# }
 
 =head1 AUTHOR
 
