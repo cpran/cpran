@@ -320,6 +320,41 @@ sub test {
   if ($results) { return 1 } else { return 0 }
 }
 
+sub remove {
+  my $self = shift;
+  my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+
+  use File::Path qw( remove_tree );
+
+  remove_tree(
+    $self->root,
+    {
+      verbose => $opt->{verbose},
+      safe => $opt->{safe},
+      error => \my $e
+    }
+  );
+
+  if (@{$e}) {
+    warn 'Could not completely remove ', $self->root, "\n"
+      unless $self->cpran->quiet;
+
+    foreach (@{$e}) {
+      my ($file, $message) = %{$_};
+        if ($file eq '') {
+        warn "General error: $message\n";
+      }
+      else {
+        warn "Problem unlinking $file: $message\n";
+      }
+    }
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
+
 =item print(I<FIELD>)
 
 Prints the contents of the plugin descriptors, either local or remote. These
