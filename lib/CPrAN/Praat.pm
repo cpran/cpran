@@ -194,8 +194,7 @@ sub remove {
 
   use Path::Class;
 
-  (defined $self->bin)
-    or die sprintf("Could not find path to %s\n", $self->bin->basename);
+  die 'Binary is undefined!' unless defined $self->bin;
 
   my $removed = $self->bin->remove
     or warn sprintf("Could not remove %s: %s\n", $self->bin, $!);
@@ -319,7 +318,7 @@ sub _build_pref_dir {
 sub _build_current {
   my ($self) = @_;
 
-  return undef unless defined $self->bin;
+  die 'Binary is undefined!' unless defined $self->bin;
 
   use SemVer;
   use Capture::Tiny qw( capture );
