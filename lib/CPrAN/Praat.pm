@@ -47,6 +47,12 @@ has _package => (
   },
 );
 
+has _releases_endpoint => (
+  is => 'ro',
+  lazy => 1,
+  default => 'https://api.github.com/repos/praat/praat/releases',
+);
+
 has [qw( _os _ext _bit )] => (
   is => 'ro',
 );
@@ -63,6 +69,13 @@ has pref_dir => (
   lazy => 1,
   coerce => 1,
   builder => '_default_pref_dir',
+);
+
+has releases => (
+  is => 'ro',
+  isa => 'ArrayRef[HashRef]',
+  lazy => 1,
+  builder => '_build_releases',
 );
 
 has bin => (
@@ -188,54 +201,6 @@ sub remove {
     or warn sprintf("Could not remove %s: %s\n", $self->bin, $!);
 
   return $removed;
-}
-
-=item B<release()>
-
-List available releases of Praat
-
-=cut
-
-sub releases {
-  my ($self, $opt) = @_;
-
-  return @{$self->{releases}} if defined $self->{releases};
-
-  use Path::Class;
-  use JSON::Tiny q(decode_json);
-
-  my @releases;
-
-  my $ua = LWP::UserAgent->new();
-  my ($next, $response);
-
-  $next = 'https://api.github.com/repos/praat/praat/releases';
-  # Repeat block is commented out to prevent
-  # busting through the API request limit
-  # do {
-    $response = $ua->get($next);
-    die $response->status_line unless $response->is_success;
-
-    my $tags = decode_json $response->decoded_content;
-    foreach my $tag (@{$tags}) {
-      try { $tag->{semver} = SemVer->new($tag->{tag_name}) }
-      finally {
-        push @releases , $tag unless @_;
-      };
-    };
-
-    ($next) = split /,/, $response->header('link');
-    if ($next =~ /rel="next"/) {
-      $next =~ s/.*<([^>]+)>.*/$1/;
-    }
-    else {
-      $next = undef;
-    }
-  # } until !defined $next;
-
-  @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
-  $self->{releases} = \@releases;
-  return @{$self->{releases}};
 }
 
 =item B<download(VERSION)>
@@ -380,6 +345,46 @@ sub _get_current {
     die "Could not get current version of Praat: $_\n";
   };
 };
+
+sub _build_releases {
+  my ($self, $opt) = @_;
+
+  use Path::Class;
+  use JSON::Tiny q(decode_json);
+
+  my @releases;
+
+  my $ua = LWP::UserAgent->new();
+  my ($next, $response);
+
+  $next = $self->_releases_endpoint;
+  # Repeat block is commented out to prevent
+  # busting through the API request limit
+  # do {
+    $response = $ua->get($next);
+    die $response->status_line unless $response->is_success;
+
+    my $tags = decode_json $response->decoded_content;
+    foreach my $tag (@{$tags}) {
+      try { $tag->{semver} = SemVer->new($tag->{tag_name}) }
+      finally {
+        push @releases , $tag unless @_;
+      };
+    };
+
+  # ($next) = split /,/, $response->header('link') if $response->header('link');
+  # if ($next =~ /rel="next"/) {
+  #   $next =~ s/.*<([^>]+)>.*/$1/;
+  # }
+  # else {
+  #   $next = undef;
+  # }
+  # } until !defined $next;
+
+  @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
+
+  return \@releases;
+}
 
 =back
 
