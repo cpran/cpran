@@ -321,8 +321,6 @@ sub _build_current {
   die 'Binary is undefined!' unless defined $self->bin;
 
   use SemVer;
-  use Capture::Tiny qw( capture );
-
   use File::Temp;
   my $script  = File::Temp->new(
     TEMPLATE => 'pscXXXXX',
