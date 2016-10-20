@@ -271,7 +271,7 @@ sub _build_latest {
   my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${ext}/;
 
   my $response = $ua->get(
-    $self->upstream . 'download_' . $self->{_os} . '.html'
+    $self->upstream . "download_$os.html"
   );
 
   if ($response->is_success) {
@@ -279,7 +279,7 @@ sub _build_latest {
     $tree->elementify;
     my $pkglink = $tree->look_down(
       '_tag', 'a',
-      sub { $_[0]->as_text =~ /$pkgregex/; }
+      sub { $_[0]->as_text =~ /$pkgregex/ }
     );
 
     if (defined $pkglink) {
