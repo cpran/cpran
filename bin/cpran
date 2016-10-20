@@ -3,8 +3,37 @@
 
 # VERSION
 
+BEGIN {
+  our @ORIGARGV = @ARGV;
+}
+
 use CPrAN;
-CPrAN->run;
+
+use Getopt::Long qw(:config pass_through );
+my %h;
+
+GetOptions(
+  \%h,
+  "praat=s",
+  "root=s",
+  "pref_dir|pref-dir=s",
+  "token=s",
+  "url=s",
+  "group=s",
+  "version",
+  "quiet",
+  "verbose+",
+  "debug+",
+  "help",
+  "yes",
+);
+
+my $app = CPrAN->new(\%h);
+
+{
+  local @ARGV = @ORIGARGV;
+  $app->run;
+}
 
 =encoding utf8
 
@@ -137,7 +166,7 @@ root of the plugin. Within this directory, all files that have a C<.t> extension
 will be regarded as tests. Tests are all run by Praat, and they are expected to
 conform to the L<Test Anything Protocol|http://testanything.org/> for correct
 evaluation. You might want to look at the
-L<testsimple|https://gitlab.com/cpran/plugin_testsimple> plugin to make it 
+L<testsimple|https://gitlab.com/cpran/plugin_testsimple> plugin to make it
 easier to write your own tests.
 
 See L<CPrAN::Command::test|test> for the full documentation.
