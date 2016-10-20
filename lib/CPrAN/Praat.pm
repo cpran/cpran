@@ -68,7 +68,7 @@ has pref_dir => (
   isa => 'Path::Class::Dir',
   lazy => 1,
   coerce => 1,
-  builder => '_default_pref_dir',
+  builder => '_build_pref_dir',
 );
 
 has releases => (
@@ -109,7 +109,7 @@ has current => (
   init_arg => undef,
   lazy => 1,
   isa => 'SemVer',
-  builder => '_get_current'
+  builder => '_build_current'
 );
 
 has latest => (
@@ -117,7 +117,7 @@ has latest => (
   init_arg => undef,
   lazy => 1,
   isa => 'SemVer',
-  builder => '_get_latest',
+  builder => '_build_latest',
 );
 
 sub BUILDARGS {
@@ -258,7 +258,7 @@ sub execute {
   };
 }
 
-sub _get_latest {
+sub _build_latest {
   my ($self) = @_;
 
   use HTML::Tree;
@@ -300,7 +300,7 @@ sub _get_latest {
   }
 }
 
-sub _default_pref_dir {
+sub _build_pref_dir {
   use Path::Class;
 
   for ($^O) {
@@ -316,7 +316,7 @@ sub _default_pref_dir {
   }
 }
 
-sub _get_current {
+sub _build_current {
   my ($self) = @_;
 
   return undef unless defined $self->bin;
