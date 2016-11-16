@@ -77,9 +77,6 @@ plugins, regardless of whether they are on CPrAN or not.
 
 =cut
 
-use overload fallback => 1,
-  '""' => sub { $_[0]->name };
-
 sub BUILDARGS {
   my $class = shift;
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
