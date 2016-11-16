@@ -5,6 +5,7 @@ use Moose;
 
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
+use Carp;
 
 extends qw( MooseX::App::Cmd );
 
