@@ -122,9 +122,13 @@ after execute_command => sub {
   }
 };
 
-sub BUILDARGS {
+around BUILDARGS => sub {
+  my $orig = shift;
   my $self = shift;
+
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+
+  $self->$orig($args);
 
   my %deprecated = (
     'api-token' => 'token',
@@ -148,7 +152,7 @@ sub BUILDARGS {
   }
 
   return $args;
-}
+};
 
 sub BUILD {
   my ($self) = @_;
