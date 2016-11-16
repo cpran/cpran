@@ -105,7 +105,7 @@ sub BUILDARGS {
 }
 
 sub BUILD {
-  $_[0]->refresh;
+  $_[0]->refresh if defined $_[0]->cpran;
 }
 
 sub refresh {
