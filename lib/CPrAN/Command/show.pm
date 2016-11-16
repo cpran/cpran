@@ -8,7 +8,7 @@ with 'MooseX::Getopt';
 
 extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
+require Carp;
 
 has installed => (
   is  => 'rw',
@@ -71,7 +71,7 @@ sub execute {
         $plugin->print('local') unless ($self->app->quiet);
       }
       else {
-        croak "$plugin->name is not installed";
+        Carp::croak "$plugin->name is not installed";
       }
     }
     else {
@@ -80,7 +80,7 @@ sub execute {
         $plugin->print('remote') unless ($self->app->quiet);
       }
       else {
-        croak "$plugin->name is not a CPrAN plugin";
+        Carp::croak "$plugin->name is not a CPrAN plugin";
       }
     }
   }

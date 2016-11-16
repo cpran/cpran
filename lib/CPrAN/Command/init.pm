@@ -6,7 +6,7 @@ use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
+require Carp;
 use Path::Class;
 
 has git => (

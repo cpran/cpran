@@ -2,10 +2,10 @@ package CPrAN;
 # ABSTRACT: A package manager for Praat
 
 use Moose;
+require Carp;
 
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
-use Carp;
 
 extends qw( MooseX::App::Cmd );
 
@@ -154,21 +154,21 @@ sub BUILD {
   my ($self) = @_;
 
   if (-e $self->root) {
-    croak 'Cannot read from CPrAN root at ', $self->root
+    Carp::croak 'Cannot read from CPrAN root at ', $self->root
       unless (-r $self->root);
 
-    croak 'Cannot write to CPrAN root at ', $self->root
+    Carp::croak 'Cannot write to CPrAN root at ', $self->root
       unless (-w $self->root);
   }
   else {
     File::Path::make_path( $self->root )
-      or carp 'Could not make directory at ', $self->root;
+      or Carp::carp 'Could not make directory at ', $self->root;
   }
 
-  croak 'Cannot read from preferences directory at ', $self->praat->pref_dir
+  Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir
     unless (-r $self->praat->pref_dir);
 
-  croak 'Cannot write to preferences directory at ', $self->praat->pref_dir
+  Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir
     unless (-w $self->praat->pref_dir);
 }
 

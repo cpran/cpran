@@ -4,6 +4,7 @@ package CPrAN::Plugin;
 use Moose;
 use uni::perl;
 
+require Carp;
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
 
@@ -58,7 +59,6 @@ has [qw( _remote _local )] => (
 );
 
 use Try::Tiny;
-use Carp;
 
 =head1 NAME
 
@@ -252,7 +252,7 @@ sub test {
   my $self = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  croak "Praat not installed; cannot test"
+  Carp::croak "Praat not installed; cannot test"
     unless defined $self->cpran->praat->current;
 
   return undef unless ($self->is_installed);

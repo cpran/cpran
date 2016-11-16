@@ -8,7 +8,7 @@ with 'MooseX::Getopt';
 
 extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
+require Carp;
 use Try::Tiny;
 
 has installed => (
@@ -313,7 +313,7 @@ C<_make_output_row()> and attaches it to the table.
 
 sub _add_output_row {
   my ($self, $opt, $plugin) = @_;
-  carp "No output table found" unless defined $self->{output};
+  Carp::carp "No output table found" unless defined $self->{output};
   my @row = $self->_make_output_row($opt, $plugin);
   $self->{output}->row(@row);
 }

@@ -8,7 +8,7 @@ with 'MooseX::Getopt';
 
 extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
+require Carp;
 use Try::Tiny;
 
 has installed => (

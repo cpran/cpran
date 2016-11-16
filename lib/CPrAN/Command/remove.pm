@@ -8,7 +8,7 @@ extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
 
-use Carp;
+require Carp;
 
 has force => (
   is  => 'rw',

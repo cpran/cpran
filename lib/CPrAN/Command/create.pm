@@ -11,7 +11,7 @@ with 'MooseX::Getopt';
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
 
-use Carp;
+require Carp;
 use Path::Class;
 
 has name => (

@@ -7,6 +7,7 @@ use Moose;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+require Carp;
 
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
@@ -218,7 +219,7 @@ sub execute {
             try { $self->git_install( $plugin ) }
             catch {
               chomp;
-              croak "Error: could not clone repository.\n$_\n";
+              Carp::croak "Error: could not clone repository.\n$_\n";
             };
           }
 
@@ -226,7 +227,7 @@ sub execute {
             try { $self->raw_install( $plugin ) }
             catch {
               chomp;
-              croak "Error: could not install.\n$_\n";
+              Carp::croak "Error: could not install.\n$_\n";
             };
           }
 
@@ -513,7 +514,7 @@ sub get_archive {
 
     # TODO(jja) Enable installation of specific versions
     my @tags = @{$self->app->api->tags($project->{id})};
-    croak 'No tags for ', $plugin->name unless (@tags);
+    Carp::croak 'No tags for ', $plugin->name unless (@tags);
 
     my @releases;
     foreach my $tag (@tags) {

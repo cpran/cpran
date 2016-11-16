@@ -8,7 +8,7 @@ extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
 
-use Carp;
+require Carp;
 use Try::Tiny;
 use Capture::Tiny 'capture';
 use File::Which;
@@ -139,7 +139,7 @@ sub execute {
       try   { CPrAN::Plugin->new( $_ ) }
       catch {
         warn $_;
-        croak "Aborting\n";
+        Carp::croak "Aborting\n";
       };
     }
   } @{$args};

@@ -7,7 +7,7 @@ use Moose;
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
 
-use Carp;
+require Carp;
 use Try::Tiny;
 
 =head1 NAME
@@ -291,11 +291,11 @@ sub _build_latest {
       return SemVer->new($v);
     }
     else {
-      croak 'Did not find Praat package link';
+      Carp::croak 'Did not find Praat package link';
     }
   }
   else {
-    croak $response->status_line;
+    Carp::croak $response->status_line;
   }
 }
 
