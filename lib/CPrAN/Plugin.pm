@@ -49,11 +49,6 @@ has [qw( is_cpran is_installed )] => (
   is => 'rw',
 );
 
-has [qw( _opt )] => (
-  is => 'rw',
-  init_arg => undef,
-);
-
 has [qw( _remote _local )] => (
   is => 'rw',
 );
