@@ -91,7 +91,7 @@ has debug => (
 
 has verbose => (
   is  => 'rw',
-  isa => 'Bool',
+  isa => 'Int',
   traits => [qw(Getopt)],
   cmd_aliases => 'v',
   documentation => 'increase verbosity',
