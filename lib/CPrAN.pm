@@ -165,8 +165,9 @@ sub BUILD {
       unless (-w $self->root);
   }
   else {
-    File::Path::make_path( $self->root )
-      or Carp::carp 'Could not make directory at ', $self->root;
+    use File::Path qw();
+    File::Path::make_path( $self->root, {} )
+      or warn 'Could not make directory at ', $self->root;
   }
 
   Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir
