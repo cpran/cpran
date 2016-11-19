@@ -41,7 +41,7 @@ has cpran => (
 
 has root => (
   is => 'rw',
-  isa => 'Path::Class::Dir',
+  isa => 'Path::Class::Dir|Undef',
   coerce => 1,
 );
 
@@ -114,7 +114,8 @@ sub refresh {
 
   # If root exists on disk then we assume it is a plugin,
   # and we know it is installed.
-  $self->root( dir($self->cpran->praat->pref_dir, 'plugin_' . $self->name) );
+  $self->root( dir($self->cpran->praat->pref_dir, 'plugin_' . $self->name) )
+    unless defined $self->root;
   $self->is_installed(1) if -e $self->root;
 
   # Initialise local and remote metadata
