@@ -181,9 +181,6 @@ keyword "praat", the client will install Praat itself.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use DDP;
-  p $args;
-
   if (grep { /\bpraat\b/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
@@ -556,8 +553,6 @@ sub install_praat {
 
   my ($self) = @_;
 
-  use DDP;
-
   try {
 #     $self->app->praat->latest;
 
@@ -574,8 +569,6 @@ sub install_praat {
       die 'Path is not a directory: ', $self->path
         unless $self->path->is_dir;
     }
-
-    p $self->path;
 
     unless (-w $self->path) {
       die 'Cannot write to ', $self->path, ".\n";
