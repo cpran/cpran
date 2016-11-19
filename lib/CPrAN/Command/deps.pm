@@ -106,13 +106,13 @@ sub get_dependencies {
   my ($self, $opt, @args) = @_;
 
   use CPrAN::Plugin;
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+  } @args;
 
   my @dependencies = ();
-  foreach my $plugin (@args) {
-
-    unless (ref $plugin eq 'CPrAN::Plugin') {
-      $plugin = CPrAN::Plugin->new( name => $plugin, cpran => $self->app );
-    }
+  foreach my $plugin (@plugins) {
 
     my $plugins = $plugin->_remote->{depends}->{plugins};
 
