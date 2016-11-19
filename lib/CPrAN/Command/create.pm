@@ -118,8 +118,7 @@ around BUILDARGS => sub {
   my $self = shift;
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  use DDP;
-
+  $self->$orig($args);
 
   return $args;
 };
