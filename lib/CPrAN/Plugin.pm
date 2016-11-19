@@ -258,7 +258,7 @@ sub test {
   use Cwd;
   my $oldwd = getcwd;
   chdir $self->{root}
-    or die "Could not change directory";
+    or die 'Could not change directory';
 
   unless ( -e 't' ) {
     # warn "No tests for $self->{name}\n";
@@ -295,12 +295,13 @@ sub test {
       my $log = dir($self->root, '.log');
       unless ( -e $log ) {
         mkdir $log
-          or die "Could not create log directory";
+          or die 'Could not create log directory';
       }
       else {
         while (my $file = $log->next) {
           next unless -f $file;
-          $file->remove or die "Could not remove $file";
+          $file->remove
+            or die 'Could not remove ', $file;
         }
       }
       push @args, ('--archive', $log);
