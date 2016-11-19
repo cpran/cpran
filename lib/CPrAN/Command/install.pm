@@ -264,7 +264,7 @@ sub run_tests {
     };
   }
 
-  if ($success) {
+  if ($success // 1) {
     print $plugin->name, ' installed successfully.', "\n"
       unless $self->app->quiet;
   }
