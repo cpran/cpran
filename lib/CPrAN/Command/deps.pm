@@ -114,10 +114,11 @@ sub get_dependencies {
   my @dependencies = ();
   foreach my $plugin (@plugins) {
 
-    my $plugins = $plugin->_remote->{depends}->{plugins};
+    my $deps = $plugin->_remote // $plugin->_local;
+    $deps = $deps->{depends}->{plugins};
 
-    if (defined $plugins and ref $plugins eq 'HASH') {
-      my %raw = %{$plugins};
+    if (defined $deps and ref $deps eq 'HASH') {
+      my %raw = %{$deps};
 
       foreach my $key (keys %raw) {
         $plugin->{reqname} = [ keys %raw   ];
