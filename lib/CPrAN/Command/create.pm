@@ -195,13 +195,20 @@ sub execute {
   print 'Copying template...', "\n" unless $self->app->quiet;
 
   use File::Copy::Recursive qw( dircopy );
-  my $src = $template->root;
-  my $tgt = dir( $src->parent, 'plugin_' . $self->name );
+  use Cwd;
 
-  dircopy $src, $tgt
+  my $source = $template->root;
+  my $target = dir( cwd, 'plugin_' . $self->name );
+
+  dircopy $source, $target
     or die "Could not rename plugin: $!\n";
 
-  my $plugin = CPrAN::Plugin->new( name => $self->name, cpran => $self->app );
+  my $plugin = CPrAN::Plugin->new(
+    name  => $self->name,
+    cpran => $self->app,
+    root  => $target,
+  );
+
   $self->write_readme     ($plugin);
   $self->write_descriptor ($plugin);
   $self->write_setup      ($plugin);
