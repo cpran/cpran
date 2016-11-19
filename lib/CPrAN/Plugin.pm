@@ -336,7 +336,7 @@ sub remove {
   );
 
   if (@{$e}) {
-    warn 'Could not completely remove ', $self->root, "\n"
+    Carp::carp 'Could not completely remove ', $self->root, "\n"
       unless $self->cpran->quiet;
 
     foreach (@{$e}) {
