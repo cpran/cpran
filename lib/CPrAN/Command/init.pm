@@ -98,7 +98,6 @@ sub execute {
     my $cpran;
     {
       my $cmd = CPrAN::Command::update->new(
-        virtual => 1,
         app => $self->app,
       );
       $cpran = ($self->app->execute_command($cmd, $opt, 'cpran'))[0];
