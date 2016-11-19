@@ -84,16 +84,18 @@ sub execute {
   foreach my $plugin (@plugins) {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran || $self->force) {
-        warn 'W: ', $plugin->name, ' is not a CPrAN plugin, but processing anyway.', "\n"
-          unless $plugin->is_cpran;
+        warn $plugin->name, ' is not a CPrAN plugin, but processing anyway.', "\n"
+          if !$plugin->is_cpran and !$self->app->quiet;
         push @todo, $plugin;
       }
       else {
-        warn 'W: ', $plugin->name, ' is not a CPrAN plugin. Use --force to process anyway.', "\n";
+        warn $plugin->name, ' is not a CPrAN plugin. Use --force to process anyway.', "\n"
+          unless $self->app->quiet;
       }
     }
     else {
-      warn "W: $plugin->name is not installed; cannot remove.\n";
+      warn 'Plugin ', $plugin->name, ' is not installed; cannot remove', "\n"
+        unless $self->app->quiet;
     }
   }
 
