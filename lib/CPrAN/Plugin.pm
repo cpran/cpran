@@ -166,7 +166,8 @@ sub fetch {
   }
 
   unless (defined $id and defined $url) {
-    warn $self->name, ' not found remotely';
+    Carp::carp $self->name, ' not found remotely'
+      unless $self->cpran->quiet;
     return undef;
   }
 
@@ -183,7 +184,8 @@ sub fetch {
 
   # Ignore projects with no tags
   unless (scalar @releases) {
-    warn 'No releases for ', $self->name;
+    Carp::carp 'No releases for ', $self->name
+      unless $self->cpran->quiet;
     return undef;
   }
 
@@ -198,7 +200,8 @@ sub fetch {
     }
     catch {};
     unless (defined $check) {
-      warn 'Could not deserialise fetched remote for ', $self->name;
+      Carp::carp 'Could not deserialise fetched remote for ', $self->name
+        unless $self->cpran->quiet;
       return undef;
     }
   }
@@ -245,8 +248,10 @@ sub test {
   my $self = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  Carp::croak "Praat not installed; cannot test"
-    unless defined $self->cpran->praat->current;
+  unless (defined $self->cpran->praat->current) {
+    Carp::croak "Praat not installed; cannot test"
+      unless $self->cpran->quiet;
+  }
 
   return undef unless ($self->is_installed);
 
@@ -267,7 +272,8 @@ sub test {
   my $version = $self->cpran->praat->current;
   $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   if ($version >= 6 and $version < 6.003) {
-    warn "Automated tests not supported for this version of Praat\n";
+    Carp::carp 'Automated tests not supported for this version of Praat', "\n"
+      unless $self->cpran->quiet;
     return undef;
   }
   elsif ($version >= 6.003) {
@@ -300,7 +306,8 @@ sub test {
       push @args, ('--archive', $log);
     }
     catch {
-      warn "Disabling logging. Install TAP::Harness::Archive to enable it\n";
+      Carp::carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
+        unless $self->cpran->quiet;
     };
   }
 
@@ -395,7 +402,8 @@ sub _parse_meta {
     $parsed = YAML::XS::Load( encode_utf8 $meta );
   }
   catch {
-    warn "Could not deserialise meta: $meta";
+    Carp::carp 'Could not deserialise meta: ', $meta
+      unless ref($class) or $class->cpran->quiet;
   };
 
   return undef unless defined $parsed and ref $parsed eq 'HASH';
@@ -409,7 +417,8 @@ sub _parse_meta {
     SemVer->new($parsed->{version}) unless ref $parsed->{version} eq 'SemVer';
   }
   catch {
-    warn 'Not a valid version number: ', $parsed->{version};
+    Carp::carp 'Not a valid version number: ', $parsed->{version}
+      unless ref($class) or $class->cpran->quiet;
   };
 
   return $parsed;
