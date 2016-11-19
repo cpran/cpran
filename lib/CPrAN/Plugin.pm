@@ -272,7 +272,7 @@ sub test {
   my $version = $self->cpran->praat->current;
   $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   if ($version >= 6 and $version < 6.003) {
-    Carp::carp 'Automated tests not supported for this version of Praat', "\n"
+    warn 'Automated tests not supported for this version of Praat', "\n"
       unless $self->cpran->quiet;
     return undef;
   }
