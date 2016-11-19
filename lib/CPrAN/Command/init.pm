@@ -117,8 +117,16 @@ sub execute {
     $self->app->yes($yes);
   }
 
-  print "CPrAN is initialised!\nYou should now run 'cpran update' to refresh the plugin directory\n"
-    unless $self->app->quiet;
+  if ($cpran->is_installed) {
+    print "CPrAN is initialised!\nYou should now run 'cpran update' to refresh the plugin directory\n"
+      unless $self->app->quiet;
+    return 1;
+  }
+  else {
+    print "Could not initialise CPrAN\n"
+      unless $self->app->quiet;
+    return 0;
+  }
 }
 
 
