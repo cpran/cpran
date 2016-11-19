@@ -152,7 +152,7 @@ Running C<create> will generate a new plugin in the current directory.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use DDP;
+  $self->name($args->[0]) if defined $args->[0];
 
   print 'Creating plugin "', $self->name, '"...', "\n" unless $self->app->quiet;
   if (-e 'plugin_' . $self->name) {
