@@ -64,7 +64,7 @@ has upstream => (
 );
 
 has pref_dir => (
-  is => 'ro',
+  is => 'rw',
   isa => 'Path::Class::Dir',
   lazy => 1,
   coerce => 1,
@@ -92,7 +92,7 @@ has bin => (
          which('praatcon'));
   },
 );
-around bin => sub {
+around [qw( pref_dir bin )] => sub {
   my ($orig, $self, $path) = @_;
   use File::Glob ':bsd_glob';
 

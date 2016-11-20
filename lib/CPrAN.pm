@@ -109,6 +109,11 @@ has yes => (
   default => 0,
 );
 
+has _pref_dir => (
+  is  => 'rw',
+  init_arg => 'pref_dir',
+);
+
 after execute_command => sub {
   my ($self, $cmd, $opt, $args) = @_;
   if (ref $cmd eq 'App::Cmd::Command::version') {
@@ -175,6 +180,9 @@ sub BUILD {
 
   Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir
     unless (-w $self->praat->pref_dir);
+
+  $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
+
 }
 
 =encoding utf8
@@ -255,7 +263,7 @@ used multiple times to increase the number of debug messages that are printed.
 sub global_opt_spec {
   return (
     [ "praat=s"    => "set path to the Praat binary" ],
-    [ "pref_dir=s" => "set path to Praat preferences directory" ],
+    [ "pref_dir|pref-dir=s" => "set path to Praat preferences directory" ],
     [ "root=s"     => "set path to CPrAN root" ],
     [ "token=s"    => "set private token for GitLab API access" ],
     [ "url=s"      => "set url of GitLab API" ],
