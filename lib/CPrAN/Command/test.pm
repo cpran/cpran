@@ -48,6 +48,14 @@ will only report success if all tests for all given plugins were successful.
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  if (scalar @{$args} == 1 and $args->[0] eq '-') {
+    while (<STDIN>) {
+      chomp;
+      push @{$args}, $_;
+    }
+    shift @{$args};
+  }
+
   use CPrAN::Plugin;
 
   my $outcome = 1;

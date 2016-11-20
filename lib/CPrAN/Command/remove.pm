@@ -64,6 +64,14 @@ remove. For each named passed as argument, all contents of the directory named
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  if (scalar @{$args} == 1 and $args->[0] eq '-') {
+    while (<STDIN>) {
+      chomp;
+      push @{$args}, $_;
+    }
+    shift @{$args};
+  }
+
 #   if (grep { /\bpraat\b/i } @{$args}) {
 #     if (scalar @{$args} > 1) {
 #       die "Praat must be the only argument for processing\n";

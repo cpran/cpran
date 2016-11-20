@@ -55,12 +55,19 @@ B<--yes> flag is set, since no user interaction is possible.
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  if (scalar @{$args} == 1 and $args->[0] eq '-') {
+    while (<STDIN>) {
+      chomp;
+      push @{$args}, $_;
+    }
+    shift @{$args};
+  }
+
   # Make a list of CPrAN plugins from input, if they are not already
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
     else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
-
 
   # Get a source dependency tree for the plugins to be installed.
   @plugins = $self->get_dependencies( $opt, @plugins );
