@@ -165,30 +165,19 @@ sub execute {
   );
 
   unless ($template->is_installed) {
-    my $quiet = $self->app->quiet;
-    my $yes = $self->app->yes;
-    $self->app->quiet(1);
-    $self->app->yes(1);
-
     print 'Installing plugin template...', "\n" unless $quiet;
-    {
-      my $cmd = CPrAN::Command::update->new(
-        virtual => 1,
-        app => $self->app,
-      );
-      $template = ($self->app->execute_command($cmd, $opt, 'template'))[0];
-    }
+    $template = $self->app->run_command( update => 'template', {
+      virtual => 1,
+      quiet => 1,
+      yes => 1,
+    });
 
-    {
-      my $cmd = CPrAN::Command::install->new(
-        git => 0,
-        test => 0,
-        app => $self->app,
-      );
-      $self->app->execute_command($cmd, $opt, $template);
-    }
-    $self->app->quiet($quiet);
-    $self->app->yes($yes);
+    $self->app->run_command( install => $template, {
+      git => 0,
+      test => 0,
+      quiet => 1,
+      yes => 1,
+    });
   }
 
   print 'Copying template...', "\n" unless $self->app->quiet;

@@ -89,31 +89,16 @@ sub execute {
   print 'Initialising CPrAN bridge...', "\n"
     unless $self->app->quiet;
 
-  my $quiet = $self->app->quiet;
-  my $yes = $self->app->yes;
-  $self->app->quiet(1);
-  $self->app->yes(1);
+  my ($cpran) = $self->app->run_command( update => 'cpran', {
+    quiet => 1,
+    yes => 1,
+  });
 
-  my $cpran;
-  {
-    my $cmd = CPrAN::Command::update->new(
-      app => $self->app,
-    );
-    $cpran = ($self->app->execute_command($cmd, $opt, 'cpran'))[0];
-  }
-
-  {
-    my $cmd = CPrAN::Command::install->new(
-      git   => $self->git,
-      test  => $self->test,
-      app   => $self->app,
-      force => $self->force,
-    );
-    $self->app->execute_command($cmd, $opt, $cpran);
-  }
-
-  $self->app->quiet($quiet);
-  $self->app->yes($yes);
+  $self->app->run_command( install => $cpran, {
+    quiet => 1,
+    yes => 1,
+    map { $_ => $self->$_ } qw( git test app force )
+  });
 
   if ($cpran->is_installed) {
     print "CPrAN is initialised!\nYou should now run 'cpran update' to refresh the plugin directory\n"
@@ -126,7 +111,6 @@ sub execute {
     return 0;
   }
 }
-
 
 =head1 AUTHOR
 

@@ -177,31 +177,22 @@ sub execute {
   # Make sure plugins are upgraded in order
   if (scalar @todo) {
     use Array::Utils qw( intersect );
-    my $cmd = CPrAN::Command::deps->new({});
 
-    my %params = %{$opt};
-    $params{quiet} = 1;
-
-    my @deps = $app->execute_command($cmd, \%params, @todo);
+    my @deps = $self->app->run_command( deps => {
+      quiet => 1,
+      installed => $self->installed,
+      wrap => $self->wrap,
+    });
     @todo = intersect(@todo, @deps);
   }
 
   if (@todo) {
-    unless ($opt->{quiet}) {
+    unless ($self->app->quiet) {
       print "The following plugins will be UPGRADED:\n";
       print '  ', join(' ', map { $_->{name} } @todo), "\n";
       print "Do you want to continue?";
     }
     if ($self->_yesno('y')) {
-
-      my %params;
-      unless ($self->git) {
-        # We copy the current options, in case custom paths have been passed
-        %params = %{$opt};
-        $params{quiet} = 1;
-        $params{yes}   = 1;
-      }
-
       foreach my $plugin (@todo) {
         print 'Upgrading ', $plugin->{name}, ' from v',
           $plugin->{local}->{version}, ' to v',
@@ -289,8 +280,14 @@ sub execute {
           }
         }
         else {
-          $app->execute_command(CPrAN::Command::remove->new({}),  \%params, $plugin->{name});
-          $app->execute_command(CPrAN::Command::install->new({}), \%params, $plugin->{name});
+          $self->app->run_command( remove => $plugin->{name}, {
+            quiet => 1,
+            yes => 1,
+          });
+          $self->app->run_command( install => $plugin->{name}, {
+            quiet => 1,
+            yes => 1,
+          });
           print $plugin->{name}, ' upgraded successfully', "\n"
             unless $self->app->quiet;
         }

@@ -41,17 +41,10 @@ sub execute {
 #     }
 #   }
 
-  {
-    local @ARGV = qw( search .* );
-    my @argv = $self->app->prepare_args;
-    my ($cmd, $opt, @args) = $self->app->prepare_command(@argv);
-
-    # Child command inherits options from parent
-    $cmd->installed($self->installed);
-    $cmd->wrap($self->wrap);
-
-    return $self->app->execute_command($cmd, $opt, @args);
-  }
+  return $self->app->run_command( search => '.*', {
+    installed => $self->installed,
+    wrap      => $self->wrap,
+  });
 }
 
 =item _praat()

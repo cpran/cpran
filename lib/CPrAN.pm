@@ -322,6 +322,31 @@ sub _yesno {
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
 }
 
+sub run_command {
+  my ($self, $command, @args) = @_;
+  my $opt = (ref $args[-1] eq 'HASH') ? pop @args : {};
+
+  my %bkp;
+  foreach (qw( quiet yes )) {
+    if (defined $opt->{$_}) {
+      $bkp{$_} = $self->$_;
+      $self->$_($opt->{$_});
+      delete $opt->{$_};
+    }
+  }
+
+  local @ARGV = ( $command );
+  my @argv = $self->prepare_args;
+  my ($cmd) = $self->prepare_command(@argv);
+
+  $cmd->$_($opt->{$_}) foreach keys %{$opt};
+  my @retval = $self->execute_command($cmd, {}, @args);
+
+  $self->$_($bkp{$_}) foreach keys %bkp;
+
+  return @retval;
+}
+
 =back
 
 =head1 AUTHOR

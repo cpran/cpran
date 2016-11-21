@@ -432,15 +432,7 @@ sub make_schedule {
 
   my @ordered;
   if (scalar @todo) {
-    local @ARGV = qw( deps );
-    my $quiet = $self->app->quiet;
-    my @argv = $self->app->prepare_args;
-    my ($cmd, $opt, @args) = $self->app->prepare_command(@argv);
-
-    $self->app->quiet(1);
-
-    @ordered = $self->app->execute_command($cmd, $opt, @todo);
-    $self->app->quiet($quiet);
+    @ordered = $self->app->run_command( deps => @todo, { quiet => 1 } );
   }
 
   # Scheduled plugins that are already installed are descheduled
