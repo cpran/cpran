@@ -81,17 +81,16 @@ sub validate_args {
   # 1. git is available
   # 2. Git::Repository is installed
   # 3. The user has not turned it off by setting --nogit
-  if (!defined $opt->{git} or $opt->{git}) {
+  if ($self->git) {
     try {
-      $opt->{git} = which('git');
-      die "Could not find path to git binary. Is git installed?\n"
-        unless defined $opt->{git};
+      $self->git( which('git') ? 1 : 0 )
+        or die "Could not find path to git binary. Is git installed?\n";
       require Git::Repository;
     }
     catch {
-      $opt->{git} = 0;
       $self->app->logger->warn('Disabling git support');
       $self->app->logger->debug($_);
+      $self->git(0);
     }
   }
 }
@@ -107,32 +106,32 @@ sub validate_args {
 
 # TODO(jja) Break execute into smaller chunks
 sub execute {
-  use CPrAN::Plugin;
-
   my ($self, $opt, $args) = @_;
 
-  my $app;
-  $app = CPrAN->new();
   $self->app->logger->debug('Executing upgrade');
 
-  if (grep { /praat/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
+  if (! scalar @{$args}) {
+    $self->app->logger->trace('Processing all installed plugins');
+    $args = [
+      $self->app->run_command( list => { quiet => 1, installed => 1 } )
+    ];
+  }
+  elsif (scalar @{$args} == 1) {
+    if ($args->[0] eq '-') {
+      $self->app->logger->trace('Reading parameters from STDIN');
+      while (<STDIN>) {
+        chomp;
+        push @{$args}, $_;
+      }
+      shift @{$args};
     }
-    else {
+    elsif ($args->[0] =~ /praat/i) {
       $self->app->logger->debug('Processing Praat');
-      $self->_praat($opt);
+      $self->_praat;
     }
   }
 
-  unless (@{$args}) {
-    my $cmd = CPrAN::Command::list->new({});
-    my %params = %{$opt};
-    $params{quiet} = 1;
-    $params{installed} = 1;
-    $args = [ $app->execute_command($cmd, \%params, ()) ];
-  }
-
+  use CPrAN::Plugin;
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') {
       $_;
@@ -193,10 +192,10 @@ sub execute {
       print '  ', join(' ', map { $_->{name} } @todo), "\n";
       print "Do you want to continue?";
     }
-    if (CPrAN::yesno( $opt )) {
+    if ($self->_yesno('y')) {
 
       my %params;
-      unless ($opt->{git}) {
+      unless ($self->git) {
         # We copy the current options, in case custom paths have been passed
         %params = %{$opt};
         $params{quiet} = 1;
@@ -206,9 +205,9 @@ sub execute {
       foreach my $plugin (@todo) {
         print 'Upgrading ', $plugin->{name}, ' from v',
           $plugin->{local}->{version}, ' to v',
-          $plugin->{remote}->{version}, "...\n" unless $opt->{quiet};
+          $plugin->{remote}->{version}, "...\n" unless $self->app->quiet;
 
-        if ($opt->{git}) {
+        if ($self->git) {
           try {
             require Git::Repository;
             my $repo;
@@ -235,13 +234,13 @@ sub execute {
               $repo->run( 'pull', '--tags', $plugin->{url}, { fatal => '!0' } );
             }
             catch {
-              die "Could not fetch from origin.\n",
-                ($opt->{debug}) ? $_ : '';
+              $self->app->logger->warn('Could not fetch from origin');
+              $self->app->logger->debug($_);
             };
 
             my $latest = $plugin->latest;
             my @args = ( 'checkout', '--quiet', $latest->{commit}->{id} );
-            push @args, '--force' if defined $opt->{force};
+            push @args, '--force' if defined $self->force;
 
             try {
               my ($STDOUT, $STDERR) = capture {
@@ -262,12 +261,12 @@ sub execute {
             };
 
             if (defined $success and !$success) {
-              if ($opt->{force}) {
+              if ($self->force) {
                 $self->app->logger->warn('Tests failed, but continuing anyway because of --force')
                   unless $self->app->quiet;
               }
               else {
-                unless ($opt->{quiet}) {
+                unless ($self->app->quiet) {
                   $self->app->logger->warn('Tests failed. Rolling back upgrade of ', $plugin->{name});
                   $self->app->logger->warn('Use --force to ignore this warning');
                 }
@@ -279,7 +278,8 @@ sub execute {
               }
             }
             else {
-              print "$plugin->{name} upgraded successfully.\n" unless $opt->{quiet};
+              print $plugin->{name}, 'upgraded successfully.', "\n"
+                unless $self->app->quiet;
             }
           }
           catch {
@@ -291,17 +291,18 @@ sub execute {
         else {
           $app->execute_command(CPrAN::Command::remove->new({}),  \%params, $plugin->{name});
           $app->execute_command(CPrAN::Command::install->new({}), \%params, $plugin->{name});
-          print "$plugin->{name} upgraded successfully.\n" unless $opt->{quiet};
+          print $plugin->{name}, ' upgraded successfully', "\n"
+            unless $self->app->quiet;
         }
       }
     }
     else {
-      print "Abort\n" unless ($opt->{quiet});
-      exit;
+      print 'Abort', "\n" unless $self->app->quiet;
+      exit 1;
     }
   }
   else {
-    print "All plugins up to date.\n" unless ($opt->{quiet});
+    print 'All plugins up to date', "\n" unless $self->app->quiet;
     exit;
   }
 }
@@ -353,33 +354,30 @@ but will disregard those that fail.
 =cut
 
 sub _praat {
-  my ($self, $opt) = @_;
+  my ($self) = @_;
 
   try {
-    my $praat = $self->{app}->praat;
-    die "Could not find " . ( $opt->{bin} // 'praat' )
-      unless defined $praat->current;
-
-    print "Querying server for latest version...\n"
-      unless $opt->{quiet};
+    my $praat = $self->app->praat;
+    print 'Querying server for latest version...', "\n"
+      unless $self->app->quiet;
 
     if ($praat->latest > $praat->current) {
-      unless ($opt->{quiet}) {
-        print "Praat will be UPGRADED from ", $praat->current, " to ", $praat->latest, "\n";
-        print "Do you want to continue?";
+      unless ($self->app->quiet) {
+        print 'Praat will be UPGRADED from ', $praat->current, ' to ', $praat->latest, "\n";
+        print 'Do you want to continue?';
       }
 
-      if (CPrAN::yesno( $opt )) {
-        my $app = CPrAN->new;
-        my %params = %{$opt};
-        $params{yes} = $params{reinstall} = 1;
-        # TODO(jja) Better verbosity controls
-        $params{quiet} = 2; # Silence everything _but_ the download progress bar
-        $app->execute_command(CPrAN::Command::install->new({}), \%params, 'praat');
+      if ($self->_yesno('y')) {
+        # TODO: Silence everything _but_ the download progress bar
+        $self->app->run_command( install => 'praat', {
+          yes => 1,
+          reinstall => 1,
+          quiet => 1,
+        });
       }
     }
     else {
-      print "Praat is already at its latest version (", $praat->current, ")\n";
+      print 'Praat is already at its latest version (', $praat->current, ")\n";
       exit 0;
     }
   }
