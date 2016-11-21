@@ -265,9 +265,7 @@ sub run_tests {
       unless $self->app->quiet;
 
     $success = try {
-      $plugin->test(
-        log => $self->log,
-      );
+      $plugin->test( log => $self->log );
     }
     catch {
       chomp;

@@ -133,16 +133,7 @@ sub execute {
 
   use CPrAN::Plugin;
   my @plugins = map {
-    if (ref $_ eq 'CPrAN::Plugin') {
-      $_;
-    }
-    else {
-      try   { CPrAN::Plugin->new( $_ ) }
-      catch {
-        warn $_;
-        Carp::croak "Aborting\n";
-      };
-    }
+    CPrAN::Plugin->new( name => $_, cpran => $self->app ) unless ref $_;
   } @{$args};
 
   $self->app->logger->debug(scalar @{$args}, ' plugins for processing: ',
