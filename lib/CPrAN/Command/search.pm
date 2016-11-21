@@ -43,6 +43,7 @@ has in_description => (
   traits => [qw(Getopt)],
   documentation => 'search in description of plugin',
   cmd_aliases => 'D',
+  default => 1,
 );
 
 has in_short => (
@@ -51,6 +52,7 @@ has in_short => (
   traits => [qw(Getopt)],
   documentation => 'search in short description of plugin',
   cmd_aliases => 'S',
+  default => 1,
 );
 
 has in_long => (
@@ -59,6 +61,7 @@ has in_long => (
   traits => [qw(Getopt)],
   documentation => 'search in long description of plugin',
   cmd_aliases => 'L',
+  default => 1,
 );
 
 has in_author => (
@@ -283,20 +286,20 @@ sub _match {
   }
 
   if ($plugin->is_cpran) {
-    if (!defined $self->in_description or $self->in_description) {
+    if ($self->in_description) {
       if (defined $plugin->_remote) {
-        return 1 if !defined $self->in_short or $self->in_short
+        return 1 if $self->in_short
           and $plugin->_remote->{description}->{short}  =~ /$search/i;
 
-        return 1 if !defined $self->in_long or $self->in_long
+        return 1 if $self->in_long
           and $plugin->_remote->{description}->{long} =~ /$search/i;
       }
 
       if (defined $plugin->_local) {
-        return 1 if !defined $self->in_short or $self->in_short
+        return 1 if $self->in_short
           and $plugin->_local->{description}->{short}  =~ /$search/i;
 
-        return 1 if !defined $self->in_long or $self->in_long
+        return 1 if $self->in_long
           and $plugin->_local->{description}->{long} =~ /$search/i;
       }
     }
