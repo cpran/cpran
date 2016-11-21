@@ -106,7 +106,7 @@ will be downloaded. This second case is the recommended use.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing list');
+  $self->app->logger->debug('Executing update');
 
   if (scalar @{$args} == 1 and $args->[0] eq '-') {
     while (<STDIN>) {

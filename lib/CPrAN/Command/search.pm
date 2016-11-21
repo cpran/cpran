@@ -159,6 +159,7 @@ sub execute {
     CPrAN::Plugin->new( name => $_, cpran => $self->app )
   } keys %names;
 
+
   unless ($self->app->quiet) {
     $self->{output} = Text::FormatTable->new('l l l l');
     $self->{output}->head(

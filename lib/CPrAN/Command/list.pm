@@ -32,6 +32,8 @@ has wrap => (
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  $self->app->logger->debug('Executing list');
+
 #   if (grep { /\bpraat\b/i } @{$args}) {
 #     if (scalar @{$args} > 1) {
 #       die "Praat must be the only argument for processing\n";
