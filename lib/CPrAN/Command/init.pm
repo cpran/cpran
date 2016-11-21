@@ -97,7 +97,7 @@ sub execute {
   $self->app->run_command( install => $cpran, {
     quiet => 1,
     yes => 1,
-    map { $_ => $self->$_ } qw( git test app force )
+    map { $_ => $self->$_ } qw( git test force )
   });
 
   if ($cpran->is_installed) {
