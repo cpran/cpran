@@ -13,7 +13,7 @@ use Log::Any::Adapter;
 use Getopt::Long qw( :config pass_through );
 my %h;
 $h{pref_dir} = $ENV{CPRAN_PREF_DIR}  if defined $ENV{CPRAN_PREF_DIR};
-$h{root_dir} = $ENV{CPRAN_ROOT_DIR}  if defined $ENV{CPRAN_ROOT_DIR};
+$h{root}     = $ENV{CPRAN_ROOT_DIR}  if defined $ENV{CPRAN_ROOT_DIR};
 $h{praat}    = $ENV{CPRAN_PRAAT_BIN} if defined $ENV{CPRAN_PRAAT_BIN};
 $h{token}    = $ENV{CPRAN_API_TOKEN} if defined $ENV{CPRAN_API_TOKEN};
 
