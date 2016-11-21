@@ -85,7 +85,6 @@ sub BUILDARGS {
 
     if (ref $args->{meta} eq 'HASH') {
       $args->{name} = $args->{meta}->{name};
-      $args->{name} =~ s/^plugin_([\w\d]+)/$1/;
       $args->{id}   = $args->{meta}->{id};
       $args->{url}  = $args->{meta}->{http_url_to_repo};
     }
@@ -100,6 +99,7 @@ sub BUILDARGS {
     }
     delete $args->{meta};
   }
+  $args->{name} =~ s/^plugin_([\w\d]+)/$1/;
 
   return $args;
 }
