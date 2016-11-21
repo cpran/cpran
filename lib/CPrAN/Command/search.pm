@@ -121,6 +121,8 @@ including their name, local and remote versions, and a short description.
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  $self->app->logger->debug('Executing search');
+
   use CPrAN::Plugin;
   use Text::FormatTable;
 

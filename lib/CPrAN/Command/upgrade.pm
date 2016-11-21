@@ -89,8 +89,9 @@ sub validate_args {
       require Git::Repository;
     }
     catch {
-      warn "Disabling git support", ($opt->{debug}) ? ": $_" : ".\n";
       $opt->{git} = 0;
+      $self->app->logger->warn('Disabling git support');
+      $self->app->logger->debug($_);
     }
   }
 }
@@ -112,13 +113,14 @@ sub execute {
 
   my $app;
   $app = CPrAN->new();
+  $self->app->logger->debug('Executing upgrade');
 
   if (grep { /praat/i } @{$args}) {
     if (scalar @{$args} > 1) {
       die "Praat must be the only argument for processing\n";
     }
     else {
-      warn "Processing praat\n" if $opt->{debug};
+      $self->app->logger->debug('Processing Praat');
       $self->_praat($opt);
     }
   }
@@ -144,8 +146,8 @@ sub execute {
     }
   } @{$args};
 
-  warn 'DEBUG: ', scalar @{$args}, " plugins for processing: ",
-    join(', ', map { $_->{name} } @plugins), "\n" if $opt->{debug};
+  $self->app->logger->debug(scalar @{$args}, ' plugins for processing: ',
+    join(', ', map { $_->{name} } @plugins));
 
   # Plugins that are not installed cannot be upgraded.
   # @todo will hold the names of the plugins passed as arguments that are
@@ -165,14 +167,13 @@ sub execute {
         }
       }
       else {
-        warn 'DEBUG: ', "$plugin->{name} is not a CPrAN plugin\n"
-          if $opt->{debug}
+        $self->app->logger->debug($plugin->{name}, ' is not a CPrAN plugin');
       }
     }
     else { warn "$plugin->{name} is not installed\n" }
   }
-  warn 'DEBUG: ', scalar @todo, " plugins require upgrading: ",
-    join(', ', map { $_->{name} } @todo), "\n" if $opt->{debug};
+  $self->app->logger->debug(scalar @todo, ' plugins require upgrading: ',
+    join(', ', map { $_->{name} } @todo));
 
   # Make sure plugins are upgraded in order
   if (scalar @todo) {
@@ -215,8 +216,9 @@ sub execute {
               $repo = Git::Repository->new( work_tree => $plugin->root );
             }
             catch {
-              die "No git repository at ", $plugin->root, "\n",
-                ($opt->{debug}) ? $_ : '';
+              $self->app->logger->warn('No git repository at ', $plugin->root);
+              $self->app->logger->debug($_);
+              exit 1;
             };
 
             my $head;
@@ -224,8 +226,8 @@ sub execute {
               $head = $repo->run('rev-parse', 'HEAD', { fatal => '!0' } );
             }
             catch {
-              die "Could not locate HEAD.\n",
-                ($opt->{debug}) ? $_ : '';
+              $self->app->logger->warn('Could not locate HEAD');
+              $self->app->logger->debug($_);
             };
 
             try {
@@ -261,18 +263,19 @@ sub execute {
 
             if (defined $success and !$success) {
               if ($opt->{force}) {
-                warn "Tests failed, but continuing anyway because of --force\n"
-                  unless $opt->{quiet};
+                $self->app->logger->warn('Tests failed, but continuing anyway because of --force')
+                  unless $self->app->quiet;
               }
               else {
                 unless ($opt->{quiet}) {
-                  warn "Tests failed. Rolling back upgrade of $plugin->{name}.\n";
-                  warn "Use --force to ignore this warning\n";
+                  $self->app->logger->warn('Tests failed. Rolling back upgrade of ', $plugin->{name});
+                  $self->app->logger->warn('Use --force to ignore this warning');
                 }
                 $repo->run('reset', '--hard', '--quiet', $head , { fatal => '!0' });
 
-                my $msg = ($opt->{quiet}) ? "" : "Did not upgrade $plugin->{name}.";
-                die $msg . "\n";
+                $self->app->logger->warn('Did not upgrade ', $plugin->{name})
+                  unless $self->app->quiet;
+                exit 1;
               }
             }
             else {
@@ -280,8 +283,8 @@ sub execute {
             }
           }
           catch {
-            warn "$_";
-            warn "Aborting\n";
+            $self->app->logger->warn($_);
+            $self->app->logger->warn('Aborting');
             exit 1;
           }
         }
@@ -382,8 +385,8 @@ sub _praat {
   }
   catch {
     chomp;
-    warn "$_\n";
-    warn "Could not upgrade Praat";
+    $self->app->logger->warn($_);
+    $self->app->logger->warn('Could not upgrade Praat');
     exit 1;
   };
   exit 0;

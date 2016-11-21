@@ -4,6 +4,7 @@ package CPrAN::Praat;
 # use uni::perl;
 
 use Moose;
+use Log::Any;
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
 
@@ -118,6 +119,11 @@ has latest => (
   lazy => 1,
   isa => 'SemVer',
   builder => '_build_latest',
+);
+
+has logger => (
+  is => 'ro',
+  default => sub { Log::Any->get_logger },
 );
 
 sub BUILDARGS {
@@ -237,6 +243,8 @@ Reads instructions from file and executes them with Praat.
 sub execute {
   my ($self, $script, @args) = @_;
 
+  $self->logger->trace('Executing Praat command');
+
   return undef unless defined $script;
 
   my @opts = (ref $args[-1] eq 'ARRAY') ? @{pop @args} : (
@@ -244,6 +252,9 @@ sub execute {
     '--ansi',
     '--run'
   );
+
+  $self->logger->trace('  ', $self->bin, @opts, $script, @args)
+    if $self->logger->is_trace;
 
   use Capture::Tiny qw( capture );
   return capture {
@@ -318,8 +329,9 @@ sub _build_pref_dir {
 sub _build_current {
   my ($self) = @_;
 
-  die 'Binary is undefined!' unless defined $self->bin;
+  $self->logger->trace('Detecting current version of Praat');
 
+  die 'Binary is undefined!' unless defined $self->bin;
   use SemVer;
   use File::Temp;
   my $script  = File::Temp->new(
@@ -332,8 +344,8 @@ sub _build_current {
   my ($stdout, $stderr, @result) = $self->execute($script, []);
   chomp $stdout;
 
-  use Path::Class;
-  use Try::Tiny;
+  $self->logger->trace('Version detection complete');
+
 
   try {
     SemVer->new($stdout);
@@ -345,6 +357,8 @@ sub _build_current {
 
 sub _build_releases {
   my ($self, $opt) = @_;
+
+  $self->logger->trace('Finding Praat releases');
 
   use Path::Class;
   use JSON::Tiny q(decode_json);

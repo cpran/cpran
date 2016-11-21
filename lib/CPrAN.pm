@@ -3,7 +3,7 @@ package CPrAN;
 
 use Moose;
 require Carp;
-
+use Log::Any ();
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
 
@@ -127,6 +127,11 @@ after execute_command => sub {
   }
 };
 
+has logger => (
+  is => 'ro',
+  default => sub { Log::Any->get_logger },
+);
+
 around BUILDARGS => sub {
   my $orig = shift;
   my $self = shift;
@@ -183,6 +188,7 @@ sub BUILD {
 
   $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
 
+  $self->logger->debug("Initialised CPrAN instance");
 }
 
 =encoding utf8

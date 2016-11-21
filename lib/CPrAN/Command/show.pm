@@ -56,6 +56,8 @@ whose descriptors will be displayed.
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  $self->app->logger->debug('Executing show');
+
   if (scalar @{$args} == 1 and $args->[0] eq '-') {
     while (<STDIN>) {
       chomp;

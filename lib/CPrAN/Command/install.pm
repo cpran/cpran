@@ -181,6 +181,8 @@ keyword "praat", the client will install Praat itself.
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  $self->app->logger->debug('Executing install');
+
   if (scalar @{$args} == 1 and $args->[0] eq '-') {
     while (<STDIN>) {
       chomp;
@@ -194,6 +196,7 @@ sub execute {
       die "Praat must be the only argument for processing\n";
     }
     else {
+      $self->app->logger->trace('Processing Praat');
       return $self->install_praat;
     }
   }
@@ -224,7 +227,7 @@ sub execute {
             try { $self->git_install( $plugin ) }
             catch {
               chomp;
-              Carp::croak "Error: could not clone repository.\n$_\n";
+              die "Error: could not clone repository.\n$_\n";
             };
           }
 
@@ -232,7 +235,7 @@ sub execute {
             try { $self->raw_install( $plugin ) }
             catch {
               chomp;
-              Carp::croak "Error: could not install.\n$_\n";
+              die "Error: could not install.\n$_\n";
             };
           }
 

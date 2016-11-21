@@ -106,6 +106,8 @@ will be downloaded. This second case is the recommended use.
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  $self->app->logger->debug('Executing list');
+
   if (scalar @{$args} == 1 and $args->[0] eq '-') {
     while (<STDIN>) {
       chomp;
@@ -155,20 +157,17 @@ sub fetch_raw {
   foreach my $source (@projects) {
 
     unless ($source->{name} =~ /^plugin_/) {
-      warn "Not a plugin, ignoring $source->{name}\n"
-        if $self->app->debug;
+      $self->app->logger->debug('Not a plugin, ignoring ', $source->{name});
       next;
     }
 
     unless ($source->{visibility_level} eq 20) {
-      warn "Not publicly visible, ignoring $source->{name}\n"
-        if $self->app->debug;
+      $self->app->logger->debug('Not publicly visible, ignoring ', $source->{name});
       next;
     }
 
     if (scalar @requested > 1 and !defined $self->requested->{$source->{name}}) {
-      warn "Not in requested plugins, ignoring $source->{name}\n"
-        if $self->app->debug;
+      $self->app->logger->debug('Not in requested plugins, ignoring ', $source->{name});
       next;
     }
 
@@ -179,8 +178,7 @@ sub fetch_raw {
       );
     }
     catch {
-      warn "Could not initialise plugin '", $source->{name}, "'"
-        if $self->app->debug;
+      $self->app->logger->debug('Could not initialise plugin ', $source->{name});
     };
 
     next unless defined $plugin;
@@ -192,8 +190,7 @@ sub fetch_raw {
       $plugin->fetch;
 
       unless (defined $plugin->_remote) {
-        warn 'Undefined remote for ', $plugin->name, ', skipping'
-          if $self->app->debug;
+        $self->app->logger->debug('Undefined remote for ', $plugin->name, ', skipping');
         next;
       }
 
@@ -205,7 +202,7 @@ sub fetch_raw {
           $fh->print( $plugin->_remote->{meta} );
         }
         else {
-          warn 'Nothing to write for ', $plugin->name if $self->app->debug;
+          $self->app->logger->debug('Nothing to write for ', $plugin->name);
         }
       }
     }

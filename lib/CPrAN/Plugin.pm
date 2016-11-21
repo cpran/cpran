@@ -248,6 +248,8 @@ sub test {
   my $self = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
+  $self->cpran->logger->debug('In CPrAN::Plugin::test');
+
   unless (defined $self->cpran->praat->current) {
     Carp::croak "Praat not installed; cannot test"
       unless $self->cpran->quiet;
@@ -255,13 +257,15 @@ sub test {
 
   return undef unless ($self->is_installed);
 
+  $self->cpran->logger->debug('Plugin is installed');
+
   use Cwd;
   my $oldwd = getcwd;
   chdir $self->{root}
     or die 'Could not change directory';
 
   unless ( -e 't' ) {
-    # warn "No tests for $self->{name}\n";
+    $self->cpran->logger->debug('No tests for ', $self->{name});
     return undef;
   }
 
@@ -272,7 +276,7 @@ sub test {
   my $version = $self->cpran->praat->current;
   $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   if ($version >= 6 and $version < 6.003) {
-    warn 'Automated tests not supported for this version of Praat', "\n"
+    $self->cpran->logger->warn('Automated tests not supported for this version of Praat')
       unless $self->cpran->quiet;
     return undef;
   }

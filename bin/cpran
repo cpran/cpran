@@ -8,8 +8,9 @@ BEGIN {
 }
 
 use CPrAN;
+use Log::Any::Adapter;
 
-use Getopt::Long qw(:config pass_through );
+use Getopt::Long qw( :config pass_through );
 my %h;
 
 GetOptions(
@@ -27,6 +28,12 @@ GetOptions(
   "help",
   "yes",
 );
+
+if (defined $h{debug}) {
+  Log::Any::Adapter->set('Stderr');
+} else {
+  Log::Any::Adapter->set('Stderr', log_level => 'warn' );
+}
 
 my $app = CPrAN->new(\%h);
 
