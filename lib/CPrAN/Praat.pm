@@ -333,22 +333,26 @@ sub _build_current {
 
   die 'Binary is undefined!' unless defined $self->bin;
   use SemVer;
-  use File::Temp;
-  my $script  = File::Temp->new(
-    TEMPLATE => 'pscXXXXX',
-    SUFFIX   => '.praat'
-  );
-  print $script "echo 'praatVersion\$'";
-  # Use no command-line options to check for current version of
-  # Praat, since pre-6.0 versions had different ones.
-  my ($stdout, $stderr, @result) = $self->execute($script, []);
-  chomp $stdout;
+
+  my ($buffer, $version);
+  open my $fh, '<:raw', $self->bin;
+  # Read binary into the buffer after any residual copied from the last chunk
+  while( my $read = read $fh, $buffer, 4096, pos( $buffer ) || 0 ) {
+    while( $buffer =~ m[([4-9]\.\d\.\d{2})]g ) {
+      $version = $1;
+      last;
+    }
+
+    ## Slide the unsearched remainer to the front of the buffer.
+    no warnings qw( uninitialized );
+    substr( $buffer, 0, pos( $buffer ) ) = substr $buffer, pos( $buffer );
+  }
+  close $fh;
 
   $self->logger->trace('Version detection complete');
 
-
   try {
-    SemVer->new($stdout);
+    SemVer->new($version);
   }
   catch {
     die "Could not get current version of Praat: $_\n";

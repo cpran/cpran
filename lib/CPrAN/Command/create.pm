@@ -165,7 +165,9 @@ sub execute {
   );
 
   unless ($template->is_installed) {
-    print 'Installing plugin template...', "\n" unless $quiet;
+    print 'Installing plugin template...', "\n"
+      unless $self->app->quiet;
+
     $template = $self->app->run_command( update => 'template', {
       virtual => 1,
       quiet => 1,
