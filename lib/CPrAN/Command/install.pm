@@ -186,7 +186,8 @@ sub execute {
   if (scalar @{$args} == 1) {
     if (grep { /\bpraat\b/i } @{$args}) {
       $self->app->logger->trace('Processing Praat');
-      return $self->install_praat;
+      my ($n, $v) = split /:/, $args->[0];
+      return $self->install_praat($v);
     }
     elsif ($args->[0] eq '-') {
       while (<STDIN>) {
@@ -550,7 +551,9 @@ sub get_archive {
 sub install_praat {
   use Path::Class;
 
-  my ($self) = @_;
+  my ($self, $requested) = @_;
+  my $praat = $self->app->praat;
+  $praat->requested($requested);
 
   try {
     if (defined $self->app->praat->bin) {
@@ -568,66 +571,66 @@ sub install_praat {
     }
 
     unless (-w $self->path) {
-      die 'Cannot write to ', $self->path, ".\n";
+      die 'Cannot write to "', $self->path, '". Use --path to specify a different target', "\n";
     }
 
     # TODO(jja) Should we check for the target path to be in PATH?
 
-#     print "Querying server for latest version...\n" unless $opt->{quiet};
-#     unless ($opt->{quiet}) {
-#       print "Praat v", $praat->latest, " will be INSTALLED in $praat->{path}\n";
-#       print "Do you want to continue?";
-#     }
-#     if (CPrAN::yesno( $opt )) {
-#
-#       print "Downloading package from ", $praat->{home}, $praat->{package}, "...\n"
-#         unless $opt->{quiet};
-#
-#       my $archive = $praat->download;
-#
-#       use File::Temp;
-#       my $package = File::Temp->new(
-#         template => 'praat' . $praat->latest . '-XXXXX',
-#         suffix => $praat->{ext},
-#       );
-#
-#       my $extract = File::Temp->newdir(
-#         template => 'praat-XXXXX',
-#       );
-#
-#       print "Saving archive to ", $package->filename, "\n"
-#         unless $opt->{quiet};
-#
-#       use Path::Class;
-#       my $fh = Path::Class::file( $package->filename )->openw();
-#       binmode($fh);
-#       $fh->print($archive);
-#
-#       print "Extracting package to $praat->{path}...\n"
-#         unless $opt->{quiet};
-#
-#       # Extract archives
-#       use Archive::Extract;
-#
-#       my $ae = Archive::Extract->new( archive => $package->filename );
-#       $ae->extract( to => $extract )
-#         or die "Could not extract package: $ae->error";
-#
-#       use Path::Class;
-#       my $file = file($ae->extract_path, $ae->files->[0]);
-#
-#       use File::Copy;
-#       File::Copy::move $file, $praat->{path}
-#         or die "Could not move file: $!\n";
-#     }
+    unless ($self->app->quiet) {
+      print 'Querying server for latest version...', "\n";
+      print 'Praat v', $praat->latest, ' will be INSTALLED in ', $self->path, "\n";
+      print 'Do you want to continue?';
+    }
+    if ($self->app->_yesno('y')) {
+      print 'Downloading package from ', $praat->upstream, "...\n"
+        unless $self->app->quiet;
+
+      my $archive = $praat->download;
+
+      use File::Temp;
+      my $package = File::Temp->new(
+        template => 'praat' . $praat->latest . '-XXXXX',
+        suffix => $praat->_ext,
+      );
+
+      my $extract = File::Temp->newdir(
+        template => 'praat-XXXXX',
+      );
+
+      print "Saving archive to ", $package->filename, "\n"
+        unless $self->app->quiet;
+
+      use Path::Class;
+      my $fh = Path::Class::file( $package->filename )->openw();
+      binmode($fh);
+      $fh->print($archive);
+
+      print 'Extracting package to ', $self->path, "...\n"
+        unless $self->app->quiet;
+
+      # Extract archives
+      use Archive::Extract;
+
+      my $ae = Archive::Extract->new( archive => $package->filename );
+      $ae->extract( to => $extract )
+        or die "Could not extract package: $ae->error";
+
+      use Path::Class;
+      my $file = file($ae->extract_path, $ae->files->[0]);
+
+      use File::Copy;
+      File::Copy::move $file, $self->path
+        or die "Could not move file: $!\n";
+    }
   }
   catch {
     chomp;
     warn "$_\n";
     die "Could not install Praat\n";
   };
-#   print "Praat succesfully installed\n"
-#     unless $opt->{quiet};
+
+  print "Praat succesfully installed\n"
+    unless $self->app->quiet;
 }
 
 =back
