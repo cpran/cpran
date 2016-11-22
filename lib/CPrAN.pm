@@ -268,17 +268,17 @@ used multiple times to increase the number of debug messages that are printed.
 
 sub global_opt_spec {
   return (
-    [ "praat=s"    => "set path to the Praat binary" ],
+    [ "praat=s"             => "set path to the Praat binary" ],
     [ "pref_dir|pref-dir=s" => "set path to Praat preferences directory" ],
-    [ "root=s"     => "set path to CPrAN root" ],
-    [ "token=s"    => "set private token for GitLab API access" ],
-    [ "url=s"      => "set url of GitLab API" ],
-    [ "group=s"    => "set the id for the GitLab CPrAN group" ],
-    [ "verbose+"   => "increase verbosity" ],
-    [ "quiet"      => "quietly say no to everything" ],
-    [ "yes"        => "assume yes when prompted for confirmation" ],
-    [ "debug+"     => "increase debug level" ],
-    [ "outfile=s"  => "redirect output to file" ],
+    [ "root=s"              => "set path to CPrAN root" ],
+    [ "token=s"             => "set private token for GitLab API access" ],
+    [ "url=s"               => "set url of GitLab API" ],
+    [ "group=s"             => "set the id for the GitLab CPrAN group" ],
+    [ "verbose|v+"          => "increase verbosity" ],
+    [ "quiet"               => "quietly say no to everything" ],
+    [ "yes"                 => "assume yes when prompted for confirmation" ],
+    [ "debug+"              => "increase debug level" ],
+    [ "outfile=s"           => "redirect output to file" ],
   );
 }
 

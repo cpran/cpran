@@ -27,7 +27,7 @@ GetOptions(
   "group=s",
   "version",
   "quiet",
-  "verbose+",
+  "verbose|v+",
   "debug+",
   "help",
   "yes",
