@@ -32,6 +32,12 @@ has current => (
   },
 );
 
+has requested => (
+  is => 'rw',
+  isa => 'SemVer|Undef',
+  coerce => 1,
+);
+
 has cpran => (
   is => 'ro',
   isa => 'CPrAN',
@@ -103,6 +109,13 @@ sub BUILDARGS {
     }
     delete $args->{meta};
   }
+
+  if ($args->{name} =~ /:/) {
+    my ($n, $v) = split /:/, $args->{name};
+    $args->{name} = $n;
+    $args->{requested} = $v unless $v eq 'latest';
+  }
+
   $args->{name} =~ s/^plugin_([\w\d]+)/$1/;
 
   return $args;
