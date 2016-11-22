@@ -320,6 +320,7 @@ sub git_install {
   if ($needs_pull) {
     print 'Pulling recent changes from upstream', "\n"
       unless $self->app->quiet;
+
     $repo->run( checkout => 'master' );
     $repo->run( pull => 'origin', 'master' );
   }
@@ -328,7 +329,7 @@ sub git_install {
 
   print "Checking out '$latest'\n" unless $self->app->quiet;
 
-  $repo->run( 'checkout', '--quiet', $latest );
+  $repo->run( checkout => '--quiet', $latest );
 }
 
 sub raw_install {
