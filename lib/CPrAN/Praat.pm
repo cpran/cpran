@@ -388,7 +388,7 @@ sub _build_releases {
   $self->logger->trace('Finding Praat releases');
 
   use Path::Class;
-  use JSON::Tiny q(decode_json);
+  use JSON qw( decode_json );
 
   my @releases;
 
