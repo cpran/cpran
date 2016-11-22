@@ -85,7 +85,7 @@ has releases => (
 
 has bin => (
   is => 'ro',
-  isa => 'Path::Class::File|Undef',
+  isa => 'Path::Class::File',
   lazy => 1,
   coerce => 1,
   default => sub {

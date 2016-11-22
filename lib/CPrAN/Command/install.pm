@@ -96,7 +96,7 @@ has path => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    return $_[0]->app->praat->bin->parent if defined $_[0]->app->praat->bin;
+    return $_[0]->app->praat->bin->parent if $_[0]->app->praat->bin->stringify;
 
     use Path::Class;
     if ($^O =~ /darwin/) {
@@ -556,7 +556,7 @@ sub install_praat {
   $praat->requested($requested);
 
   try {
-    if (defined $self->app->praat->bin) {
+    if ($praat->bin->stringify) {
       unless ($self->reinstall) {
         warn "Praat is already installed. Use --reinstall to ignore this warning\n";
         exit 0;
