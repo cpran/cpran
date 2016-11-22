@@ -261,11 +261,11 @@ sub test {
 
   use Cwd;
   my $oldwd = getcwd;
-  chdir $self->{root}
+  chdir $self->root
     or die 'Could not change directory';
 
   unless ( -e 't' ) {
-    $self->cpran->logger->debug('No tests for ', $self->{name});
+    $self->cpran->logger->debug('No tests for ', $self->name);
     return undef;
   }
 
