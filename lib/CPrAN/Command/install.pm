@@ -117,19 +117,19 @@ has path => (
     }
   },
 );
-# around path => sub {
-#   my ($orig, $self, $path) = @_;
-#
-#   if (defined $path) {
-#     use File::Glob ':bsd_glob';
-#     $path = bsd_glob $path if defined $path;
-#
-#     $self->$orig($path);
-#   }
-#   else {
-#     $self->$orig;
-#   }
-# };
+
+around BUILDARGS => sub {
+  my $orig = shift;
+  my $self = shift;
+  my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+
+  if (defined $args->{path}) {
+    use File::Glob ':bsd_glob';
+    $args->{path} = bsd_glob $args->{path};
+  }
+
+  return $self->$orig($args);
+};
 
 =head1 NAME
 
