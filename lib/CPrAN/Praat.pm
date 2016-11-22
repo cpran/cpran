@@ -38,13 +38,23 @@ A pseudo-class to encapsulate CPrAN's handling of Praat itself.
 =cut
 
 # Set during first call to latest
-has _package => (
+has _package_name => (
   is => 'rw',
   init_arg => undef,
   lazy => 1,
   default => sub {
     $_[0]->latest;
-    return $_[0]->_package;
+    return $_[0]->_package_name;
+  },
+);
+
+has _package_url => (
+  is => 'rw',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    $_[0]->latest;
+    return $_[0]->_package_url;
   },
 );
 
@@ -56,12 +66,6 @@ has _releases_endpoint => (
 
 has [qw( _os _ext _bit )] => (
   is => 'ro',
-);
-
-has upstream => (
-  is => 'ro',
-  lazy => 1,
-  default => 'http://www.fon.hum.uva.nl/praat/',
 );
 
 has pref_dir => (
@@ -81,7 +85,7 @@ has releases => (
 
 has bin => (
   is => 'ro',
-  isa => 'Path::Class::File',
+  isa => 'Path::Class::File|Undef',
   lazy => 1,
   coerce => 1,
   default => sub {
@@ -118,7 +122,13 @@ has latest => (
   init_arg => undef,
   lazy => 1,
   isa => 'SemVer',
-  builder => '_build_latest',
+  builder => '_build_remote',
+);
+
+has requested => (
+  is => 'rw',
+  isa => 'SemVer|Undef',
+  coerce => 1,
 );
 
 has logger => (
@@ -225,7 +235,7 @@ sub download {
   my $ua = LWP::UserAgent->new;
   $ua->show_progress( 1 - $opt->{quiet} );
 
-  my $response = $ua->get( $self->upstream . $self->_package );
+  my $response = $ua->get( $self->_package_url );
   if ($response->is_success) {
     return $response->decoded_content;
   }
@@ -268,46 +278,59 @@ sub execute {
   };
 }
 
-sub _build_latest {
-  my ($self) = @_;
+sub _build_remote {
+  my ($self, $requested) = @_;
 
-  use HTML::Tree;
+  use URI;
+  use JSON qw( decode_json );
   use LWP::UserAgent;
   use SemVer;
 
-  my $tree = HTML::Tree->new;
-  my $ua   = LWP::UserAgent->new;
+  my $ua = LWP::UserAgent->new;
 
   my ($os, $bit, $ext) = ($self->_os, $self->_bit, $self->_ext);
   my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${ext}/;
 
-  my $response = $ua->get(
-    $self->upstream . "download_$os.html"
-  );
+  my @haystack;
+  my $url;
+  if ($self->requested) {
+    $url = URI->new( $self->_releases_endpoint . '/tags/v' . $self->requested->stringify )
+  }
+  else {
+    $url = URI->new( $self->_releases_endpoint . '/latest' )
+  }
 
+  my $response = $ua->get( $url );
   if ($response->is_success) {
-    $tree->parse( $response->decoded_content );
-    $tree->elementify;
-    my $pkglink = $tree->look_down(
-      '_tag', 'a',
-      sub { $_[0]->as_text =~ /$pkgregex/ }
-    );
-
-    if (defined $pkglink) {
-      $self->_package($pkglink->as_trimmed_text);
-
-      $pkglink->as_trimmed_text =~ /$pkgregex/;
-      my $v = $+{version};
-      $v =~ s/(\d)(\d{2})$/.$1.$2/;
-      return SemVer->new($v);
-    }
-    else {
-      Carp::croak 'Did not find Praat package link';
-    }
+    @haystack = ( decode_json $response->decoded_content );
   }
   else {
     Carp::croak $response->status_line;
   }
+
+  my ($latest, $found);
+  my $once = 0;
+
+  foreach (@haystack) {
+    $latest = $_;
+    ($found) = grep { $_->{name} =~ $pkgregex } @{$latest->{assets}};
+
+    unless (defined $found) {
+      $self->logger->info('Did not find suitable release in latest, looking back');
+      @haystack = reverse @{$self->releases} unless $once;
+      $once = 1;
+    }
+
+    last if defined $found;
+  }
+
+  die 'Could not find ', ($self->requested // 'latest'), ' Praat release for this system', "\n"
+    unless defined $found;
+
+  $self->_package_name($found->{name});
+  $self->_package_url($found->{browser_download_url});
+
+  return SemVer->new( $latest->{tag_name} );
 }
 
 sub _build_pref_dir {
