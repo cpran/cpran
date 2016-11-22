@@ -325,11 +325,12 @@ sub git_install {
     $repo->run( pull => 'origin', 'master' );
   }
 
-  my $latest = 'v' . $plugin->latest->stringify;
+  my $wanted = $plugin->requested // $plugin->latest;
+  $wanted = 'v' . $wanted->stringify;
 
-  print "Checking out '$latest'\n" unless $self->app->quiet;
+  print "Checking out '$wanted'\n" unless $self->app->quiet;
 
-  $repo->run( checkout => '--quiet', $latest );
+  $repo->run( checkout => '--quiet', $wanted );
 }
 
 sub raw_install {
