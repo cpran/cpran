@@ -287,7 +287,7 @@ sub test {
     push @args, ('--exec', $self->cpran->praat->bin . ' --ansi');
   }
 
-  if ($self->cpran->verbose > 1) {
+  if ($self->cpran->verbose) {
     push @args, '-v';
   }
 
