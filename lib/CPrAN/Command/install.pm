@@ -118,6 +118,14 @@ has path => (
   },
 );
 
+has barren => (
+  is  => 'rw',
+  traits => [qw(Getopt)],
+  documentation => 'request a barren Praat binary',
+  lazy => 1,
+  default => 0,
+);
+
 around BUILDARGS => sub {
   my $orig = shift;
   my $self = shift;
@@ -554,6 +562,7 @@ sub install_praat {
   my ($self, $requested) = @_;
   my $praat = $self->app->praat;
   $praat->requested($requested);
+  $praat->_barren($self->barren) if $self->barren;
 
   try {
     if ($praat->bin->stringify) {
@@ -582,7 +591,7 @@ sub install_praat {
       print 'Do you want to continue?';
     }
     if ($self->app->_yesno('y')) {
-      print 'Downloading package from ', $praat->upstream, "...\n"
+      print 'Downloading package from ', $praat->_package_url, "...\n"
         unless $self->app->quiet;
 
       my $archive = $praat->download;

@@ -37,6 +37,12 @@ A pseudo-class to encapsulate CPrAN's handling of Praat itself.
 
 =cut
 
+has _barren => (
+  is => 'rw',
+  lazy => 1,
+  default => 0,
+);
+
 # Set during first call to latest
 has _package_name => (
   is => 'rw',
@@ -289,7 +295,8 @@ sub _build_remote {
   my $ua = LWP::UserAgent->new;
 
   my ($os, $bit, $ext) = ($self->_os, $self->_bit, $self->_ext);
-  my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${ext}/;
+  my $barren = $self->_barren ? 'barren' : '';
+  my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${barren}${ext}/;
 
   my @haystack;
   my $url;
