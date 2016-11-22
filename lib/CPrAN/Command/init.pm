@@ -100,7 +100,6 @@ sub execute {
 
   my ($cpran) = $self->app->run_command( update => 'cpran', {
     quiet => 1,
-    yes => 1,
   });
 
   my @plugins = $self->app->run_command( deps => $cpran, {
@@ -110,7 +109,6 @@ sub execute {
 
   $self->app->run_command( update => @plugins, {
     quiet => 1,
-    yes => 1,
   });
 
   $self->app->run_command( install => @plugins, $cpran, {
