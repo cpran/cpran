@@ -120,12 +120,9 @@ sub execute {
 
   my @updated;
   if ($self->raw) {
-    print 'Contacting remote repositories for latest data...', "\n"
-      unless $self->app->quiet;
     @updated = $self->fetch_raw;
   }
   else {
-    print 'Updating plugin data...', "\n" unless $self->app->quiet;
     @updated = $self->fetch_cache;
   }
 
@@ -140,6 +137,9 @@ sub execute {
 
 sub fetch_raw {
   my ($self) = @_;
+
+  print 'Contacting remote repositories for latest data...', "\n"
+    unless $self->app->quiet;
 
   my @updated;
   my @requested = keys %{$self->requested};
@@ -157,17 +157,17 @@ sub fetch_raw {
   foreach my $source (@projects) {
 
     unless ($source->{name} =~ /^plugin_/) {
-      $self->app->logger->debug('Not a plugin, ignoring ', $source->{name});
+      $self->app->logger->debug('Not a plugin, ignoring', $source->{name});
       next;
     }
 
     unless ($source->{visibility_level} eq 20) {
-      $self->app->logger->debug('Not publicly visible, ignoring ', $source->{name});
+      $self->app->logger->debug('Not publicly visible, ignoring', $source->{name});
       next;
     }
 
     if (scalar @requested > 1 and !defined $self->requested->{$source->{name}}) {
-      $self->app->logger->debug('Not in requested plugins, ignoring ', $source->{name});
+      $self->app->logger->debug('Not in requested plugins, ignoring', $source->{name});
       next;
     }
 
@@ -184,30 +184,33 @@ sub fetch_raw {
     next unless defined $plugin;
 
     if ($plugin->is_cpran) {
-      print 'Working on ', $plugin->name, "...\n"
-        if $self->app->verbose;
+      $self->app->logger->trace('Working on', $plugin->name)
+        unless $self->app->quiet;
 
       $plugin->fetch;
 
       unless (defined $plugin->_remote) {
-        $self->app->logger->debug('Undefined remote for ', $plugin->name, ', skipping');
+        $self->app->logger->debug('Undefined remote for', $plugin->name, ', skipping');
         next;
       }
 
       push @updated, $plugin;
 
-      unless (defined $self->virtual) {
+      unless ($self->virtual) {
         if (defined $plugin->_remote->{meta} and $plugin->_remote->{meta} ne '') {
-          my $fh = $plugin->root->openw;
+
+          use Path::Class;
+          my $fh = file( $self->app->root, $plugin->name )->openw;
           $fh->print( $plugin->_remote->{meta} );
         }
         else {
-          $self->app->logger->debug('Nothing to write for ', $plugin->name);
+          $self->app->logger->debug('Nothing to write for', $plugin->name);
         }
       }
     }
     else {
-      warn $source->{name}, ' is not a CPrAN plugin', "\n";
+      $self->app->logger->warn($plugin->name, 'is not a CPrAN plugin')
+        unless $self->app->quiet;
     }
   }
   return @updated;
@@ -215,6 +218,9 @@ sub fetch_raw {
 
 sub fetch_cache {
   my ($self) = @_;
+
+  print 'Updating plugin data...', "\n"
+    unless $self->app->quiet;
 
   my @meta = split /---/, $self->app->api->raw_snippet(
     $self->_project->{id}, $self->_list->{id}
