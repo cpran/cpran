@@ -553,8 +553,6 @@ sub install_praat {
   my ($self) = @_;
 
   try {
-#     $self->app->praat->latest;
-
     if (defined $self->app->praat->bin) {
       unless ($self->reinstall) {
         warn "Praat is already installed. Use --reinstall to ignore this warning\n";
