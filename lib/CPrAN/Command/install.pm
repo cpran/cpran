@@ -100,7 +100,7 @@ has path => (
 
     use Path::Class;
     if ($^O =~ /darwin/) {
-      warn 'in mac';
+      $_[0]->app->logger->debug('Installing Praat binary to default Mac path');
       die "Praat installation not currently supported on MacOS\n";
       # Use hdiutil and cp?
       #     hdituil mount some.dmg
@@ -108,11 +108,11 @@ has path => (
       #     hdiutil umount "/Volumes/Praat"
     }
     elsif ($^O =~ /MSWin32/) {
-      warn 'in win';
+      $_[0]->app->logger->debug('Installing Praat binary to default Windows path');
       return dir 'C:', 'Program Files', 'Praat';
     }
     else {
-      warn 'in else';
+      $_[0]->app->logger->debug('Installing Praat binary to default path');
       return dir '', 'usr', 'bin';
     }
   },
