@@ -116,7 +116,12 @@ sub execute {
     shift @{$args};
   }
 
-  $self->request_plugin($_, 1) foreach @{$args};
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+  } @{$args};
+
+  $self->request_plugin($_->name, 1) foreach @plugins;
 
   my @updated;
   if ($self->raw) {
