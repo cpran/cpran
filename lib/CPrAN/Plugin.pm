@@ -15,6 +15,8 @@ has [qw( name id url )] => (
 has latest => (
   is => 'ro',
   lazy => 1,
+  isa => 'SemVer',
+  coerce => 1,
   default => sub {
     $_[0]->_remote->{version};
   },
@@ -22,6 +24,8 @@ has latest => (
 
 has current => (
   is => 'ro',
+  isa => 'SemVer',
+  coerce => 1,
   lazy => 1,
   default => sub {
     $_[0]->_local->{version};
