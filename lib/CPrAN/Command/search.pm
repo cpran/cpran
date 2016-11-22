@@ -159,7 +159,6 @@ sub execute {
     CPrAN::Plugin->new( name => $_, cpran => $self->app )
   } keys %names;
 
-
   unless ($self->app->quiet) {
     $self->{output} = Text::FormatTable->new('l l l l');
     $self->{output}->head(
@@ -262,7 +261,9 @@ of plugins whose descriptors have been saved by C<cpran update>
 =cut
 
 sub list_known {
-  return map { $_->basename } $_[0]->app->root->children;
+  return map  { $_->basename }
+         grep { $_->basename !~ /^\./ }
+         $_[0]->app->root->children;
 }
 
 =item B<_match()>
