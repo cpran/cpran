@@ -103,7 +103,11 @@ sub execute {
     yes => 1,
   });
 
-  $self->app->run_command( install => $cpran, {
+  my @plugins = $self->app->run_command( deps => $cpran, {
+    quiet => 1,
+  });
+
+  $self->app->run_command( install => @plugins, {
     quiet => 1,
     yes => 1,
     map { $_ => $self->$_ } qw( git test force reinstall )
