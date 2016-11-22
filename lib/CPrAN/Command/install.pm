@@ -183,21 +183,17 @@ sub execute {
 
   $self->app->logger->debug('Executing install');
 
-  if (scalar @{$args} == 1 and $args->[0] eq '-') {
-    while (<STDIN>) {
-      chomp;
-      push @{$args}, $_;
-    }
-    shift @{$args};
-  }
-
-  if (grep { /\bpraat\b/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
+  if (scalar @{$args} == 1) {
+    if (grep { /\bpraat\b/i } @{$args}) {
       $self->app->logger->trace('Processing Praat');
       return $self->install_praat;
+    }
+    elsif ($args->[0] eq '-') {
+      while (<STDIN>) {
+        chomp;
+        push @{$args}, $_;
+      }
+      shift @{$args};
     }
   }
 
