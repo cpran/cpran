@@ -36,6 +36,15 @@ has log => (
   documentation => 'request / disable log of tests',
 );
 
+has reinstall => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  lazy => 1,
+  default => 0,
+  documentation => 're-install requested plugins',
+);
+
 has force => (
   is  => 'rw',
   isa => 'Bool',
@@ -80,7 +89,7 @@ This command installs the [cpran plugin][] on an otherwise empty system.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (-e dir($self->app->praat->pref_dir, 'plugin_cpran')) {
+  if (!$self->reinstall and -e dir($self->app->praat->pref_dir, 'plugin_cpran')) {
     print "CPrAN is already initialised. Nothing to do here!\n"
       unless $self->app->quiet;
     return;
@@ -97,7 +106,7 @@ sub execute {
   $self->app->run_command( install => $cpran, {
     quiet => 1,
     yes => 1,
-    map { $_ => $self->$_ } qw( git test force )
+    map { $_ => $self->$_ } qw( git test force reinstall )
   });
 
   if ($cpran->is_installed) {
