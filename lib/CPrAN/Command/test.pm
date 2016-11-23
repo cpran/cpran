@@ -118,4 +118,7 @@ L<CPrAN::Command::upgrade|upgrade>
 
 # VERSION
 
+__PACKAGE__->meta->make_immutable;
+no Moose;
+
 1;
