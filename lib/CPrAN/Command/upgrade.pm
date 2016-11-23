@@ -173,7 +173,8 @@ sub execute {
       print '  ', join(' ', map { $_->{name} } @todo), "\n";
       print "Do you want to continue?";
     }
-    if ($self->_yesno('y')) {
+
+    if ($self->app->_yesno('y')) {
       foreach my $plugin (@todo) {
         print 'Upgrading ', $plugin->{name}, ' from v',
           $plugin->{local}->{version}, ' to v',
