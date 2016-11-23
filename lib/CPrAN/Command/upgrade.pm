@@ -160,10 +160,8 @@ sub execute {
   if (scalar @todo) {
     use Array::Utils qw( intersect );
 
-    my @deps = $self->app->run_command( deps => {
+    my @deps = $self->app->run_command( deps => @todo, {
       quiet => 1,
-      installed => $self->installed,
-      wrap => $self->wrap,
     });
     @todo = intersect(@todo, @deps);
   }
