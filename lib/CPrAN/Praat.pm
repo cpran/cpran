@@ -241,6 +241,7 @@ sub download {
   my $ua = LWP::UserAgent->new;
   $ua->show_progress( 1 - $opt->{quiet} );
 
+  $self->logger->trace('GET', $self->_package_url) if $self->logger->is_trace;
   my $response = $ua->get( $self->_package_url );
   if ($response->is_success) {
     return $response->decoded_content;
@@ -307,6 +308,7 @@ sub _build_remote {
     $url = URI->new( $self->_releases_endpoint . '/latest' )
   }
 
+  $self->logger->trace('GET', $url) if $self->logger->is_trace;
   my $response = $ua->get( $url );
   if ($response->is_success) {
     @haystack = ( decode_json $response->decoded_content );
@@ -406,6 +408,7 @@ sub _build_releases {
   # Repeat block is commented out to prevent
   # busting through the API request limit
   # do {
+    $self->logger->trace('GET', $next) if $self->logger->is_trace;
     $response = $ua->get($next);
     die $response->status_line unless $response->is_success;
 
