@@ -287,8 +287,24 @@ sub git_install {
   my ($self, $plugin) = @_;
 
   my $needs_pull = 1;
+  my $repo;
 
-  unless ($plugin->is_installed) {
+  if ($plugin->is_installed) {
+    $repo = Git::Repository->new( work_tree => $plugin->root );
+
+    my %remotes = map { my ($a, $b) = split /\s/, $_; $a => $b }
+      $repo->run( remote => '-v' );
+
+    if (defined $remotes{cpran}) {
+      die 'Cannot reinstall ', $plugin->name, ' using git: \'cpran\' remote is not HTTP'
+        unless $remotes{cpran} =~ /^http/;
+    }
+    else {
+      $plugin->fetch;
+      $repo->run( remote => qw( add cpran ), $plugin->url );
+    }
+  }
+  else {
     print 'Contacting server...', "\n" unless $self->app->quiet;
 
     unless ($plugin->url) {
@@ -298,17 +314,18 @@ sub git_install {
 
     print 'Cloning from ', $plugin->url, "\n" unless $self->app->quiet;
     Git::Repository->run( clone => $plugin->url, $plugin->root );
+
+    $repo = Git::Repository->new( work_tree => $plugin->root );
+    $repo->run( remote => qw( rename origin cpran ) );
     $needs_pull = 0;
   }
-
-  my $repo = Git::Repository->new( work_tree => $plugin->root );
 
   if ($needs_pull) {
     print 'Pulling recent changes from upstream', "\n"
       unless $self->app->quiet;
 
     $repo->run( checkout => 'master' );
-    $repo->run( pull => 'origin', 'master' );
+    $repo->run( pull => qw( cpran master ) );
   }
 
   my $wanted = $plugin->requested // $plugin->latest;
