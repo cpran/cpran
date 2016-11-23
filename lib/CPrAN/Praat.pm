@@ -392,7 +392,7 @@ sub _build_current {
 };
 
 sub _build_releases {
-  my ($self, $opt) = @_;
+  my ($self) = @_;
 
   $self->logger->trace('Finding Praat releases');
 
