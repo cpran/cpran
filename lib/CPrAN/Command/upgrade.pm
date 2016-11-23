@@ -176,103 +176,16 @@ sub execute {
 
     if ($self->app->_yesno('y')) {
       foreach my $plugin (@todo) {
-        print 'Upgrading ', $plugin->{name}, ' from v',
-          $plugin->{local}->{version}, ' to v',
-          $plugin->{remote}->{version}, "...\n" unless $self->app->quiet;
+        print 'Upgrading ', $plugin->name, ' from v',
+          $plugin->current, ' to v',
+          $plugin->requested, "...\n" unless $self->app->quiet;
 
-        if ($self->git) {
-          try {
-            require Git::Repository;
-            my $repo;
-            try {
-              $repo = Git::Repository->new( work_tree => $plugin->root );
-            }
-            catch {
-              $self->app->logger->warn('No git repository at ', $plugin->root);
-              $self->app->logger->debug($_);
-              exit 1;
-            };
+        my $success = ($self->git) ?
+          $self->git_upgrade($plugin) :
+          $self->raw_upgrade($plugin);
 
-            my $head;
-            try {
-              $head = $repo->run('rev-parse', 'HEAD', { fatal => '!0' } );
-            }
-            catch {
-              $self->app->logger->warn('Could not locate HEAD');
-              $self->app->logger->debug($_);
-            };
-
-            try {
-              $plugin->fetch unless defined $plugin->{url};
-              $repo->run( 'pull', '--tags', $plugin->{url}, { fatal => '!0' } );
-            }
-            catch {
-              $self->app->logger->warn('Could not fetch from origin');
-              $self->app->logger->debug($_);
-            };
-
-            my $latest = $plugin->latest;
-            my @args = ( 'checkout', '--quiet', $latest->{commit}->{id} );
-            push @args, '--force' if defined $self->force;
-
-            try {
-              my ($STDOUT, $STDERR) = capture {
-                $repo->run(@args, { fatal => '!0' })
-              }
-            }
-            catch {
-              die "Unable to move HEAD. Do you have uncommited local changes? ",
-                "Commit or stash them before upgrade to keep them, or discard them with --force.\n";
-            };
-
-            $plugin->update;
-            my $success = 0;
-            try { $success = $plugin->test }
-            catch {
-              chomp;
-              warn "There were errors while testing:\n$_\n";
-            };
-
-            if (defined $success and !$success) {
-              if ($self->force) {
-                $self->app->logger->warn('Tests failed, but continuing anyway because of --force')
-                  unless $self->app->quiet;
-              }
-              else {
-                unless ($self->app->quiet) {
-                  $self->app->logger->warn('Tests failed. Rolling back upgrade of ', $plugin->{name});
-                  $self->app->logger->warn('Use --force to ignore this warning');
-                }
-                $repo->run('reset', '--hard', '--quiet', $head , { fatal => '!0' });
-
-                $self->app->logger->warn('Did not upgrade ', $plugin->{name})
-                  unless $self->app->quiet;
-                exit 1;
-              }
-            }
-            else {
-              print $plugin->{name}, 'upgraded successfully.', "\n"
-                unless $self->app->quiet;
-            }
-          }
-          catch {
-            $self->app->logger->warn($_);
-            $self->app->logger->warn('Aborting');
-            exit 1;
-          }
-        }
-        else {
-          $self->app->run_command( remove => $plugin->{name}, {
-            quiet => 1,
-            yes => 1,
-          });
-          $self->app->run_command( install => $plugin->{name}, {
-            quiet => 1,
-            yes => 1,
-          });
-          print $plugin->{name}, ' upgraded successfully', "\n"
-            unless $self->app->quiet;
-        }
+        print $plugin->name, ' upgraded successfully', "\n"
+          if !$self->app->quiet and $success;
       }
     }
     else {
@@ -284,6 +197,107 @@ sub execute {
     print 'All plugins up to date', "\n" unless $self->app->quiet;
     exit;
   }
+}
+
+sub git_upgrade {
+  my ($self, $plugin) = @_;
+
+  try {
+    require Git::Repository;
+    my $repo;
+    try {
+      $repo = Git::Repository->new( work_tree => $plugin->root );
+    }
+    catch {
+      $self->app->logger->warn('No git repository at ', $plugin->root);
+      $self->app->logger->debug($_);
+      exit 1;
+    };
+
+    my $head;
+    try {
+      $head = $repo->run( rev-parse => 'HEAD', { fatal => '!0' } );
+    }
+    catch {
+      $self->app->logger->warn('Could not locate HEAD');
+      $self->app->logger->debug($_);
+    };
+
+    try {
+      $plugin->fetch unless defined $plugin->url;
+      $repo->run( pull => '--tags', $plugin->url, { fatal => '!0' } );
+    }
+    catch {
+      $self->app->logger->warn('Could not fetch from remote');
+      $self->app->logger->debug($_);
+    };
+
+    my $latest = $plugin->latest;
+    my @args = ( '--quiet', $latest->{commit}->{id} );
+    push @args, '--force' if defined $self->force;
+
+    try {
+      my ($STDOUT, $STDERR) = capture {
+        $repo->run( checkout => @args, { fatal => '!0' })
+      }
+    }
+    catch {
+      die "Unable to move HEAD. Do you have uncommited local changes? ",
+        "Commit or stash them before upgrade to keep them, or discard them with --force.\n";
+    };
+
+    $plugin->refresh;
+    my $success = 0;
+    try { $success = $plugin->test }
+    catch {
+      chomp;
+      $self->app->logger->warn('There were errors while testing:');
+      $self->app->logger->warn($_);
+    };
+
+    if (defined $success and !$success) {
+      if ($self->force) {
+        $self->app->logger->warn('Tests failed, but continuing anyway because of --force')
+          unless $self->app->quiet;
+      }
+      else {
+        unless ($self->app->quiet) {
+          $self->app->logger->warn('Tests failed. Rolling back upgrade of', $plugin->name);
+          $self->app->logger->warn('Use --force to ignore this warning');
+        }
+        $repo->run( reset => '--hard', '--quiet', $head , { fatal => '!0' });
+
+        $self->app->logger->warn('Did not upgrade', $plugin->name)
+          unless $self->app->quiet;
+        return 0;
+      }
+    }
+    return 1;
+  }
+  catch {
+    $self->app->logger->warn($_);
+    $self->app->logger->warn('Aborting');
+    exit 1;
+  };
+}
+
+sub raw_upgrade {
+  my ($self, $plugin) = @_;
+
+  $self->app->run_command( remove => $plugin, {
+    quiet => 1,
+    yes => 1,
+  });
+
+  $self->app->run_command( install => $plugin, {
+    quiet => 1,
+    git => 0,
+    yes => 1,
+  });
+
+  $plugin->refresh;
+
+  return $plugin->current == $plugin->requested;
 }
 
 =head1 OPTIONS
