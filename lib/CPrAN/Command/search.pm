@@ -148,7 +148,7 @@ sub execute {
   unless ($self->app->quiet) {
     $self->{output} = Text::FormatTable->new('l l l l');
     $self->{output}->head(
-      "Name", "Local", "Remote", "Description"
+      'Name', 'Local', 'Remote', 'Description'
     );
 
     $self->_add_output_row($_) foreach @found;
@@ -159,13 +159,15 @@ sub execute {
         GetTerminalSize();
       }
       catch {
-        warn "DEBUG: Unable to get terminal size: $_\n"
+        $self->app->logger->debug('Unable to get terminal size:', $_)
           if $self->debug;
         80;
       };
       print $self->{output}->render($self->wrap ? $wchar : 1000);
     }
-    else { print "No matches found\n" }
+    else {
+      print 'No matches found', "\n";
+    }
   }
 
   return @found;

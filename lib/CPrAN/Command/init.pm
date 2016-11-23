@@ -83,7 +83,7 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   if (!$self->reinstall and -e dir($self->app->praat->pref_dir, 'plugin_cpran')) {
-    print "CPrAN is already initialised. Nothing to do here!\n"
+    print 'CPrAN is already initialised. Nothing to do here!', "\n"
       unless $self->app->quiet;
     return;
   }
@@ -111,12 +111,13 @@ sub execute {
   });
 
   if ($cpran->is_installed) {
-    print "CPrAN is initialised!\nYou should now run 'cpran update' to refresh the plugin directory\n"
+    print 'CPrAN is initialised!', "\n",
+          'You should now run \'cpran update\' to refresh the plugin directory', "\n"
       unless $self->app->quiet;
     return 1;
   }
   else {
-    print "Could not initialise CPrAN\n"
+    print 'Could not initialise CPrAN', "\n"
       unless $self->app->quiet;
     return 0;
   }

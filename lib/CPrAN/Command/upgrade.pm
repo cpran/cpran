@@ -137,18 +137,20 @@ sub execute {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran) {
         if ($plugin->is_latest // 1) {
-          print "$plugin->{name} is already at its latest version\n"
-            if $opt->{verbose} > 1;
+          $self->app->logger->debug($plugin->name, 'is already at its latest version')
+            if $self->app->debug;
         }
         else {
           push @todo, $plugin;
         }
       }
       else {
-        $self->app->logger->debug($plugin->{name}, ' is not a CPrAN plugin');
+        $self->app->logger->debug($plugin->name, 'is not a CPrAN plugin');
       }
     }
-    else { warn "$plugin->{name} is not installed\n" }
+    else {
+      $self->app->logger->warn($plugin->name, 'is not installed');
+    }
   }
 
   if ($self->app->debug) {
