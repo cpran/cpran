@@ -58,7 +58,21 @@ sub execute {
 
   $self->app->logger->debug('Executing show');
 
-  if (scalar @{$args} == 1 and $args->[0] eq '-') {
+  use CPrAN::Plugin;
+  use YAML::XS;
+  use Cwd;
+  use Path::Class;
+
+  if (!scalar @{$args}) {
+    # If no arguments are given, read a plugin from the current directory
+    push @{$args}, CPrAN::Plugin->new(
+      name => dir(cwd)->basename,
+      root => dir(cwd),
+      cpran => $self->app,
+    );
+    $self->installed(1);
+  }
+  elsif (scalar @{$args} == 1 and $args->[0] eq '-') {
     while (<STDIN>) {
       chomp;
       push @{$args}, $_;
@@ -66,11 +80,9 @@ sub execute {
     shift @{$args};
   }
 
-  use CPrAN::Plugin;
-  use YAML::XS;
-
   my @plugins = map {
-    CPrAN::Plugin->new( name => $_, cpran => $self->app ) unless ref $_;
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
 
   my @stream;

@@ -48,7 +48,19 @@ will only report success if all tests for all given plugins were successful.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (scalar @{$args} == 1 and $args->[0] eq '-') {
+  use CPrAN::Plugin;
+  use Cwd;
+  use Path::Class;
+
+  if (!scalar @{$args}) {
+    # If no arguments are given, read a plugin from the current directory
+    push @{$args}, CPrAN::Plugin->new(
+      name => dir(cwd)->basename,
+      root => dir(cwd),
+      cpran => $self->app,
+    );
+  }
+  elsif (scalar @{$args} == 1 and $args->[0] eq '-') {
     while (<STDIN>) {
       chomp;
       push @{$args}, $_;
@@ -56,11 +68,10 @@ sub execute {
     shift @{$args};
   }
 
-  use CPrAN::Plugin;
-
   my $outcome = 1;
   my @plugins = map {
-    CPrAN::Plugin->new( name => $_, cpran => $self->app ) unless ref $_
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
 
   try {
