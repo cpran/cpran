@@ -326,7 +326,7 @@ sub _build_remote {
 
     unless (defined $found) {
       $self->logger->info('Did not find suitable release in latest, looking back');
-      @haystack = reverse @{$self->releases} unless $once;
+      @haystack = @{$self->releases} unless $once;
       $once = 1;
     }
 
@@ -429,7 +429,7 @@ sub _build_releases {
   # }
   # } until !defined $next;
 
-  @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
+  @releases = sort { $b->{semver} <=> $a->{semver} } @releases;
 
   return \@releases;
 }
