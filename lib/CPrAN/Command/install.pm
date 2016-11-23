@@ -11,8 +11,10 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
+use Try::Tiny;
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
+use Lingua::EN::Inflexion;
 
 has [qw(
   test log force reinstall git barren
@@ -195,9 +197,10 @@ sub execute {
   my @installed;
   if (@schedule) {
     unless ($self->app->quiet) {
-      print "The following plugins will be INSTALLED:\n";
+      my $n = scalar @schedule;
+      print inflect("<#d:$n>The following <N:plugin> will be INSTALLED:"), "\n";
       print '  ', join(' ', map { $_->name } @schedule), "\n";
-      print "Do you want to continue?";
+      print 'Do you want to continue?';
     }
     if ($self->app->_yesno('y')) {
       try {

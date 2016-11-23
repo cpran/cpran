@@ -14,6 +14,7 @@ require Carp;
 use Try::Tiny;
 use Capture::Tiny 'capture';
 use File::Which;
+use Lingua::EN::Inflexion;
 
 has [qw(
   git test log force
@@ -149,8 +150,11 @@ sub execute {
     }
     else { warn "$plugin->{name} is not installed\n" }
   }
-  $self->app->logger->debug(scalar @todo, ' plugins require upgrading: ',
-    join(', ', map { $_->{name} } @todo));
+
+  if ($self->app->debug) {
+    my $n = scalar @todo;
+    $self->app->logger->debug(inflect "<#n:$n> <N:plugin> <V:require> upgrading");
+  }
 
   # Make sure plugins are upgraded in order
   if (scalar @todo) {
@@ -166,7 +170,8 @@ sub execute {
 
   if (@todo) {
     unless ($self->app->quiet) {
-      print "The following plugins will be UPGRADED:\n";
+      my $n = scalar @todo;
+      print inflect("<#d:$n>The following <N:plugin> will be UPGRADED:"), "\n";
       print '  ', join(' ', map { $_->{name} } @todo), "\n";
       print "Do you want to continue?";
     }

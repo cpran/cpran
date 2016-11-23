@@ -11,6 +11,7 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
+use Lingua::EN::Inflexion;
 
 has [qw(
   force cautious
@@ -100,7 +101,8 @@ sub execute {
 
     my @names;
     unless ($self->app->quiet) {
-      print "The following plugins will be REMOVED:\n";
+      my $n = scalar @todo;
+      print inflect("<#d:$n>The following <N:plugin> will be REMOVED:"), "\n";
       print '  ', join(' ', map { $_->name } @todo ), "\n";
       print "Do you want to continue?";
     }
