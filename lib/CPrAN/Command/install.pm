@@ -328,8 +328,7 @@ sub git_install {
     $repo->run( pull => qw( cpran master ) );
   }
 
-  my $wanted = $plugin->requested // $plugin->latest;
-  $wanted = 'v' . $wanted->stringify;
+  my $wanted = 'v' . $plugin->requested->stringify;
 
   print "Checking out '$wanted'\n" unless $self->app->quiet;
 
