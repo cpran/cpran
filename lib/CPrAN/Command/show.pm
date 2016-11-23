@@ -7,6 +7,7 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 
@@ -57,28 +58,6 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   $self->app->logger->debug('Executing show');
-
-  use CPrAN::Plugin;
-  use YAML::XS;
-  use Cwd;
-  use Path::Class;
-
-  if (!scalar @{$args}) {
-    # If no arguments are given, read a plugin from the current directory
-    push @{$args}, CPrAN::Plugin->new(
-      name => dir(cwd)->basename,
-      root => dir(cwd),
-      cpran => $self->app,
-    );
-    $self->installed(1);
-  }
-  elsif (scalar @{$args} == 1 and $args->[0] eq '-') {
-    while (<STDIN>) {
-      chomp;
-      push @{$args}, $_;
-    }
-    shift @{$args};
-  }
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }

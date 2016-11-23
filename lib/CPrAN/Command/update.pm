@@ -7,6 +7,7 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 use Try::Tiny;
@@ -106,14 +107,6 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   $self->app->logger->debug('Executing update');
-
-  if (scalar @{$args} == 1 and $args->[0] eq '-') {
-    while (<STDIN>) {
-      chomp;
-      push @{$args}, $_;
-    }
-    shift @{$args};
-  }
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }

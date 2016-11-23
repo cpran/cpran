@@ -7,6 +7,8 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+with 'CPrAN::Role::Processes::Praat';
+with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 use MooseX::Types::Path::Class;
@@ -180,20 +182,7 @@ sub execute {
 
   $self->app->logger->debug('Executing install');
 
-  if (scalar @{$args} == 1) {
-    if (grep { /\bpraat\b/i } @{$args}) {
-      $self->app->logger->trace('Processing Praat');
-      my ($n, $v) = split /:/, $args->[0];
-      return $self->install_praat($v);
-    }
-    elsif ($args->[0] eq '-') {
-      while (<STDIN>) {
-        chomp;
-        push @{$args}, $_;
-      }
-      shift @{$args};
-    }
-  }
+  require CPrAN::Plugin;
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
@@ -545,7 +534,7 @@ sub get_archive {
   return $file;
 }
 
-sub install_praat {
+sub process_praat {
   use Path::Class;
 
   my ($self, $requested) = @_;

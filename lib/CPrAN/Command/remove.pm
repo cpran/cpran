@@ -7,6 +7,8 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+with 'CPrAN::Role::Processes::Praat';
+with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 
@@ -66,28 +68,12 @@ remove. For each named passed as argument, all contents of the directory named
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (scalar @{$args} == 1 and $args->[0] eq '-') {
-    while (<STDIN>) {
-      chomp;
-      push @{$args}, $_;
-    }
-    shift @{$args};
-  }
-
-#   if (grep { /\bpraat\b/i } @{$args}) {
-#     if (scalar @{$args} > 1) {
-#       die "Praat must be the only argument for processing\n";
-#     }
-#     else {
-#       return $self->_praat($opt);
-#     }
-#   }
-
   use Path::Class;
   use CPrAN::Plugin;
 
   my @plugins = map {
-    CPrAN::Plugin->new( name => $_, cpran => $self->app ) unless ref $_;
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
 
   my @todo;
@@ -138,7 +124,7 @@ sub execute {
   return $retval;
 }
 
-sub _praat {
+sub process_praat {
   my ($self, $opt) = @_;
 
   my $praat = $self->app->praat;

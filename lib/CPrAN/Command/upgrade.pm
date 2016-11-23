@@ -7,6 +7,8 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+with 'CPrAN::Role::Processes::Praat';
+with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 use Try::Tiny;
@@ -112,28 +114,17 @@ sub execute {
       $self->app->run_command( list => { quiet => 1, installed => 1 } )
     ];
   }
-  elsif (scalar @{$args} == 1) {
-    if ($args->[0] eq '-') {
-      $self->app->logger->trace('Reading parameters from STDIN');
-      while (<STDIN>) {
-        chomp;
-        push @{$args}, $_;
-      }
-      shift @{$args};
-    }
-    elsif ($args->[0] =~ /praat/i) {
-      $self->app->logger->debug('Processing Praat');
-      $self->_praat;
-    }
-  }
 
-  use CPrAN::Plugin;
   my @plugins = map {
-    CPrAN::Plugin->new( name => $_, cpran => $self->app ) unless ref $_;
+    require CPrAN::Plugin;
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
 
-  $self->app->logger->debug(scalar @{$args}, ' plugins for processing: ',
-    join(', ', map { $_->{name} } @plugins));
+  if ($self->app->debug) {
+    my $n = scalar @{$args};
+    $self->app->logger->debug(inflect "<#n:$n> <N:plugin> for processing");
+  }
 
   # Plugins that are not installed cannot be upgraded.
   # @todo will hold the names of the plugins passed as arguments that are
@@ -337,7 +328,7 @@ but will disregard those that fail.
 
 =cut
 
-sub _praat {
+sub process_praat {
   my ($self) = @_;
 
   try {

@@ -7,6 +7,8 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
+with 'CPrAN::Role::Processes::Praat';
+with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 use Try::Tiny;
@@ -36,44 +38,29 @@ sub execute {
 
   $self->app->logger->debug('Executing list');
 
-#   if (grep { /\bpraat\b/i } @{$args}) {
-#     if (scalar @{$args} > 1) {
-#       die "Praat must be the only argument for processing\n";
-#     }
-#     else {
-#       return $self->_praat;
-#     }
-#   }
-
   return $self->app->run_command( search => '.*', {
     installed => $self->installed,
     wrap      => $self->wrap,
   });
 }
 
-=item _praat()
+sub process_praat {
+  use Path::Class;
 
-Process praat
+  my ($self) = @_;
 
-=cut
+  try {
+    my $praat = $self->app->praat;
+    my $releases = $praat->releases;
 
-# sub _praat {
-#   use Path::Class;
-#
-#   my ($self) = @_;
-#
-#   try {
-#     my $praat = $self->{app}->praat;
-#     my @releases = $praat->releases($opt);
-#
-#     print "$_->{semver}\n" foreach @releases;
-#   }
-#   catch {
-#     chomp;
-#     warn "$_\n";
-#     die "Could not list Praat releases\n";
-#   };
-# }
+    print $_->{semver}, "\n" foreach @{$releases};
+  }
+  catch {
+    chomp;
+    $self->app->logger->warn($_);
+    die 'Could not list Praat releases', "\n";
+  };
+}
 
 =head1 AUTHOR
 

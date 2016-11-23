@@ -4,6 +4,9 @@ package CPrAN::Command::deps;
 use uni::perl;
 use Moose;
 
+with 'CPrAN::Role::Reads::WorkingPlugin';
+with 'CPrAN::Role::Reads::STDIN';
+
 extends qw( MooseX::App::Cmd::Command );
 
 =head1 NAME
@@ -55,25 +58,7 @@ B<--yes> flag is set, since no user interaction is possible.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use CPrAN::Plugin;
-  use Path::Class;
-  use Cwd;
-
-  if (!scalar @{$args}) {
-    # If no arguments are given, read a plugin from the current directory
-    push @{$args}, CPrAN::Plugin->new(
-      name => dir(cwd)->basename,
-      root => dir(cwd),
-      cpran => $self->app,
-    );
-  }
-  elsif (scalar @{$args} == 1 and $args->[0] eq '-') {
-    while (<STDIN>) {
-      chomp;
-      push @{$args}, $_;
-    }
-    shift @{$args};
-  }
+  require CPrAN::Plugin;
 
   # Make a list of CPrAN plugins from input, if they are not already
   my @plugins = map {
