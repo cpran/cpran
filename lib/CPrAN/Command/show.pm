@@ -87,23 +87,25 @@ sub execute {
 
   my @stream;
   foreach my $plugin (@plugins) {
-    if (!defined $self->installed or $self->installed) {
-      if ($plugin->is_installed) {
-        push @stream, $plugin->_local;
-        $plugin->print('local') unless ($self->app->quiet);
+    $self->app->logger->trace('Showing', $plugin->name);
+
+    if ($plugin->is_cpran) {
+      if ($self->installed) {
+        if ($plugin->is_installed) {
+          push @stream, $plugin->_local;
+          $plugin->print('local') unless $self->app->quiet;
+        }
+        else {
+          $self->app->logger->warn($plugin->name, 'is not installed');
+        }
       }
       else {
-        Carp::croak "$plugin->name is not installed";
+        push @stream, $plugin->_remote;
+        $plugin->print('remote') unless $self->app->quiet;
       }
     }
     else {
-      if ($plugin->is_cpran) {
-        push @stream, $plugin->_remote;
-        $plugin->print('remote') unless ($self->app->quiet);
-      }
-      else {
-        Carp::croak "$plugin->name is not a CPrAN plugin";
-      }
+      $self->app->logger->warn($plugin->name, 'is not a CPrAN plugin');
     }
   }
 
