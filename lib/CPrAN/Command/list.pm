@@ -4,29 +4,31 @@ package CPrAN::Command::list;
 use Moose;
 use uni::perl;
 
-with 'MooseX::Getopt';
-
 extends qw( MooseX::App::Cmd::Command );
+
+with 'MooseX::Getopt';
 
 require Carp;
 use Try::Tiny;
 
-has installed => (
+has [qw(
+  installed wrap
+)] => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
+);
+
+has '+installed' => (
   documentation => 'search in installed plugins',
   cmd_aliases => 'i',
 );
 
-has wrap => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+wrap' => (
   documentation => 'wrap output table when printing',
+  cmd_aliases => 'w',
   lazy => 1,
   default => 1,
-  cmd_aliases => 'w',
 );
 
 sub execute {

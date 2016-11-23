@@ -9,46 +9,39 @@ extends qw( MooseX::App::Cmd::Command );
 require Carp;
 use Path::Class;
 
-has git => (
+has [qw(
+  git test log reinstall force
+)] => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
+);
+
+has '+git' => (
   lazy => 1,
   documentation => 'request / disable git support',
   default => 1,
 );
 
-has test => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+test' => (
   lazy => 1,
   default => 1,
   documentation => 'request / disable tests',
 );
 
-has log => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+log' => (
   lazy => 1,
   default => 1,
   documentation => 'request / disable log of tests',
 );
 
-has reinstall => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+reinstall' => (
   lazy => 1,
   default => 0,
   documentation => 're-install requested plugins',
 );
 
-has force => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+force' => (
   lazy => 1,
   default => 0,
   documentation => 'ignore failing tests',

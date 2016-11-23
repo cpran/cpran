@@ -10,72 +10,60 @@ extends qw( MooseX::App::Cmd::Command );
 
 require Carp;
 use Try::Tiny;
+use Text::FormatTable;
 
-has installed => (
+has [qw(
+  installed wrap in_name in_description in_short in_long in_author invert
+)] => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
+);
+
+has '+installed' => (
   documentation => 'search in installed plugins',
   cmd_aliases => 'i',
 );
 
-has wrap => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+wrap' => (
   documentation => 'wrap output table when printing',
   lazy => 1,
   default => 1,
   cmd_aliases => 'w',
 );
 
-has in_name => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+in_name' => (
   documentation => 'search in name of plugin',
   cmd_aliases => 'N',
 );
 
-has in_description => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+in_description' => (
   documentation => 'search in description of plugin',
   cmd_aliases => 'D',
+  lazy => 1,
   default => 1,
 );
 
-has in_short => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+in_short' => (
   documentation => 'search in short description of plugin',
   cmd_aliases => 'S',
+  lazy => 1,
   default => 1,
 );
 
-has in_long => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+in_long' => (
   documentation => 'search in long description of plugin',
   cmd_aliases => 'L',
+  lazy => 1,
   default => 1,
 );
 
-has in_author => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+in_author' => (
   documentation => 'search in name of plugin\'s author',
   cmd_aliases => 'A',
 );
 
-has invert => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+invert' => (
   documentation => 'perform a negative search',
   cmd_aliases => 'x',
 );
@@ -126,9 +114,6 @@ sub execute {
 
   $self->app->logger->debug('Executing search');
 
-  use CPrAN::Plugin;
-  use Text::FormatTable;
-
   my %names;
   if (defined $self->installed) {
     if ($self->installed) {
@@ -156,6 +141,7 @@ sub execute {
   } sort {
     "\L$a->{name}" cmp "\L$b->{name}"
   } map {
+    require CPrAN::Plugin;
     CPrAN::Plugin->new( name => $_, cpran => $self->app )
   } keys %names;
 

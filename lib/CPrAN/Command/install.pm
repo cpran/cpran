@@ -1,59 +1,56 @@
 package CPrAN::Command::install;
 # ABSTRACT: install new plugins
 
-use uni::perl;
 use Moose;
+use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
-require Carp;
 
+require Carp;
 use MooseX::Types::Path::Class;
 use CPrAN::Types;
 
-use Try::Tiny;
-
-has test => (
+has [qw(
+  test log force reinstall git barren
+)] => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
+);
+
+has '+test' => (
   lazy => 1,
   default => 1,
   documentation => 'request / disable tests',
 );
 
-has log => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+log' => (
   lazy => 1,
   default => 1,
   documentation => 'request / disable log of tests',
 );
 
-has force => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+force' => (
   lazy => 1,
   default => 0,
   documentation => 'ignore failing tests',
 );
 
-has reinstall => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+reinstall' => (
   lazy => 1,
   default => 0,
   documentation => 're-install requested plugins',
 );
 
-has git => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+barren' => (
+  documentation => 'request a barren Praat binary',
+  lazy => 1,
+  default => 0,
+);
+
+has '+git' => (
   lazy => 1,
   documentation => 'request / disable git support',
   default => 1,
@@ -116,14 +113,6 @@ has path => (
       return dir '', 'usr', 'bin';
     }
   },
-);
-
-has barren => (
-  is  => 'rw',
-  traits => [qw(Getopt)],
-  documentation => 'request a barren Praat binary',
-  lazy => 1,
-  default => 0,
 );
 
 around BUILDARGS => sub {

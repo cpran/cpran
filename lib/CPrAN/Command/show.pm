@@ -4,9 +4,9 @@ package CPrAN::Command::show;
 use Moose;
 use uni::perl;
 
-with 'MooseX::Getopt';
-
 extends qw( MooseX::App::Cmd::Command );
+
+with 'MooseX::Getopt';
 
 require Carp;
 

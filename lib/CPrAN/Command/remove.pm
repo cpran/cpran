@@ -10,19 +10,21 @@ with 'MooseX::Getopt';
 
 require Carp;
 
-has force => (
+has [qw(
+  force cautious
+)] => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
+);
+
+has '+force' => (
   documentation => 'attempt to work around errors',
   lazy => 1,
   default => undef,
 );
 
-has cautious => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+cautious' => (
   documentation => 'be extra-careful while removing files',
   lazy => 1,
   default => undef,

@@ -34,39 +34,22 @@ has name => (
   },
 );
 
-has author => (
+has [qw(
+  author url desc readme version email
+)] => (
   is  => 'rw',
-  isa => 'Str',
   traits => [qw(Getopt)],
+);
+
+has '+author' => (
+  isa => 'Str',
   documentation => 'name of plugin\'s author',
   lazy => 1,
   default => 'A. N. Onymous',
 );
 
-has email => (
-  is  => 'rw',
+has '+url' => (
   isa => 'Str',
-  traits => [qw(Getopt)],
-  documentation => 'email of plugin\'s author',
-  lazy => 1,
-  default => 'email@example.com',
-  trigger => sub {
-    my ($self, $new, $old) = @_;
-
-    use Regexp::Common qw[Email::Address];
-
-    if (defined $old and $new !~ /^$RE{Email}{Address}$/) {
-      warn "<$new> is not a valid email address. Ignoring\n";
-      $self->email($old);
-      $new = "<$new>" if $new ne '' and $new !~ /^<.*>$/;
-    }
-  },
-);
-
-has url => (
-  is  => 'rw',
-  isa => 'Str',
-  traits => [qw(Getopt)],
   documentation => 'URL of plugin\'s homepage',
   lazy => 1,
   default => sub {
@@ -74,19 +57,21 @@ has url => (
   },
 );
 
-has desc => (
-  is  => 'rw',
+has '+desc' => (
   isa => 'Str',
-  traits => [qw(Getopt)],
   documentation => 'short description of plugin',
   lazy => 1,
   default => '~',
 );
 
-has version => (
-  is  => 'rw',
+has '+readme' => (
+  isa => 'Path::Class::File',
+  documentation => 'path to a readme for the plugin',
+  coerce => 1,
+);
+
+has '+version' => (
   isa => 'SemVer',
-  traits => [qw(Getopt)],
   documentation => 'starting version of the plugin',
   coerce => 1,
   lazy => 1,
@@ -105,12 +90,22 @@ has version => (
   },
 );
 
-has readme => (
-  is  => 'rw',
-  isa => 'Path::Class::File',
-  traits => [qw(Getopt)],
-  documentation => 'path to a readme for the plugin',
-  coerce => 1,
+has '+email' => (
+  isa => 'Str',
+  documentation => 'email of plugin\'s author',
+  lazy => 1,
+  default => 'email@example.com',
+  trigger => sub {
+    my ($self, $new, $old) = @_;
+
+    use Regexp::Common qw[Email::Address];
+
+    if (defined $old and $new !~ /^$RE{Email}{Address}$/) {
+      warn "<$new> is not a valid email address. Ignoring\n";
+      $self->email($old);
+      $new = "<$new>" if $new ne '' and $new !~ /^<.*>$/;
+    }
+  },
 );
 
 around BUILDARGS => sub {

@@ -12,30 +12,25 @@ has [qw( name id url )] => (
   is => 'rw',
 );
 
-has latest => (
-  is => 'ro',
-  lazy => 1,
-  isa => 'SemVer',
-  coerce => 1,
-  default => sub {
-    $_[0]->_remote->{version};
-  },
-);
-
-has current => (
-  is => 'ro',
-  isa => 'SemVer',
-  coerce => 1,
-  lazy => 1,
-  default => sub {
-    $_[0]->_local->{version};
-  },
-);
-
-has requested => (
+has [qw( current latest requested )] => (
   is => 'rw',
-  isa => 'SemVer|Undef',
+  isa => 'SemVer',
   coerce => 1,
+);
+
+has '+latest' => (
+  lazy => 1,
+  default => sub { $_[0]->_remote->{version} },
+);
+
+has '+current' => (
+  lazy => 1,
+  default => sub { $_[0]->_local->{version} },
+);
+
+has '+requested' => (
+  lazy => 1,
+  default => sub { $_[0]->latest },
 );
 
 has cpran => (

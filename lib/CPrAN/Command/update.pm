@@ -11,28 +11,27 @@ with 'MooseX::Getopt';
 require Carp;
 use Try::Tiny;
 
-has virtual => (
+has [qw(
+  virtual print raw
+)] => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
+);
+
+has '+virtual' => (
   lazy => 1,
   default => 0,
   documentation => 'do not write anything to disk',
 );
 
-has print => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+print' => (
   lazy => 1,
   default => 0,
   documentation => 'print the stream of updated descriptors to STDOUT',
 );
 
-has raw => (
-  is  => 'rw',
-  isa => 'Bool',
-  traits => [qw(Getopt)],
+has '+raw' => (
   lazy => 1,
   default => 0,
   documentation => 'compute a new list of plugins from scratch',
