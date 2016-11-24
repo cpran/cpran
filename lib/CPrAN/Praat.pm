@@ -5,7 +5,8 @@ package CPrAN::Praat;
 
 use Moose;
 use Log::Any;
-use MooseX::Types::Path::Class;
+use Types::Path::Tiny qw( File Dir );
+use Path::Tiny;
 use CPrAN::Types;
 
 require Carp;
@@ -76,7 +77,7 @@ has [qw( _os _ext _bit )] => (
 
 has pref_dir => (
   is => 'rw',
-  isa => 'Path::Class::Dir',
+  isa => Dir,
   lazy => 1,
   coerce => 1,
   builder => '_build_pref_dir',
@@ -91,29 +92,14 @@ has releases => (
 
 has bin => (
   is => 'ro',
-  isa => 'Path::Class::File',
+  isa => File,
   lazy => 1,
   coerce => 1,
   default => sub {
-    use Path::Class;
     use File::Which;
-    file(which('praat')     ||
-         which('praat.exe') ||
-         which('Praat')     ||
-         which('praatcon'));
+    which('praat') || which('praat.exe') || which('Praat') || which('praatcon'));
   },
 );
-around [qw( pref_dir bin )] => sub {
-  my ($orig, $self, $path) = @_;
-  use File::Glob ':bsd_glob';
-
-  if (defined $path) {
-    return $self->$orig(bsd_glob($path));
-  }
-  else {
-    return $self->$orig;
-  }
-};
 
 has current => (
   is => 'ro',
@@ -127,13 +113,14 @@ has latest => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => 'SemVer',
+  coerce => 1,
+  isa => SemVer,
   builder => '_build_remote',
 );
 
 has requested => (
   is => 'rw',
-  isa => 'SemVer|Undef',
+  isa => SemVer|Undef,
   coerce => 1,
 );
 
@@ -191,11 +178,6 @@ sub BUILDARGS {
     };
   }
 
-  use File::Glob qw( :bsd_glob );
-  foreach (qw( bin pref_dir )) {
-    $args->{$_} = bsd_glob($args->{$_}) if defined $args->{$_};
-  }
-
   return $args;
 }
 
@@ -213,8 +195,6 @@ Removes praat from disk
 
 sub remove {
   my ($self, $opt) = @_;
-
-  use Path::Class;
 
   die 'Binary is undefined!' unless defined $self->bin;
 
@@ -343,17 +323,15 @@ sub _build_remote {
 }
 
 sub _build_pref_dir {
-  use Path::Class;
-
   for ($^O) {
     if (/darwin/) {
-      return dir $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs';
+      return join('/', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs');
     }
     elsif (/MSWin32/) {
-      return dir $ENV{HOMEPATH}, 'Praat';
+      return join('/', $ENV{HOMEPATH}, 'Praat');
     }
     else {
-      return dir $ENV{HOME}, '.praat-dir';
+      return join('/', $ENV{HOME}, '.praat-dir');
     }
   }
 }
@@ -396,7 +374,6 @@ sub _build_releases {
 
   $self->logger->trace('Finding Praat releases');
 
-  use Path::Class;
   use JSON qw( decode_json );
 
   my @releases;

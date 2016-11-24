@@ -10,6 +10,7 @@ with 'MooseX::Getopt';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
+require Path::Tiny;
 use Try::Tiny;
 
 has [qw(
@@ -195,9 +196,7 @@ sub fetch_raw {
 
       unless ($self->virtual) {
         if (defined $plugin->_remote->{meta} and $plugin->_remote->{meta} ne '') {
-
-          use Path::Class;
-          my $fh = file( $self->app->root, $plugin->name )->openw;
+          my $fh = $self->app->root->child( $plugin->name )->touchpath->openw;
           $fh->print( $plugin->_remote->{meta} );
         }
         else {
@@ -223,33 +222,35 @@ sub fetch_cache {
     $self->_project->{id}, $self->_list->{id}
   );
 
-  use Encode;
-  use YAML::XS;
 
   my @updated;
   foreach (@meta) {
     next unless $_;
 
-    my $encoded = "---" . encode_utf8 $_;
-    my $plugin = Load(encode('utf-8', $encoded));
+    require Encode;
+    require YAML::XS;
+    require CPrAN::Plugin;
+
+    my $meta = "---" . $_;
+    my $plugin = YAML::XS::Load(Encode::encode_utf8 $meta);
 
     next if scalar keys %{$self->requested} >= 1 and
       !exists $self->requested->{$plugin->{Plugin}};
 
-    warn 'Working on ', $plugin->{Plugin}, "...\n" if $self->app->verbose > 1;
+    $self->app->logger->debug('Working on', $plugin->{Plugin})
+      if $self->app->debug;
 
     if ($self->virtual) {
       $plugin = CPrAN::Plugin->new(
-        meta => $encoded,
+        meta => $meta,
         cpran => $self->app
       );
     }
     else {
-      use Path::Class;
-      my $out = file( $self->app->root, $plugin->{Plugin} );
+      my $out = $self->app->root->child( $plugin->{Plugin} )->touchpath;
 
-      my $fh = $out->openw;
-      $fh->print( $encoded );
+      my $fh = $out->openw_utf8;
+      $fh->print( $meta );
       $fh->close;
       $plugin = CPrAN::Plugin->new(
         name => $plugin->{Plugin},

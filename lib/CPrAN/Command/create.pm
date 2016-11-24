@@ -8,11 +8,11 @@ extends qw( MooseX::App::Cmd::Command );
 
 with 'MooseX::Getopt';
 
-use MooseX::Types::Path::Class;
+use Types::Path::Tiny qw( File );
 use CPrAN::Types;
 
 require Carp;
-use Path::Class;
+require Path::Tiny;
 
 has name => (
   is  => 'rw',
@@ -25,8 +25,8 @@ has name => (
 
     my $name;
     do {
-      my $dict = file( file($INC{'Data/Random/WordList.pm'})->dir, 'dict' );
-      my $wl = Data::Random::WordList->new( wordlist => $dict );
+      my $dict = Path::Tiny::path( $INC{'Data/Random/WordList.pm'} )->parent->child('dict');
+      my $wl = Data::Random::WordList->new( wordlist => $dict->canonpath );
       $name = join '-', map { lc } $wl->get_words(2);
       $name =~ s/[^a-z0-9_-]//g;
     } until (! -e 'plugin_' . $name);
@@ -65,7 +65,7 @@ has '+desc' => (
 );
 
 has '+readme' => (
-  isa => 'Path::Class::File',
+  isa => File,
   documentation => 'path to a readme for the plugin',
   coerce => 1,
 );
@@ -180,10 +180,9 @@ sub execute {
   print 'Copying template...', "\n" unless $self->app->quiet;
 
   use File::Copy::Recursive qw( dircopy );
-  use Cwd;
 
   my $source = $template->root;
-  my $target = dir( cwd, 'plugin_' . $self->name );
+  my $target = Path::Tiny::path->cwd->child( 'plugin_' . $self->name );
 
   dircopy $source, $target
     or die "Could not rename plugin: $!\n";
@@ -209,9 +208,8 @@ sub write_setup {
   my ($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
   $year += 1900;
 
-  use Path::Class;
 
-  my $setup = file($plugin->root, 'setup.praat')->slurp;
+  my $setup = Path::Tiny::path( $plugin->root, 'setup.praat' )->slurp_utf8;
 
   my ($name, $author, $url) = ($plugin->name, $self->author, $self->url);
 
@@ -220,7 +218,7 @@ sub write_setup {
   $setup =~ s/<website>/$url/g;
   $setup =~ s/<year>/$year/g;
 
-  my $fh = file($plugin->root, 'setup.praat')->openw;
+  my $fh = Path::Tiny::path( $plugin->root, 'setup.praat' )->openw_utf8;
   print $fh $setup;
 }
 
@@ -233,10 +231,10 @@ sub write_readme {
     $default = 0;
   }
   else {
-    $self->readme(file($plugin->root, 'readme.md'));
+    $self->readme(Path::Tiny::path( $plugin->root, 'readme.md' ));
   }
 
-  my $readme = $self->readme->slurp;
+  my $readme = $self->readme->slurp_utf8;
 
   if ($default) {
     my $name = $plugin->name;
@@ -284,7 +282,7 @@ sub write_descriptor {
     desc => $self->desc,
   });
 
-  my $fh = file($plugin->root, 'cpran.yaml')->openw;
+  my $fh = Path::Tiny::path( $plugin->root, 'cpran.yaml' )->openw_utf8;
   print $fh $descriptor;
 }
 

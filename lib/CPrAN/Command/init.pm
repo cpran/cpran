@@ -7,7 +7,7 @@ use uni::perl;
 extends qw( MooseX::App::Cmd::Command );
 
 require Carp;
-use Path::Class;
+require Path::Tiny;
 
 has [qw(
   git test log reinstall force
@@ -82,7 +82,7 @@ This command installs the [cpran plugin][] on an otherwise empty system.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (!$self->reinstall and -e dir($self->app->praat->pref_dir, 'plugin_cpran')) {
+  if (!$self->reinstall and -e $self->app->praat->pref_dir->child('plugin_cpran')) {
     print 'CPrAN is already initialised. Nothing to do here!', "\n"
       unless $self->app->quiet;
     return;

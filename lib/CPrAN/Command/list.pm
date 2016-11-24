@@ -11,6 +11,7 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
+require Path::Tiny;
 use Try::Tiny;
 
 has [qw(
@@ -45,10 +46,7 @@ sub execute {
 }
 
 sub process_praat {
-  use Path::Class;
-
   my ($self) = @_;
-
   try {
     my $praat = $self->app->praat;
     my $releases = $praat->releases;

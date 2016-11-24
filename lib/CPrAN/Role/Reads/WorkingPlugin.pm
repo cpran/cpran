@@ -9,14 +9,13 @@ around execute => sub {
   my ($opt, $args) = @_;
 
   use CPrAN::Plugin;
-  use Cwd;
-  use Path::Class;
+  require Path::Tiny;
 
   if (!scalar @{$args}) {
     # If no arguments are given, read a plugin from the current directory
     push @{$args}, CPrAN::Plugin->new(
-      name => dir(cwd)->basename,
-      root => dir(cwd),
+      name => Path::Tiny->cwd->basename,
+      root => Path::Tiny->cwd,
       cpran => $self->app,
     );
   }

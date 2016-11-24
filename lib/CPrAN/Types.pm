@@ -4,8 +4,6 @@ package CPrAN::Types;
 use strict;
 use warnings;
 
-use Path::Class 0.37 ();
-
 use MooseX::Types
   -declare => [qw( Praat Version )];
 
@@ -27,7 +25,6 @@ for my $type ( 'CPrAN::Praat', Praat ) {
 for my $type ( 'SemVer', Version ) {
   coerce $type,
     from Str,      via { SemVer->new( $_ ) };
-#     from ArrayRef, via { Path::Class::Dir->new(@$_) };
 }
 
 # optionally add Getopt option type

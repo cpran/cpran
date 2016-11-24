@@ -27,12 +27,6 @@ has '+force' => (
   default => undef,
 );
 
-has '+cautious' => (
-  documentation => 'be extra-careful while removing files',
-  lazy => 1,
-  default => undef,
-);
-
 =head1 NAME
 
 =encoding utf8
@@ -69,7 +63,6 @@ remove. For each named passed as argument, all contents of the directory named
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use Path::Class;
   use CPrAN::Plugin;
 
   my @plugins = map {
@@ -114,7 +107,6 @@ sub execute {
 
         $retval = $plugin->remove(
           verbose => $self->app->verbose,
-          safe => $self->cautious,
         );
       }
     }

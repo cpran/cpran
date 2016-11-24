@@ -5,7 +5,7 @@ use Moose;
 use uni::perl;
 
 require Carp;
-use MooseX::Types::Path::Class;
+use Types::Path::Tiny qw( Path );
 use CPrAN::Types;
 
 has [qw( name id url )] => (
@@ -46,7 +46,7 @@ has cpran => (
 
 has root => (
   is => 'rw',
-  isa => 'Path::Class::Dir|Undef',
+  isa => Path,
   coerce => 1,
 );
 
@@ -121,23 +121,22 @@ sub BUILD {
 }
 
 sub refresh {
-  use Path::Class;
   my ($self) = @_;
 
   # If root exists on disk then we assume it is a plugin,
   # and we know it is installed.
-  $self->root( dir($self->cpran->praat->pref_dir, 'plugin_' . $self->name) )
+  $self->root( $self->cpran->praat->pref_dir->child( 'plugin_' . $self->name) )
     unless defined $self->root;
   $self->is_installed(1) if -e $self->root;
 
   # Initialise local and remote metadata
   unless (defined $self->_local) {
-    my $meta = file($self->root, 'cpran.yaml');
+    my $meta = $self->root->child('cpran.yaml');
     $self->_local($self->parse_meta( scalar $meta->slurp )) if -e $meta;
   }
 
   unless (defined $self->_remote) {
-    my $meta = file( $self->cpran->root, $self->name );
+    my $meta = $self->cpran->root->child( $self->name );
     $self->_remote($self->parse_meta( scalar $meta->slurp )) if -e $meta;
   }
 
@@ -253,7 +252,6 @@ Runs tests for the plugin (if any). Returns the result of those tests.
 
 sub test {
   use App::Prove;
-  use Path::Class;
   use File::Which;
   use CPrAN::Praat;
 
@@ -271,8 +269,7 @@ sub test {
 
   $self->cpran->logger->debug('Plugin is installed');
 
-  use Cwd;
-  my $oldwd = getcwd;
+  my $oldwd = Path::Tiny->cwd;
   chdir $self->root
     or die 'Could not change directory';
 
@@ -308,18 +305,9 @@ sub test {
       require TAP::Harness::Archive;
       TAP::Harness::Archive->import;
 
-      my $log = dir($self->root, '.log');
-      unless ( -e $log ) {
-        mkdir $log
-          or die 'Could not create log directory';
-      }
-      else {
-        while (my $file = $log->next) {
-          next unless -f $file;
-          $file->remove
-            or die 'Could not remove ', $file;
-        }
-      }
+      my $log = $self->root->child('.log');
+      $log->remove_tree({ safe => 0 }) if $log->is_dir;
+      $log->mkpath or die 'Could not create log directory';
       push @args, ('--archive', $log);
     }
     catch {
@@ -341,16 +329,11 @@ sub remove {
   my $self = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  use File::Path qw( remove_tree );
-
-  remove_tree(
-    $self->root,
-    {
-      verbose => $opt->{verbose},
-      safe => $opt->{safe},
-      error => \my $e
-    }
-  );
+  $self->root->remove_tree({
+    verbose => $opt->{verbose},
+    safe => 0,
+    error => \my $e
+  });
 
   if (@{$e}) {
     Carp::carp 'Could not completely remove ', $self->root, "\n"
@@ -381,7 +364,6 @@ must be asked for by name. Any other names are an error.
 
 sub print {
   use Encode qw( decode );
-  use Path::Class;
 
   my ($self, $name) = @_;
   $name = '_' . $name;
@@ -410,7 +392,6 @@ sub _parse_meta {
   my ($class, $meta) = @_;
 
   use YAML::XS;
-  use Path::Class;
   use Encode;
   use SemVer;
 

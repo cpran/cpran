@@ -4,7 +4,7 @@ package CPrAN;
 use Moose;
 require Carp;
 use Log::Any ();
-use MooseX::Types::Path::Class;
+use Types::Path::Tiny qw( Path );
 use CPrAN::Types;
 
 extends qw( MooseX::App::Cmd );
@@ -13,14 +13,13 @@ with 'MooseX::Getopt';
 
 has root => (
   is  => 'rw',
-  isa => 'Path::Class::Dir',
+  isa => Path,
   traits => [qw(Getopt)],
   documentation => 'CPrAN root',
   coerce => 1,
   lazy => 1,
   default => sub {
-    use Path::Class;
-    dir($_[0]->praat->pref_dir, '.cpran');
+    $_[0]->praat->pref_dir->child('.cpran');
   },
 );
 

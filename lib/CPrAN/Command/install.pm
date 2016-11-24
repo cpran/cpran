@@ -11,8 +11,9 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
+require Path::Tiny;
 use Try::Tiny;
-use MooseX::Types::Path::Class;
+use Types::Path::Tiny qw( File Dir );
 use CPrAN::Types;
 use Lingua::EN::Inflexion;
 
@@ -91,7 +92,7 @@ around git => sub {
 
 has path => (
   is  => 'rw',
-  isa => 'Path::Class::Dir',
+  isa => Dir,
   traits => [qw(Getopt)],
   documentation => 'specify path for Praat installation',
   coerce => 1,
@@ -99,7 +100,6 @@ has path => (
   default => sub {
     return $_[0]->app->praat->bin->parent if $_[0]->app->praat->bin->stringify;
 
-    use Path::Class;
     if ($^O =~ /darwin/) {
       $_[0]->app->logger->debug('Installing Praat binary to default Mac path');
       die "Praat installation not currently supported on MacOS\n";
@@ -110,27 +110,14 @@ has path => (
     }
     elsif ($^O =~ /MSWin32/) {
       $_[0]->app->logger->debug('Installing Praat binary to default Windows path');
-      return dir 'C:', 'Program Files', 'Praat';
+      return Path::Tiny::path('C:', 'Program Files', 'Praat');
     }
     else {
       $_[0]->app->logger->debug('Installing Praat binary to default path');
-      return dir '', 'usr', 'bin';
+      return Path::Tiny::path('/', 'usr', 'bin');
     }
   },
 );
-
-around BUILDARGS => sub {
-  my $orig = shift;
-  my $self = shift;
-  my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
-
-  if (defined $args->{path}) {
-    use File::Glob ':bsd_glob';
-    $args->{path} = bsd_glob $args->{path};
-  }
-
-  return $self->$orig($args);
-};
 
 =head1 NAME
 
@@ -344,15 +331,8 @@ sub raw_install {
     unless $self->app->quiet;
 
   use Archive::Tar;
-  use Path::Class qw( file dir foreign_file foreign_dir );
 
   my $retval = 1;
-
-  # TODO(jja) Improve handling of existing target directories
-  # If we are forcing the re-install of a plugin, the previously existing
-  # directory needs to be removed. Maybe this could be better handled? Because
-  # if we are, say, reinstalling cpran itself, the .cpran root will be removed
-  # Currently, the list is being manually recreated in the main loop.
 
   if (-e $plugin->root and $self->force) {
     print 'Removing ', $plugin->root, ' (because you used --force)', "\n"
@@ -366,30 +346,24 @@ sub raw_install {
   # through the contents of the archive and construct a new target name
   my $next = Archive::Tar->iter( $archive->stringify, 1, { filter => qr/.*/ } );
   while (my $f = $next->()) {
-    # $path is a Path::Class object for the current item in the archive
+    # $path is a Path::Tiny object for the current item in the archive
     my $path;
     if ($f->name =~ /\/$/) {
-      $path = Path::Class::Dir->new_foreign('Unix', $f->name);
+      $path = Path::Tiny::path($f->name);
     }
     else {
-      $path = Path::Class::File->new_foreign('Unix', $f->prefix, $f->name);
+      $path = Path::Tiny::path($f->prefix, $f->name);
     }
 
     # @components has all the items (directories and files) in the current name
-    my @components = $path->components;
+    my @components = split qr{/}, $path->stringify;
     $components[0] = 'plugin_' . $plugin->name;
 
     # We place the preferences directory at the beginning of the new path
     unshift @components, $self->app->praat->pref_dir;
 
-    # And make a new Path::Class object pointing to it
-    my $final_path;
-    if ($path->is_dir) {
-      $final_path = Path::Class::Dir->new( @components );
-    }
-    else {
-      $final_path = Path::Class::File->new( @components );
-    }
+    # And make a new Path::Tiny object pointing to it
+    my $final_path = Path::Tiny::path( @components );
 
     # We use that new path to extract directly into it
     my $outcome = $f->extract( $final_path );
@@ -524,6 +498,8 @@ sub get_archive {
       catch { next };
       push @releases , $tag;
     };
+    @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
+
     my $tag = pop @releases;
 
     $archive = $self->app->api->archive(
@@ -538,27 +514,22 @@ sub get_archive {
   };
 
   # TODO(jja) Improve error checking. Does this work on Windows?
-  use File::Temp;
-  my $tmp = File::Temp->new(
+  my $file = Path::Tiny->tempfile(
     dir => '.',
     template => $plugin->name . '-XXXXX',
     suffix => '.zip',
     unlink => 0,
   );
 
-  my $file = Path::Class::file( $tmp->filename );
-  my $fh = $file->openw;
-  binmode($fh);
+  my $fh = $file->openw_raw;
   $fh->print($archive);
   return $file;
 }
 
 sub process_praat {
-  use Path::Class;
-
   my ($self, $requested) = @_;
   my $praat = $self->app->praat;
-  $praat->requested($requested);
+  $praat->requested($requested) if $requested;
   $praat->_barren($self->barren) if $self->barren;
 
   try {
@@ -570,7 +541,7 @@ sub process_praat {
     }
     else {
       die 'Path does not exist: ', $self->path
-        unless $self->path->resolve;
+        unless $self->path->exists;
 
       die 'Path is not a directory: ', $self->path
         unless $self->path->is_dir;
@@ -593,22 +564,19 @@ sub process_praat {
 
       my $archive = $praat->download;
 
-      use File::Temp;
-      my $package = File::Temp->new(
+      my $package = Path::Tiny->tempfile(
         template => 'praat' . $praat->latest . '-XXXXX',
         suffix => $praat->_ext,
       );
 
-      my $extract = File::Temp->newdir(
+      my $extract = Path::Tiny->tempdir(
         template => 'praat-XXXXX',
       );
 
-      print "Saving archive to ", $package->filename, "\n"
+      print "Saving archive to ", $package->basename, "\n"
         unless $self->app->quiet;
 
-      use Path::Class;
-      my $fh = Path::Class::file( $package->filename )->openw();
-      binmode($fh);
+      my $fh = $package->openw_raw;
       $fh->print($archive);
 
       print 'Extracting package to ', $self->path, "...\n"
@@ -617,15 +585,13 @@ sub process_praat {
       # Extract archives
       use Archive::Extract;
 
-      my $ae = Archive::Extract->new( archive => $package->filename );
+      my $ae = Archive::Extract->new( archive => $package->canonpath );
       $ae->extract( to => $extract )
         or die "Could not extract package: $ae->error";
 
-      use Path::Class;
-      my $file = file($ae->extract_path, $ae->files->[0]);
+      my $file = Path::Tiny::path( $ae->extract_path, $ae->files->[0] );
 
-      use File::Copy;
-      File::Copy::move $file, $self->path
+      $file->copy( $self->path->child('praat') ) and $file->remove
         or die "Could not move file: $!\n";
     }
   }
