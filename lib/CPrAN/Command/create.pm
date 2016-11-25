@@ -10,6 +10,9 @@ with 'MooseX::Getopt';
 use Types::Path::Tiny qw( File );
 use CPrAN::Types;
 
+# Until the library does this by default
+MooseX::Getopt::OptionTypeMap->add_option_type_to_map( File, '=s', );
+
 require Carp;
 require Path::Tiny;
 

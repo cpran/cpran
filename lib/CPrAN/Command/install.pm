@@ -12,9 +12,12 @@ with 'CPrAN::Role::Reads::STDIN';
 require Carp;
 require Path::Tiny;
 use Try::Tiny;
-use Types::Path::Tiny qw( File Dir );
+use Types::Path::Tiny qw( Dir );
 use CPrAN::Types;
 use Lingua::EN::Inflexion;
+
+# Until the library does this by default
+MooseX::Getopt::OptionTypeMap->add_option_type_to_map( Dir, '=s', );
 
 has [qw(
   test log force reinstall git barren
