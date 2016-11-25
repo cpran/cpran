@@ -12,7 +12,7 @@ has [qw( name id url )] => (
   is => 'rw',
 );
 
-has [qw( current latest requested )] => (
+has [qw( version latest requested )] => (
   is => 'rw',
   isa => 'SemVer',
   coerce => 1,
@@ -23,7 +23,7 @@ has '+latest' => (
   default => sub { $_[0]->_remote->{version} },
 );
 
-has '+current' => (
+has '+version' => (
   lazy => 1,
   default => sub { $_[0]->_local->{version} },
 );
@@ -241,7 +241,7 @@ sub is_latest {
   return undef unless defined $self->_remote;
   return 0     unless defined $self->_local;
 
-  return $self->current >= $self->latest;
+  return $self->version >= $self->latest;
 }
 
 =item test()
@@ -260,7 +260,7 @@ sub test {
 
   $self->cpran->logger->debug('In CPrAN::Plugin::test');
 
-  unless (defined $self->cpran->praat->current) {
+  unless (defined $self->cpran->praat->version) {
     Carp::croak "Praat not installed; cannot test"
       unless $self->cpran->quiet;
   }
@@ -282,7 +282,7 @@ sub test {
   my $prove = App::Prove->new;
   my @args;
 
-  my $version = $self->cpran->praat->current;
+  my $version = $self->cpran->praat->version;
   $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
   if ($version >= 6 and $version < 6.003) {
     $self->cpran->logger->warn('Automated tests not supported for this version of Praat')

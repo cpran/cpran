@@ -355,9 +355,9 @@ sub process_praat {
     print 'Querying server for latest version...', "\n"
       unless $self->app->quiet;
 
-    if ($praat->latest > $praat->current) {
+    if ($praat->latest > $praat->version) {
       unless ($self->app->quiet) {
-        print 'Praat will be UPGRADED from ', $praat->current, ' to ', $praat->latest, "\n";
+        print 'Praat will be UPGRADED from ', $praat->version, ' to ', $praat->latest, "\n";
         print 'Do you want to continue?';
       }
 
@@ -371,7 +371,7 @@ sub process_praat {
       }
     }
     else {
-      print 'Praat is already at its latest version (', $praat->current, ")\n";
+      print 'Praat is already at its latest version (', $praat->version, ")\n";
       exit 0;
     }
   }

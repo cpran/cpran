@@ -116,9 +116,9 @@ has _pref_dir => (
 after execute_command => sub {
   my ($self, $cmd, $opt, $args) = @_;
   if (ref $cmd eq 'App::Cmd::Command::version') {
-    if (defined $self->praat->current) {
+    if (defined $self->praat->version) {
       print sprintf "Using Praat version %s (%s)\n",
-        $self->praat->current, $self->praat->bin;
+        $self->praat->version, $self->praat->bin;
     }
     else {
       print "Praat not found in PATH\n",

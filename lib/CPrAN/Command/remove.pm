@@ -122,7 +122,7 @@ sub process_praat {
 
   my $praat = $self->app->praat;
 
-  unless (defined $praat->current) {
+  unless (defined $praat->version) {
     warn "Praat is not installed. Use 'cpran install praat' to install it\n";
     return undef;
   }
