@@ -11,6 +11,7 @@ with 'CPrAN::Role::Reads::STDIN';
 require Carp;
 require Path::Tiny;
 use Try::Tiny;
+use Lingua::EN::Inflexion;
 
 has [qw(
   virtual print raw
@@ -124,7 +125,10 @@ sub execute {
     @updated = $self->fetch_cache;
   }
 
-  print 'Updated ', scalar @updated, ' packages', "\n" unless $self->app->quiet;
+  unless ($self->app->quiet) {
+    my $n = scalar @updated;
+    print inflect "Updated <#n:$n> <N:package>\n";
+  }
 
   if ($self->print) {
     $_->print('remote') foreach @updated;
