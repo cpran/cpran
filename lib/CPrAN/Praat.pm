@@ -264,6 +264,8 @@ sub fetch {
   use JSON qw( decode_json );
   use LWP::UserAgent;
 
+  $self->_package_name(undef);
+  $self->_package_url(undef);
   my $ua = LWP::UserAgent->new;
 
   my ($os, $bit, $ext) = ($self->_os, $self->_bit, $self->_ext);
