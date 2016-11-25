@@ -326,7 +326,7 @@ sub run_command {
   my $opt = (ref $args[-1] eq 'HASH') ? pop @args : {};
 
   my %bkp;
-  foreach (qw( quiet yes )) {
+  foreach (qw( root praat api token quiet debug yes )) {
     if (defined $opt->{$_}) {
       $bkp{$_} = $self->$_;
       $self->$_($opt->{$_});
