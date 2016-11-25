@@ -3,6 +3,7 @@ package TestsFor::CPrAN::Praat;
 use Test::Class::Moose;
 with 'Test::Class::Moose::Role::AutoUse';
 
+use Path::Tiny;
 use Try::Tiny;
 use Plack::Runner;
 use Plack::App::File;
@@ -18,11 +19,11 @@ sub test_attributes : Tests {
 
   # Private
   can_ok $test->class_name, $_
-    foreach (qw( _package _os _bit _ext ));
+    foreach (qw( _barren _releases_endpoint _package_name _package_url _os _bit _ext ));
 
   # Public
   can_ok $test->class_name, $_
-    foreach (qw( bin pref_dir current latest upstream ));
+    foreach (qw( bin pref_dir version latest requested fetch ));
 }
 
 sub test_constructor : Tests {
@@ -105,11 +106,11 @@ sub test_coercions : Tests {
 
   ok $self = $class->new( bin => '/usr/bin/praat' ),
     'bin takes Str';
-  isa_ok $self->bin, 'Path::Class::File', 'bin';
+  isa_ok $self->bin, 'Path::Tiny', 'bin';
 
   ok $self = $class->new( pref_dir => '/home/user/.praat-dir'),
     'pref_dir takes Str';
-  isa_ok $self->pref_dir, 'Path::Class::Dir', 'pref_dir';
+  isa_ok $self->pref_dir, 'Path::Tiny', 'pref_dir';
 }
 
 sub test_get : Tests {
@@ -139,19 +140,20 @@ sub test_get : Tests {
       my $port = shift;
 
       my $self = $class->new(
-        upstream => "http://$host:$port/t/data/good/",
+        _releases_endpoint => "http://$host:$port/t/data/good/releases",
       );
 
       # Force OS conditions for download testing
-      $self->{_os}  = 'testos';
+      $self->{_os}  = 'linux';
       $self->{_bit} = '32';
       $self->{_ext} = '.tar.gz';
 
       ok $self->latest, 'latest returns true when connected';
       isa_ok $self->latest, 'SemVer', 'latest version';
-      is $self->latest->stringify, '1.0.32', 'latest parsed version correctly';
+      is $self->latest->stringify, '9.9.99', 'latest parsed version correctly';
+      like $self->_package_url, qr%fake\.example\.com%, 'parsed package url from latest';
 
-      $self->_package('file.txt');
+      $self->_package_url("http://$host:$port/t/data/good/releases/file.txt");
 
       use Capture::Tiny qw( capture );
       my ($stdout, $stderr, $retval) = capture {
@@ -166,13 +168,11 @@ sub test_get : Tests {
       };
       is $stderr, '', 'download accepts options and can be made quiet';
 
-      $self->download({ quiet => 1 }, '0.0.1');
-      TODO: {
-        local $TODO = 'Not yet implemented';
-        is $stdout, '', 'retrieve a specific version';
-      };
+      $self->requested('0.0.1');
+      $self->fetch;
+      like $self->_package_url, qr/0001/, 'retrieve a specific version';
 
-      $self->_package('not_found.txt');
+      $self->_package_url("http://$host:$port/not/a/real/file.txt");
       ($stdout, $stderr, $retval) = try {
         capture {
           $self->download({ quiet => 1 });
@@ -182,7 +182,7 @@ sub test_get : Tests {
       like $retval, qr/404 Not Found/, 'download dies when file not found';
 
       $self = $class->new(
-        _releases_endpoint => "http://$host:$port/t/data/good/releases.json",
+        _releases_endpoint => "http://$host:$port/t/data/good/releases/all",
       );
 
       ok $self->releases, 'releases returns true';
@@ -191,33 +191,18 @@ sub test_get : Tests {
         'all found releases have SemVer objects');
 
       $self = $class->new(
-        upstream => "http://$host:$port/t/data/bad/",
         _releases_endpoint => "http://$host:$port/t/data/bad/not_found.json",
       );
       # Force OS conditions for download testing
-      $self->{_os}  = 'testos';
+      $self->{_os}  = 'linux';
       $self->{_bit} = '32';
       $self->{_ext} = '.tar.gz';
 
-      like( (
-        try { $self->latest; 0 }
-        catch { $_ }
-      ), qr/Did not find Praat package link/, 'latest dies if unable to parse response');
+      is $self->latest, undef, 'latest is undefined when endpoint not found';
 
-      like( (
-        try { $self->releases; 0 }
-        catch { $_ }
-      ), qr/404 Not Found/, 'releases dies when endpoint not found');
+      is scalar(@{$self->releases}), 0, 'releases is undefined when endpoint not found';
     },
   );
-
-  my $self = $class->new(
-    upstream => "http://$host:$port/t/data/missing/",
-  );
-  ok( (
-    try { $self->latest; 0 }
-    catch { 1 }
-  ), 'latest dies if unable to connect');
 }
 
 sub test_execute : Tests {
@@ -229,9 +214,9 @@ sub test_execute : Tests {
     bin => "$FindBin::Bin/data/good/version",
   );
 
-  ok $self->current, 'current returns true when connected';
-  isa_ok $self->current, 'SemVer', 'current version';
-  is $self->current->stringify, '5.3.51', 'current parsed version correctly';
+  ok $self->version, 'version returns true when connected';
+  isa_ok $self->version, 'SemVer', 'current version';
+  is $self->version->stringify, '5.3.51', 'version parsed version correctly';
 
   $self = $class->new(
     bin => "$FindBin::Bin/data/good/echo",
@@ -239,9 +224,9 @@ sub test_execute : Tests {
   );
 
   ok( (
-    try { $self->current; 0 }
+    try { $self->version; 0 }
     catch { 1 }
-  ), 'current dies when unable to get version');
+  ), 'version dies when unable to get version');
 
   my ($stdout, $stderr, $retval) = $self->execute(qw( 1 2 3 ), []);
   chomp $stdout;
@@ -265,36 +250,35 @@ sub test_execute : Tests {
   $self = $class->new;
   $self->{bin} = undef;
   ok( (
-    try { $self->current; 0 }
+    try { $self->version; 0 }
     catch { 1 }
-  ), 'current dies when binary is undefined');
+  ), 'version dies when binary is undefined');
 }
 
 sub test_remove : Tests {
   my $test = shift;
   my $class = $test->class_name;
 
-  use File::Temp;
-  my $tmp = File::Temp->new(
-    template => 'deletemeXXXXX',
+  my $tmp = Path::Tiny->tempfile(
+    dir => '.',
+    template => 'deleteme_XXXXX',
   );
 
   my $self = $class->new(
-    bin => $tmp->filename,
+    bin => $tmp->basename,
   );
 
   SKIP: {
-    skip 'Could not create temporary bin file', 3 unless -e $tmp->filename;
+    skip 'Could not create temporary bin file', 3 unless $tmp->exists;
 
-    ok $self->remove, 'remove returns true when bin exists';
-    ok !(-e $tmp->filename), 'bin was deleted';
-    ok !$self->remove, 'remove returns false when bin does not exist';
+    ok  $self->remove, 'remove returns true when bin exists';
+    ok !$tmp->exists,  'bin was deleted';
+    ok !$self->remove, 'remove returns false when binary does not exist';
   };
 
   {
     local $ENV{PATH} = '';
     ok my $self = $class->new, 'constructor works when binary is undef';
-    ok !$self->remove, 'remove returns false when bin is undefined';
 
     $self->{bin} = undef;
     ok( (
