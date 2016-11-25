@@ -145,17 +145,13 @@ sub BUILDARGS {
       $ENV{PROCESSOR_ARCHITECTURE} //= '';
       $ENV{PROCESSOR_ARCHITEW6432} //= '';
 
-      if (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ or
-          uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) {
-        $args->{_bit} = 64;
-      }
-      else {
-        $args->{_bit} = 32;
-      }
+      $args->{_bit} =
+        (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ or
+         uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) ? 64 : 32;
     }
     else {
-      $args->{_os}  = "linux";
-      $args->{_ext} = "\.tar\.gz";
+      $args->{_os}  = 'linux';
+      $args->{_ext} = '\.tar\.gz';
     }
   }
 
