@@ -221,8 +221,7 @@ sub git_upgrade {
       $head = $repo->run( 'rev-parse' => 'HEAD', { fatal => '!0' } );
     }
     catch {
-      $self->app->logger->warn('Could not locate HEAD');
-      $self->app->logger->debug($_);
+      $self->app->logger->warn('Could not locate HEAD:', $_);
     };
 
     try {
