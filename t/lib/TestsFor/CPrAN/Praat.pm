@@ -231,7 +231,7 @@ sub test_execute : Tests {
 
   ok $self->current, 'current returns true when connected';
   isa_ok $self->current, 'SemVer', 'current version';
-  is $self->current->stringify, '1.0.23', 'current parsed version correctly';
+  is $self->current->stringify, '5.3.51', 'current parsed version correctly';
 
   $self = $class->new(
     bin => "$FindBin::Bin/data/good/echo",
