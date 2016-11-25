@@ -8,7 +8,7 @@ extends qw( MooseX::App::Cmd::Command );
 with 'MooseX::Getopt';
 
 use Types::Path::Tiny qw( File );
-use CPrAN::Types;
+use Types::Praat qw( Version );
 
 # Until the library does this by default
 MooseX::Getopt::OptionTypeMap->add_option_type_to_map( File, '=s', );
@@ -73,7 +73,7 @@ has '+readme' => (
 );
 
 has '+version' => (
-  isa => 'SemVer',
+  isa => Version,
   documentation => 'starting version of the plugin',
   coerce => 1,
   lazy => 1,

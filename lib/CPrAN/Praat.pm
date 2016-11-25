@@ -6,7 +6,7 @@ package CPrAN::Praat;
 use Moose;
 use Log::Any;
 use Types::Path::Tiny qw( Path );
-use Types::SemVer qw( SemVer );
+use Types::Praat qw( Version );
 use Types::Standard qw( Undef );
 use Path::Tiny;
 use CPrAN::Types;
@@ -107,7 +107,7 @@ has version => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => 'SemVer|Undef',
+  isa => Version|Undef,
   builder => '_build_version'
 );
 
@@ -116,13 +116,13 @@ has latest => (
   init_arg => undef,
   lazy => 1,
   coerce => 1,
-  isa => SemVer|Undef,
+  isa => Version|Undef,
   builder => 'fetch',
 );
 
 has requested => (
   is => 'rw',
-  isa => SemVer|Undef,
+  isa => Version|Undef,
   coerce => 1,
 );
 
@@ -283,7 +283,7 @@ sub fetch {
   my @haystack;
   my $url;
   if ($self->requested) {
-    $url = URI->new( $self->_releases_endpoint . '/tags/v' . $self->requested->stringify )
+    $url = URI->new( $self->_releases_endpoint . '/tags/v' . $self->requested->praatify )
   }
   else {
     $url = URI->new( $self->_releases_endpoint . '/latest' )
@@ -345,7 +345,7 @@ sub _build_version {
   $self->logger->trace('Detecting Praat version');
 
   die 'Binary is undefined!' unless defined $self->bin;
-  use SemVer;
+  use Praat::Version;
 
   my ($buffer, $version);
   open my $fh, '<:raw', $self->bin;
@@ -365,7 +365,7 @@ sub _build_version {
   $self->logger->trace('Version detection complete');
 
   try {
-    SemVer->new($version);
+    Praat::Version->new($version);
   }
   catch {
     die "Could not get Praat version: $_\n";
@@ -385,32 +385,22 @@ sub _build_releases {
   my ($next, $response);
 
   $next = $self->_releases_endpoint;
-  # Repeat block is commented out to prevent
-  # busting through the API request limit
-  # do {
-    $self->logger->trace('GET', $next) if $self->logger->is_trace;
-    $response = $ua->get($next);
-    unless ($response->is_success) {
-      $self->logger->warn($response->status_line);
-      return [];
-    }
+  # Fetch only first page of results, to avoid busting through request limit
+  $self->logger->trace('GET', $next) if $self->logger->is_trace;
+  $response = $ua->get($next);
+  unless ($response->is_success) {
+    $self->logger->warn($response->status_line);
+    return [];
+  }
 
-    my $tags = decode_json $response->decoded_content;
-    foreach my $tag (@{$tags}) {
-      try { $tag->{semver} = SemVer->new($tag->{tag_name}) }
-      finally {
-        push @releases , $tag unless @_;
-      };
+  my $tags = decode_json $response->decoded_content;
+  foreach my $tag (@{$tags}) {
+    use Try::Tiny;
+    try { $tag->{semver} = Praat::Version->new($tag->{tag_name}) }
+    finally {
+      push @releases , $tag unless @_;
     };
-
-  # ($next) = split /,/, $response->header('link') if $response->header('link');
-  # if ($next =~ /rel="next"/) {
-  #   $next =~ s/.*<([^>]+)>.*/$1/;
-  # }
-  # else {
-  #   $next = undef;
-  # }
-  # } until !defined $next;
+  };
 
   @releases = sort { $b->{semver} <=> $a->{semver} } @releases;
 

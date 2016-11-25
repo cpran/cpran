@@ -100,7 +100,7 @@ has path => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    return $_[0]->app->praat->bin->parent if $_[0]->app->praat->bin->stringify;
+    return $_[0]->app->praat->bin->parent if $_[0]->app->praat->bin->exists;
 
     if ($^O =~ /darwin/) {
       $_[0]->app->logger->debug('Installing Praat binary to default Mac path');
@@ -496,7 +496,8 @@ sub get_archive {
 
     my @releases;
     foreach my $tag (@tags) {
-      try { $tag->{semver} = SemVer->new($tag->{name}) }
+      require Praat::Version;
+      try { $tag->{semver} = Praat::Version->new($tag->{name}) }
       catch { next };
       push @releases , $tag;
     };

@@ -149,7 +149,7 @@ sub test_get : Tests {
       $self->{_ext} = '.tar.gz';
 
       ok $self->latest, 'latest returns true when connected';
-      isa_ok $self->latest, 'SemVer', 'latest version';
+      isa_ok $self->latest, 'Praat::Version', 'latest version';
       is $self->latest->stringify, '9.9.99', 'latest parsed version correctly';
       like $self->_package_url, qr%fake\.example\.com%, 'parsed package url from latest';
 
@@ -168,7 +168,7 @@ sub test_get : Tests {
       };
       is $stderr, '', 'download accepts options and can be made quiet';
 
-      $self->requested('0.0.1');
+      $self->requested('0.0.01');
       $self->fetch;
       like $self->_package_url, qr/0001/, 'retrieve a specific version';
 
@@ -187,8 +187,8 @@ sub test_get : Tests {
 
       ok $self->releases, 'releases returns true';
       is scalar @{$self->releases}, 4, 'found only 4 releases in test data';
-      is( (scalar grep { ref $_->{semver} eq 'SemVer' } @{$self->releases}), 4,
-        'all found releases have SemVer objects');
+      is( (scalar grep { ref $_->{semver} eq 'Praat::Version' } @{$self->releases}), 4,
+        'all found releases have version objects');
 
       $self = $class->new(
         _releases_endpoint => "http://$host:$port/t/data/bad/not_found.json",

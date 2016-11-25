@@ -6,7 +6,7 @@ use uni::perl;
 
 require Carp;
 use Types::Path::Tiny qw( Path );
-use CPrAN::Types;
+use Types::Praat qw( Version );
 
 has [qw( name id url )] => (
   is => 'rw',
@@ -14,7 +14,7 @@ has [qw( name id url )] => (
 
 has [qw( version latest requested )] => (
   is => 'rw',
-  isa => 'SemVer',
+  isa => Version,
   coerce => 1,
 );
 
@@ -182,11 +182,11 @@ sub fetch {
     return undef;
   }
 
-  use SemVer;
+  require Praat::Version;
   my $tags = $self->cpran->api->tags( $id );
   my @releases;
   foreach my $tag (@{$tags}) {
-    try { $tag->{semver} = SemVer->new($tag->{name}) }
+    try { $tag->{semver} = Praat::Version->new($tag->{name}) }
     catch { next };
     push @releases , $tag;
   };
@@ -393,7 +393,7 @@ sub _parse_meta {
 
   use YAML::XS;
   use Encode;
-  use SemVer;
+  require Praat::Version;
 
   my $parsed;
   try {
@@ -412,7 +412,7 @@ sub _parse_meta {
   $parsed->{name} = $parsed->{plugin};
 
   $parsed->{version} = try {
-    SemVer->new($parsed->{version}) unless ref $parsed->{version} eq 'SemVer';
+    Praat::Version->new($parsed->{version}) unless ref $parsed->{version} eq 'Praat::Version';
   }
   catch {
     Carp::carp 'Not a valid version number: ', $parsed->{version}
