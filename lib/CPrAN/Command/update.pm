@@ -55,7 +55,7 @@ has _list => (
   },
 );
 
-has requested => (
+has _requested => (
   is  => 'ro',
   isa => 'HashRef',
   traits => ['Hash'],
@@ -137,7 +137,7 @@ sub fetch_raw {
     unless $self->app->quiet;
 
   my @updated;
-  my @requested = keys %{$self->requested};
+  my @requested = keys %{$self->_requested};
 
   my @projects;
   if (scalar @requested) {
@@ -161,7 +161,7 @@ sub fetch_raw {
       next;
     }
 
-    if (scalar @requested > 1 and !defined $self->requested->{$source->{name}}) {
+    if (scalar @requested > 1 and !defined $self->_requested->{$source->{name}}) {
       $self->app->logger->debug('Not in requested plugins, ignoring', $source->{name});
       next;
     }
@@ -233,8 +233,8 @@ sub fetch_cache {
     my $meta = "---" . $_;
     my $plugin = YAML::XS::Load(Encode::encode_utf8 $meta);
 
-    next if scalar keys %{$self->requested} >= 1 and
-      !exists $self->requested->{$plugin->{Plugin}};
+    next if scalar keys %{$self->_requested} >= 1 and
+      !exists $self->_requested->{$plugin->{Plugin}};
 
     $self->app->logger->debug('Working on', $plugin->{Plugin})
       if $self->app->debug;
