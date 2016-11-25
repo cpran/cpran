@@ -31,7 +31,7 @@ has praat => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    use CPrAN::Praat;
+    require CPrAN::Praat;
     CPrAN::Praat->new;
   },
 );
@@ -42,7 +42,7 @@ has api => (
   documentation => 'GitLab API connection',
   lazy => 1,
   default => sub {
-    use WWW::GitLab::v3;
+    require WWW::GitLab::v3;
     WWW::GitLab::v3->new(
       url   => $_[0]->url,
       token => $_[0]->token,

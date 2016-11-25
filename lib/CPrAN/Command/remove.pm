@@ -63,9 +63,8 @@ remove. For each named passed as argument, all contents of the directory named
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use CPrAN::Plugin;
-
   my @plugins = map {
+    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
     else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};

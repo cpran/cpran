@@ -8,7 +8,7 @@ around execute => sub {
 
   my ($opt, $args) = @_;
 
-  use CPrAN::Plugin;
+  require CPrAN::Plugin;
   require Path::Tiny;
 
   if (!scalar @{$args}) {

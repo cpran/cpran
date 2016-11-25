@@ -110,6 +110,7 @@ sub execute {
   $self->app->logger->debug('Executing update');
 
   my @plugins = map {
+    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
     else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
@@ -170,6 +171,7 @@ sub fetch_raw {
     }
 
     my $plugin = try {
+      require CPrAN::Plugin;
       CPrAN::Plugin->new(
         meta => $source,
         cpran => $self->app,
