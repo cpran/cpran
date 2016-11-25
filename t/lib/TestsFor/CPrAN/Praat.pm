@@ -150,7 +150,7 @@ sub test_get : Tests {
 
       ok $self->latest, 'latest returns true when connected';
       isa_ok $self->latest, 'Praat::Version', 'latest version';
-      is $self->latest->stringify, '9.9.99', 'latest parsed version correctly';
+      is $self->latest->praatify, '4.2.03', 'latest parsed version correctly';
       like $self->_package_url, qr%fake\.example\.com%, 'parsed package url from latest';
 
       $self->_package_url("http://$host:$port/t/data/good/releases/file.txt");
