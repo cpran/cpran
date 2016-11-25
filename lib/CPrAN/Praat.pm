@@ -5,7 +5,9 @@ package CPrAN::Praat;
 
 use Moose;
 use Log::Any;
-use Types::Path::Tiny qw( File Dir );
+use Types::Path::Tiny qw( Path );
+use Types::SemVer qw( SemVer );
+use Types::Standard qw( Undef );
 use Path::Tiny;
 use CPrAN::Types;
 
@@ -77,7 +79,7 @@ has [qw( _os _ext _bit )] => (
 
 has pref_dir => (
   is => 'rw',
-  isa => Dir,
+  isa => Path,
   lazy => 1,
   coerce => 1,
   builder => '_build_pref_dir',
@@ -92,7 +94,7 @@ has releases => (
 
 has bin => (
   is => 'ro',
-  isa => File,
+  isa => Path,
   lazy => 1,
   coerce => 1,
   default => sub {
@@ -105,7 +107,7 @@ has current => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => 'SemVer',
+  isa => 'SemVer|Undef',
   builder => '_build_current'
 );
 
@@ -114,7 +116,7 @@ has latest => (
   init_arg => undef,
   lazy => 1,
   coerce => 1,
-  isa => SemVer,
+  isa => SemVer|Undef,
   builder => '_build_remote',
 );
 
@@ -293,7 +295,8 @@ sub _build_remote {
     @haystack = ( decode_json $response->decoded_content );
   }
   else {
-    Carp::croak $response->status_line;
+    $self->logger->warn($response->status_line);
+    return undef;
   }
 
   my ($latest, $found);
@@ -312,8 +315,8 @@ sub _build_remote {
     last if defined $found;
   }
 
-  die 'Could not find ', ($self->requested // 'latest'), ' Praat release for this system', "\n"
-    unless defined $found;
+  $self->logger->warn('Could not find', ($self->requested // 'latest'), 'Praat release for this system')
+    and return(undef) unless defined $found;
 
   $self->_package_name($found->{name});
   $self->_package_url($found->{browser_download_url});
@@ -387,7 +390,10 @@ sub _build_releases {
   # do {
     $self->logger->trace('GET', $next) if $self->logger->is_trace;
     $response = $ua->get($next);
-    die $response->status_line unless $response->is_success;
+    unless ($response->is_success) {
+      $self->logger->warn($response->status_line);
+      return [];
+    }
 
     my $tags = decode_json $response->decoded_content;
     foreach my $tag (@{$tags}) {
