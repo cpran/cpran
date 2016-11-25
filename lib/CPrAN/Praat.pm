@@ -117,7 +117,7 @@ has latest => (
   lazy => 1,
   coerce => 1,
   isa => SemVer|Undef,
-  builder => '_build_remote',
+  builder => 'fetch',
 );
 
 has requested => (
@@ -267,7 +267,7 @@ sub execute {
   };
 }
 
-sub _build_remote {
+sub fetch {
   my ($self) = @_;
 
   use URI;
