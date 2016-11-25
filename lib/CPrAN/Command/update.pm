@@ -117,13 +117,7 @@ sub execute {
 
   $self->request_plugin($_->name, 1) foreach @plugins;
 
-  my @updated;
-  if ($self->raw) {
-    @updated = $self->fetch_raw;
-  }
-  else {
-    @updated = $self->fetch_cache;
-  }
+  my @updated = ($self->raw) ? $self->fetch_raw : $self->fetch_cache;
 
   unless ($self->app->quiet) {
     my $n = scalar @updated;
