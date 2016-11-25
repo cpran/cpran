@@ -99,7 +99,7 @@ has bin => (
   coerce => 1,
   default => sub {
     use File::Which;
-    which('praat') || which('praat.exe') || which('Praat') || which('praatcon'));
+    which('praat') || which('praat.exe') || which('Praat') || which('praatcon');
   },
 );
 
