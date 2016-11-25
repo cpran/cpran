@@ -1,0 +1,69 @@
+[
+  {
+    "tag_name" : "v6.7.89",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat6789_linux32.tar.gz",
+        "name" : "praat6789_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat6789_linux64.tar.gz",
+        "name" : "praat6789_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat6789_linux64barren.tar.gz",
+        "name" : "praat6789_linux64barren.tar.gz"
+      }
+    ]
+  },
+  {
+    "tag_name" : "v9.9.99",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat9999_linux32.tar.gz",
+        "name" : "praat9999_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat9999_linux64.tar.gz",
+        "name" : "praat9999_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat9999_linux64barren.tar.gz",
+        "name" : "praat9999_linux64barren.tar.gz"
+      }
+    ]
+  },
+  {
+    "tag_name" : "v8.8.88",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat8888_linux32.tar.gz",
+        "name" : "praat8888_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat8888_linux64.tar.gz",
+        "name" : "praat8888_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat8888_linux64barren.tar.gz",
+        "name" : "praat8888_linux64barren.tar.gz"
+      }
+    ]
+  },
+  {
+    "bad_data" : null
+  },
+  {
+    "tag_name" : "v5.0.11",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat5011_linux32.tar.gz",
+        "name" : "praat5011_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat5011_linux64.tar.gz",
+        "name" : "praat5011_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat5011_linux64barren.tar.gz",
+        "name" : "praat5011_linux64barren.tar.gz"
+      }
+    ]
+  }
+]

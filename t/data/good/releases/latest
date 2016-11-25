@@ -1,0 +1,16 @@
+{
+  "tag_name" : "v9.9.99",
+  "assets": [{
+      "browser_download_url" : "https://fake.example.com/praat6022_linux32.tar.gz",
+      "name" : "praat9999_linux32.tar.gz"
+    },
+    {
+      "browser_download_url" : "https://fake.example.com/praat6022_linux64.tar.gz",
+      "name" : "praat9999_linux64.tar.gz"
+    },
+    {
+      "browser_download_url" : "https://fake.example.com/praat6022_linux64barren.tar.gz",
+      "name" : "praat9999_linux64barren.tar.gz"
+    }
+  ]
+}
