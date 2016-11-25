@@ -2,7 +2,6 @@ package CPrAN::Command::update;
 # ABSTRACT: update local plugin list
 
 use Moose;
-use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
 
