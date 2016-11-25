@@ -2,7 +2,6 @@ package CPrAN::Command::remove;
 # ABSTRACT: delete installed plugins from disk
 
 use Moose;
-use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
 

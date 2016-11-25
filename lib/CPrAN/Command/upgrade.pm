@@ -2,7 +2,6 @@ package CPrAN::Command::upgrade;
 # ABSTRACT: upgrade plugins to their latest version
 
 use Moose;
-use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
 

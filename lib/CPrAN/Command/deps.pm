@@ -1,7 +1,6 @@
 package CPrAN::Command::deps;
 # ABSTRACT: list the dependencies of plugins
 
-use uni::perl;
 use Moose;
 
 with 'CPrAN::Role::Reads::WorkingPlugin';

@@ -2,7 +2,6 @@ package CPrAN::Command::install;
 # ABSTRACT: install new plugins
 
 use Moose;
-use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
 
