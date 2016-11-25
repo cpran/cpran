@@ -5,7 +5,7 @@ use Moose;
 require Carp;
 use Log::Any ();
 use Types::Path::Tiny qw( Path );
-use CPrAN::Types;
+use Types::CPrAN;
 
 extends qw( MooseX::App::Cmd );
 
