@@ -266,12 +266,11 @@ sub execute {
 }
 
 sub _build_remote {
-  my ($self, $requested) = @_;
+  my ($self) = @_;
 
   use URI;
   use JSON qw( decode_json );
   use LWP::UserAgent;
-  use SemVer;
 
   my $ua = LWP::UserAgent->new;
 
@@ -319,7 +318,8 @@ sub _build_remote {
   $self->_package_name($found->{name});
   $self->_package_url($found->{browser_download_url});
 
-  return SemVer->new( $latest->{tag_name} );
+  $self->requested($latest->{tag_name}) unless defined $self->requested;
+  return $latest->{tag_name};
 }
 
 sub _build_pref_dir {
