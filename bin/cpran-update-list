@@ -4,26 +4,24 @@ use strict;
 use diagnostics;
 use warnings;
 
+use POSIX;
 use CPrAN;
-use CPrAN::Plugin;
-use WWW::GitLab::v3;
 use Capture::Tiny ':all';
 use Try::Tiny;
-use Carp;
 
-use POSIX;
+warn('No API token', "\n") and exit unless defined $ENV{'CPRAN_PUSHER_TOKEN'};
+
 print strftime("%Y-%m-%dT%T%z", localtime) . ' ';
 
-my $app = CPrAN->new;
-my $api = WWW::GitLab::v3->new(
-  url   => $app->api_url(),
+my $cpran = CPrAN->new({
   token => $ENV{'CPRAN_PUSHER_TOKEN'},
-);
+  quiet => 1,
+});
 
 my ($pid, $sid);
 try {
-  $pid = $api->projects( { search => 'plugin_cpran' } )->[0]->{id};
-  my $snippets = $api->snippets($pid);
+  $pid = $cpran->api->projects( { search => 'plugin_cpran' } )->[0]->{id};
+  my $snippets = $cpran->api->snippets($pid);
   foreach (@{$snippets}) {
     $sid = $_->{id} if $_->{file_name} eq 'cpran.list';
   }
@@ -33,24 +31,23 @@ catch {
   exit 1;
 };
 
-my $cmd = CPrAN::Command::update->new({});
-
 my ($stdout, $stderr) = capture {
-  $app->execute_command($cmd, {
+  $cpran->run_command( update => {
+    quiet => 1,
+    print => 1,
+    raw => 1,
     virtual => 1,
-    raw     => 1,
-    print   => 1,
-  }, '');
+  });
 };
 
 if ($stderr ne '') {
-  print "Errors found during update\n";
+  print "There were errors during update\n";
   print $stderr;
   exit 1;
 }
 
 try {
-  $api->edit_snippet(
+  $cpran->api->edit_snippet(
     $pid, $sid, {
       code => $stdout
     }
@@ -62,4 +59,3 @@ catch {
 };
 
 print "Success\n";
-
