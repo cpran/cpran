@@ -9,9 +9,6 @@ with 'MooseX::Getopt';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
-require Path::Tiny;
-use Try::Tiny;
-use Lingua::EN::Inflexion;
 
 has [qw(
   virtual print raw
@@ -121,6 +118,8 @@ sub execute {
 
   unless ($self->app->quiet) {
     my $n = scalar @updated;
+
+    use Lingua::EN::Inflexion;
     print inflect "Updated <#n:$n> <N:package>\n";
   }
 
@@ -167,6 +166,7 @@ sub fetch_raw {
       next;
     }
 
+    use Try::Tiny;
     my $plugin = try {
       require CPrAN::Plugin;
       CPrAN::Plugin->new(

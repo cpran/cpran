@@ -9,7 +9,6 @@ with 'MooseX::Getopt';
 extends qw( MooseX::App::Cmd::Command );
 
 require Carp;
-use Try::Tiny;
 use Text::FormatTable;
 
 has [qw(
@@ -154,7 +153,10 @@ sub execute {
     $self->_add_output_row($_) foreach @found;
 
     if (@found) {
-      use Term::ReadKey;
+      require Term::ReadKey;
+      Term::ReadKey->import;
+
+      use Try::Tiny;
       my ($wchar) = try {
         GetTerminalSize();
       }

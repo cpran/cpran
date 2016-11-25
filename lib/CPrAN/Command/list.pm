@@ -11,8 +11,6 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
-require Path::Tiny;
-use Try::Tiny;
 
 has [qw(
   installed wrap
@@ -47,6 +45,8 @@ sub execute {
 
 sub process_praat {
   my ($self) = @_;
+
+  use Try::Tiny;
   try {
     my $praat = $self->app->praat;
     my $releases = $praat->releases;

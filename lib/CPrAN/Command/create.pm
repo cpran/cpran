@@ -14,7 +14,6 @@ use Types::Praat qw( Version );
 MooseX::Getopt::OptionTypeMap->add_option_type_to_map( File, '=s', );
 
 require Carp;
-require Path::Tiny;
 
 has name => (
   is  => 'rw',

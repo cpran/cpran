@@ -6,7 +6,6 @@ use Moose;
 extends qw( MooseX::App::Cmd::Command );
 
 require Carp;
-require Path::Tiny;
 
 has [qw(
   git test log reinstall force

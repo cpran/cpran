@@ -11,7 +11,6 @@ with 'CPrAN::Role::Reads::WorkingPlugin';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
-use Try::Tiny;
 
 has log => (
   is  => 'rw',
@@ -58,6 +57,7 @@ sub execute {
     else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
   } @{$args};
 
+  use Try::Tiny;
   try {
     foreach my $plugin (@plugins) {
       my $result;

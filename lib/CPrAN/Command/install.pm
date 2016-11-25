@@ -10,11 +10,7 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
-require Path::Tiny;
-use Try::Tiny;
 use Types::Path::Tiny qw( Dir );
-use CPrAN::Types;
-use Lingua::EN::Inflexion;
 
 # Until the library does this by default
 MooseX::Getopt::OptionTypeMap->add_option_type_to_map( Dir, '=s', );
@@ -63,23 +59,21 @@ has '+git' => (
   default => 1,
 );
 around git => sub {
-  use File::Which;
-
   my $orig = shift;
   my $self = shift;
 
   my $return = $self->$orig(@_);
 
   if ($return) {
-    use File::Which;
-    use Class::Load ':all';
+    require File::Which;
+    require Class::Load;
 
     my $enable = 1;
-    unless (which 'git') {
+    unless (File::Which::which('git')) {
       warn "Could not find path to git binary\n";
       $enable = 0;
     }
-    unless (try_load_class 'Git::Repository') {
+    unless (Class::Load::try_load_class 'Git::Repository') {
       warn "Could not load Git::Repository\n";
       $enable = 0;
     }
@@ -102,6 +96,7 @@ has path => (
   default => sub {
     return $_[0]->app->praat->bin->parent if $_[0]->app->praat->bin->exists;
 
+    require Path::Tiny;
     if ($^O =~ /darwin/) {
       $_[0]->app->logger->debug('Installing Praat binary to default Mac path');
       die "Praat installation not currently supported on MacOS\n";
@@ -187,6 +182,9 @@ sub execute {
   if (@schedule) {
     unless ($self->app->quiet) {
       my $n = scalar @schedule;
+
+      use Lingua::EN::Inflexion;
+
       print inflect("<#d:$n>The following <N:plugin> will be INSTALLED:"), "\n";
       print '  ', join(' ', map { $_->name } @schedule), "\n";
       print 'Do you want to continue?';
@@ -332,10 +330,9 @@ sub raw_install {
   print "Extracting...\n"
     unless $self->app->quiet;
 
-  use Archive::Tar;
+  require Archive::Tar;
 
   my $retval = 1;
-
   if (-e $plugin->root and $self->force) {
     print 'Removing ', $plugin->root, ' (because you used --force)', "\n"
       unless $self->app->quiet;
@@ -350,6 +347,8 @@ sub raw_install {
   while (my $f = $next->()) {
     # $path is a Path::Tiny object for the current item in the archive
     my $path;
+
+    require Path::Tiny;
     if ($f->name =~ /\/$/) {
       $path = Path::Tiny::path($f->name);
     }
@@ -484,8 +483,9 @@ sub get_archive {
   print 'Downloading archive for ', $plugin->name, "\n"
     unless $self->app->quiet;
 
-  my $archive;
-  try {
+  use Try::Tiny;
+
+  my $archive = try {
     my $project = shift @{$self->app->api->projects(
       { search => 'plugin_' . $plugin->name }
     )};
@@ -505,7 +505,7 @@ sub get_archive {
 
     my $tag = pop @releases;
 
-    $archive = $self->app->api->archive(
+    $self->app->api->archive(
       $project->{id},
       { sha => $tag->{commit}->{id} },
     );
@@ -516,6 +516,7 @@ sub get_archive {
     exit 1;
   };
 
+  require Path::Tiny;
   # TODO(jja) Improve error checking. Does this work on Windows?
   my $file = Path::Tiny->tempfile(
     dir => '.',
@@ -535,6 +536,7 @@ sub process_praat {
   $praat->requested($requested) if $requested;
   $praat->_barren($self->barren) if $self->barren;
 
+  use Try::Tiny;
   try {
     if ($praat->bin->stringify) {
       unless ($self->reinstall) {
@@ -567,6 +569,8 @@ sub process_praat {
 
       my $archive = $praat->download;
 
+      require Path::Tiny;
+
       my $package = Path::Tiny->tempfile(
         template => 'praat' . $praat->latest . '-XXXXX',
         suffix => $praat->_ext,
@@ -586,7 +590,7 @@ sub process_praat {
         unless $self->app->quiet;
 
       # Extract archives
-      use Archive::Extract;
+      require Archive::Extract;
 
       my $ae = Archive::Extract->new( archive => $package->canonpath );
       $ae->extract( to => $extract )

@@ -10,10 +10,6 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
-use Try::Tiny;
-use Capture::Tiny 'capture';
-use File::Which;
-use Lingua::EN::Inflexion;
 
 has [qw(
   git test log force
@@ -80,8 +76,10 @@ sub validate_args {
   # 2. Git::Repository is installed
   # 3. The user has not turned it off by setting --nogit
   if ($self->git) {
+    use Try::Tiny;
     try {
-      $self->git( which('git') ? 1 : 0 )
+      require File::Which;
+      $self->git( File::Which::which('git') ? 1 : 0 )
         or die "Could not find path to git binary. Is git installed?\n";
       require Git::Repository;
     }
@@ -114,6 +112,8 @@ sub execute {
       $self->app->run_command( list => { quiet => 1, installed => 1 } )
     ];
   }
+
+  use Lingua::EN::Inflexion;
 
   my @plugins = map {
     require CPrAN::Plugin;
@@ -203,6 +203,8 @@ sub execute {
 sub git_upgrade {
   my ($self, $plugin) = @_;
 
+  use Try::Tiny;
+
   try {
     require Git::Repository;
     my $repo;
@@ -237,7 +239,8 @@ sub git_upgrade {
     push @args, '--force' if defined $self->force;
 
     try {
-      my ($STDOUT, $STDERR) = capture {
+      require Capture::Tiny;
+      my ($STDOUT, $STDERR) = Capture::Tiny::capture {
         $repo->run( checkout => @args, { fatal => '!0' })
       }
     }
@@ -348,6 +351,8 @@ but will disregard those that fail.
 
 sub process_praat {
   my ($self) = @_;
+
+  use Try::Tiny;
 
   try {
     my $praat = $self->app->praat;

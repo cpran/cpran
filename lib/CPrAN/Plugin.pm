@@ -391,13 +391,13 @@ sub parse_meta {
 sub _parse_meta {
   my ($class, $meta) = @_;
 
-  use YAML::XS;
-  use Encode;
+  require YAML::XS;
+  require Encode;
   require Praat::Version;
 
   my $parsed;
   try {
-    $parsed = YAML::XS::Load( encode_utf8 $meta );
+    $parsed = YAML::XS::Load( Encode::encode_utf8 $meta );
   }
   catch {
     Carp::carp 'Could not deserialise meta: ', $meta

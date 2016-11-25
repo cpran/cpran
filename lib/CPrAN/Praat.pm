@@ -8,11 +8,8 @@ use Log::Any;
 use Types::Path::Tiny qw( Path );
 use Types::Praat qw( Version );
 use Types::Standard qw( Undef );
-use Path::Tiny;
-use CPrAN::Types;
 
 require Carp;
-use Try::Tiny;
 
 =head1 NAME
 
@@ -98,7 +95,8 @@ has bin => (
   lazy => 1,
   coerce => 1,
   default => sub {
-    use File::Which;
+    require File::Which;
+    File::Which->import;
     which('praat') || which('praat.exe') || which('Praat') || which('praatcon');
   },
 );
@@ -162,22 +160,18 @@ sub BUILDARGS {
   }
 
   unless (defined $args->{_bit}) {
-    try {
+    use Try::Tiny;
+
+    my $uname = try {
       my $cmd = 'uname -a';
-      open CMD, "$cmd 2>&1 |"
-        or die ("Could not execute $cmd: $!");
-      chomp(my $uname = <CMD>);
-      if ($uname =~ /\bx86_64\b/) {
-        $args->{_bit} = 64;
-      }
-      else {
-        $args->{_bit} = 32;
-      }
+      open CMD, "$cmd 2>&1 |" or die ("Could not execute $cmd: $!");
+      chomp(my $line = <CMD>);
+      $line;
     }
     catch {
       warn "Could not determine system bitness. Defaulting to 32bit\n";
-      $args->{_bit} = 32;
     };
+    $args->{_bit} = (defined $uname and $uname =~ /\bx86_64\b/) ? 64 : 32;
   }
 
   return $args;
@@ -364,6 +358,7 @@ sub _build_version {
 
   $self->logger->trace('Version detection complete');
 
+  use Try::Tiny;
   try {
     Praat::Version->new($version);
   }
