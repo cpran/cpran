@@ -11,15 +11,10 @@ with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
 
-has [qw(
-  force cautious
-)] => (
+has force => (
   is  => 'rw',
   isa => 'Bool',
   traits => [qw(Getopt)],
-);
-
-has '+force' => (
   documentation => 'attempt to work around errors',
   lazy => 1,
   default => undef,
@@ -151,8 +146,6 @@ sub process_praat {
 =item B<--force>
 
 Tries to work around problems.
-
-=item B<--cautious>
 
 =back
 
