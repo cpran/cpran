@@ -325,7 +325,7 @@ sub git_install {
 sub raw_install {
   my ($self, $plugin) = @_;
 
-  my $archive = $self->get_archive( $plugin, '' );
+  my $archive = $self->get_archive( $plugin );
 
   print "Extracting...\n"
     unless $self->app->quiet;
