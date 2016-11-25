@@ -103,12 +103,12 @@ has bin => (
   },
 );
 
-has current => (
+has version => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
   isa => 'SemVer|Undef',
-  builder => '_build_current'
+  builder => '_build_version'
 );
 
 has latest => (
@@ -339,10 +339,10 @@ sub _build_pref_dir {
   }
 }
 
-sub _build_current {
+sub _build_version {
   my ($self) = @_;
 
-  $self->logger->trace('Detecting current version of Praat');
+  $self->logger->trace('Detecting Praat version');
 
   die 'Binary is undefined!' unless defined $self->bin;
   use SemVer;
@@ -368,7 +368,7 @@ sub _build_current {
     SemVer->new($version);
   }
   catch {
-    die "Could not get current version of Praat: $_\n";
+    die "Could not get Praat version: $_\n";
   };
 };
 

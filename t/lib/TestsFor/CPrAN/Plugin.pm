@@ -22,7 +22,7 @@ sub test_attributes : Tests {
 
   # Public
   can_ok $test->class_name, $_
-    foreach (qw( cpran current latest root is_cpran is_installed ));
+    foreach (qw( cpran version latest root is_cpran is_installed ));
 }
 
 sub test_constructor : Tests {
