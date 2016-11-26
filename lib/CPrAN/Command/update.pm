@@ -2,6 +2,7 @@ package CPrAN::Command::update;
 # ABSTRACT: update local plugin list
 
 use Moose;
+use Log::Any qw( $log );
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -107,7 +108,7 @@ will be downloaded. This second case is the recommended use.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing update');
+  $log->debug('Executing update');
 
   my @plugins = map {
     require CPrAN::Plugin;
@@ -153,17 +154,17 @@ sub fetch_raw {
   foreach my $source (@projects) {
 
     unless ($source->{name} =~ /^plugin_/) {
-      $self->app->logger->debug('Not a plugin, ignoring', $source->{name});
+      $log->debug('Not a plugin, ignoring', $source->{name});
       next;
     }
 
     unless ($source->{visibility_level} eq 20) {
-      $self->app->logger->debug('Not publicly visible, ignoring', $source->{name});
+      $log->debug('Not publicly visible, ignoring', $source->{name});
       next;
     }
 
     if (scalar @requested > 1 and !defined $self->requested->{$source->{name}}) {
-      $self->app->logger->debug('Not in requested plugins, ignoring', $source->{name});
+      $log->debug('Not in requested plugins, ignoring', $source->{name});
       next;
     }
 
@@ -175,19 +176,19 @@ sub fetch_raw {
       );
     }
     catch {
-      $self->app->logger->debug('Could not initialise plugin ', $source->{name});
+      $log->debug('Could not initialise plugin ', $source->{name});
     };
 
     next unless defined $plugin;
 
     if ($plugin->is_cpran) {
-      $self->app->logger->trace('Working on', $plugin->name)
+      $log->trace('Working on', $plugin->name)
         unless $self->app->quiet;
 
       $plugin->fetch;
 
       unless (defined $plugin->_remote) {
-        $self->app->logger->debug('Undefined remote for', $plugin->name, ', skipping');
+        $log->debug('Undefined remote for', $plugin->name, ', skipping');
         next;
       }
 
@@ -199,12 +200,12 @@ sub fetch_raw {
           $fh->print( $plugin->_remote->{meta} );
         }
         else {
-          $self->app->logger->debug('Nothing to write for', $plugin->name);
+          $log->debug('Nothing to write for', $plugin->name);
         }
       }
     }
     else {
-      $self->app->logger->warn($plugin->name, 'is not a CPrAN plugin')
+      $log->warn($plugin->name, 'is not a CPrAN plugin')
         unless $self->app->quiet;
     }
   }

@@ -2,6 +2,7 @@ package CPrAN::Command::search;
 # ABSTRACT: search among available CPrAN plugins
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 with 'MooseX::Getopt';
@@ -112,7 +113,7 @@ including their name, local and remote versions, and a short description.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing search');
+  $log->debug('Executing search');
 
   my %names;
   if (defined $self->installed) {
@@ -159,7 +160,7 @@ sub execute {
         GetTerminalSize();
       }
       catch {
-        $self->app->logger->debug('Unable to get terminal size:', $_)
+        $log->debug('Unable to get terminal size:', $_)
           if $self->debug;
         80;
       };

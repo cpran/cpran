@@ -2,6 +2,7 @@ package CPrAN::Command::create;
 # ABSTRACT: create a new plugin using a template
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );

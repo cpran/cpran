@@ -2,6 +2,7 @@ package CPrAN::Command::test;
 # ABSTRACT: run tests for the given plugins
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );

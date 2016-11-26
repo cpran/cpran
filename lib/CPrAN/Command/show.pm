@@ -2,6 +2,7 @@ package CPrAN::Command::show;
 # ABSTRACT: show information about plugins
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
@@ -57,7 +58,7 @@ whose descriptors will be displayed.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing show');
+  $log->debug('Executing show');
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
@@ -66,7 +67,7 @@ sub execute {
 
   my @stream;
   foreach my $plugin (@plugins) {
-    $self->app->logger->trace('Showing', $plugin->name);
+    $log->trace('Showing', $plugin->name);
 
     if ($plugin->is_cpran) {
       if ($self->installed) {
@@ -75,7 +76,7 @@ sub execute {
           $plugin->print('local') unless $self->app->quiet;
         }
         else {
-          $self->app->logger->warn($plugin->name, 'is not installed');
+          $log->warn($plugin->name, 'is not installed');
         }
       }
       else {
@@ -84,7 +85,7 @@ sub execute {
       }
     }
     else {
-      $self->app->logger->warn($plugin->name, 'is not a CPrAN plugin');
+      $log->warn($plugin->name, 'is not a CPrAN plugin');
     }
   }
 

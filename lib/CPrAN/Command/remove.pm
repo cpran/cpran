@@ -11,6 +11,7 @@ with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
+use Log::Any qw( $log );
 use Lingua::EN::Inflexion;
 
 has [qw(
@@ -62,6 +63,8 @@ remove. For each named passed as argument, all contents of the directory named
 
 sub execute {
   my ($self, $opt, $args) = @_;
+
+  $log->debug('Executing remove');
 
   my @plugins = map {
     require CPrAN::Plugin;

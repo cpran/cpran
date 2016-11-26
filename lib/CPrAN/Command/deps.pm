@@ -1,8 +1,8 @@
 package CPrAN::Command::deps;
 # ABSTRACT: list the dependencies of plugins
 
-use uni::perl;
 use Moose;
+use Log::Any qw( $log );
 
 with 'CPrAN::Role::Reads::WorkingPlugin';
 with 'CPrAN::Role::Reads::STDIN';
