@@ -14,8 +14,7 @@ with 'CPrAN::Role::Reads::STDIN';
 require Carp;
 require Path::Tiny;
 use Try::Tiny;
-use Types::Path::Tiny qw( File Dir );
-use CPrAN::Types;
+use Types::Path::Tiny qw( Dir );
 use Lingua::EN::Inflexion;
 
 has [qw(
@@ -172,11 +171,9 @@ sub execute {
 
   $log->debug('Executing install');
 
-  require CPrAN::Plugin;
-
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   my @schedule = $self->make_schedule(@plugins);

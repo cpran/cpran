@@ -3,6 +3,7 @@ package CPrAN::Command::deps;
 
 use Moose;
 use Log::Any qw( $log );
+use uni::perl;
 
 with 'CPrAN::Role::Reads::WorkingPlugin';
 with 'CPrAN::Role::Reads::STDIN';
@@ -58,12 +59,10 @@ B<--yes> flag is set, since no user interaction is possible.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  require CPrAN::Plugin;
-
   # Make a list of CPrAN plugins from input, if they are not already
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   # Get a source dependency tree for the plugins to be installed.
@@ -109,10 +108,9 @@ an array of hashes properly formatted for processing with order_dependencies()
 sub get_dependencies {
   my ($self, $opt, @args) = @_;
 
-  use CPrAN::Plugin;
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @args;
 
   my @dependencies = ();

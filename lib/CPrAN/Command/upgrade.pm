@@ -118,9 +118,8 @@ sub execute {
   }
 
   my @plugins = map {
-    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   if ($self->app->debug) {

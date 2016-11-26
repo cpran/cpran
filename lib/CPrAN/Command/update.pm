@@ -111,9 +111,8 @@ sub execute {
   $log->debug('Executing update');
 
   my @plugins = map {
-    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   $self->request_plugin($_->name, 1) foreach @plugins;
@@ -169,11 +168,7 @@ sub fetch_raw {
     }
 
     my $plugin = try {
-      require CPrAN::Plugin;
-      CPrAN::Plugin->new(
-        meta => $source,
-        cpran => $self->app,
-      );
+      $self->app->new_plugin( meta => $source );
     }
     catch {
       $log->debug('Could not initialise plugin ', $source->{name});
@@ -237,14 +232,11 @@ sub fetch_cache {
     next if scalar keys %{$self->requested} >= 1 and
       !exists $self->requested->{$plugin->{Plugin}};
 
-    $self->app->logger->debug('Working on', $plugin->{Plugin})
+    $log->debug('Working on', $plugin->{Plugin})
       if $self->app->debug;
 
     if ($self->virtual) {
-      $plugin = CPrAN::Plugin->new(
-        meta => $meta,
-        cpran => $self->app
-      );
+      $self->app->new_plugin( meta => $meta );
     }
     else {
       my $out = $self->app->root->child( $plugin->{Plugin} )->touchpath;
@@ -252,10 +244,7 @@ sub fetch_cache {
       my $fh = $out->openw_utf8;
       $fh->print( $meta );
       $fh->close;
-      $plugin = CPrAN::Plugin->new(
-        name => $plugin->{Plugin},
-        cpran => $self->app
-      );
+      $self->app->new_plugin( name => $plugin->{Plugin} );
     }
 
     push @updated, $plugin;

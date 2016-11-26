@@ -6,7 +6,7 @@ use MooX::HandlesVia;
 use Log::Any qw( $log );
 use Types::Standard qw( HashRef Str );
 use Types::Path::Tiny qw( Path File );
-use Types::SemVer qw( SemVer );
+use Types::Praat qw( Version );
 
 require Carp;
 
@@ -34,7 +34,7 @@ has version => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => SemVer,
+  isa => Version,
   coerce => 1,
   builder => '_build_version'
 );
@@ -47,20 +47,7 @@ has plugins => (
     list_plugins => 'keys',
   },
   lazy => 1,
-  default => sub {
-    my %h;
-    foreach ($_[0]->pref_dir->children(qr/^plugin_/)) {
-      my $name = $_->basename;
-      $name =~ s/^plugin_//;
-
-      require Praat::Plugin;
-      $h{$name} = Praat::Plugin->new(
-        name => $_->basename,
-        root => $_,
-      );
-    }
-    return \%h;
-  },
+  builder => 'map_plugins',
 );
 
 sub run_script {
@@ -131,6 +118,23 @@ sub _build_version {
 
   return $version;
 };
+
+sub map_plugins {
+  my ($self) = @_;
+
+  my %h;
+  foreach ($_[0]->pref_dir->children(qr/^plugin_/)) {
+    my $name = $_->basename;
+    $name =~ s/^plugin_//;
+
+    require Praat::Plugin;
+    $h{$name} = Praat::Plugin->new(
+      name => $_->basename,
+      root => $_,
+    );
+  }
+  return \%h;
+}
 
 # VERSION
 

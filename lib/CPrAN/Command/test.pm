@@ -12,7 +12,6 @@ with 'CPrAN::Role::Reads::WorkingPlugin';
 with 'CPrAN::Role::Reads::STDIN';
 
 require Carp;
-use Try::Tiny;
 
 has log => (
   is  => 'rw',
@@ -51,18 +50,17 @@ will only report success if all tests for all given plugins were successful.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  require CPrAN::Plugin;
-
   my $outcome = 1;
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
+  use Try::Tiny;
   try {
     foreach my $plugin (@plugins) {
       my $result;
-      $result = $plugin->test($opt);
+      $result = $self->app->test_plugin($plugin, $opt);
       $outcome = $result if defined $result;
     }
   }

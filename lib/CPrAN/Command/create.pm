@@ -10,7 +10,7 @@ extends qw( MooseX::App::Cmd::Command );
 with 'MooseX::Getopt';
 
 use Types::Path::Tiny qw( File );
-use CPrAN::Types;
+use Types::CPrAN;
 
 require Carp;
 require Path::Tiny;
@@ -155,10 +155,7 @@ sub execute {
     exit 1;
   }
 
-  my $template =CPrAN::Plugin->new(
-    name => 'template',
-    cpran => $self->app,
-  );
+  my $template = $self->app->new_plugin( name => 'template' );
 
   unless ($template->is_installed) {
     print 'Installing plugin template...', "\n"
@@ -188,9 +185,8 @@ sub execute {
   dircopy $source, $target
     or die "Could not rename plugin: $!\n";
 
-  my $plugin = CPrAN::Plugin->new(
+  my $plugin = $self->app->new_plugin(
     name  => $self->name,
-    cpran => $self->app,
     root  => $target,
   );
 
