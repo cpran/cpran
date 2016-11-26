@@ -228,21 +228,21 @@ sub test_execute : Tests {
     catch { 1 }
   ), 'version dies when unable to get version');
 
-  my ($stdout, $stderr, $retval) = $self->execute(qw( 1 2 3 ), []);
+  my ($stdout, $stderr, $retval) = $self->run_script(qw( 1 2 3 ), []);
   chomp $stdout;
 
   ok defined $retval, 'execute returns a list of three';
   is $stdout, '1 2 3', 'pass arguments without options';
 
-  ($stdout, $stderr, $retval) = $self->execute(qw( 1 2 3 ));
+  ($stdout, $stderr, $retval) = $self->run_script(qw( 1 2 3 ));
   chomp $stdout;
 
   like $stdout, qr/--pref-dir=.*ansi.*run/,
     'default options include ansi run and pref dir';
 
-  is $self->execute(), undef, 'not passing a script returns undef';
+  is $self->run_script(), undef, 'not passing a script returns undef';
 
-  ($stdout, $stderr, $retval) = $self->execute('script', [qw( --run )] );
+  ($stdout, $stderr, $retval) = $self->run_script('script', [qw( --run )] );
   chomp $stdout;
 
   is $stdout, '--run script', 'can specify options';

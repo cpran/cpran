@@ -2,6 +2,7 @@ package CPrAN::Command::remove;
 # ABSTRACT: delete installed plugins from disk
 
 use Moose;
+use Log::Any qw( $log );
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -56,10 +57,11 @@ remove. For each named passed as argument, all contents of the directory named
 sub execute {
   my ($self, $opt, $args) = @_;
 
+  $log->debug('Executing remove');
+
   my @plugins = map {
-    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   my @todo;

@@ -2,6 +2,7 @@ package CPrAN::Command::install;
 # ABSTRACT: install new plugins
 
 use Moose;
+use Log::Any qw( $log );
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -166,13 +167,11 @@ keyword "praat", the client will install Praat itself.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing install');
-
-  require CPrAN::Plugin;
+  $log->debug('Executing install');
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   my @schedule = $self->make_schedule(@plugins);

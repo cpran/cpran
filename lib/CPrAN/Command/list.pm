@@ -2,6 +2,7 @@ package CPrAN::Command::list;
 # ABSTRACT: list all available plugins
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
@@ -35,7 +36,7 @@ has '+wrap' => (
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing list');
+  $log->debug('Executing list');
 
   return $self->app->run_command( search => '.*', {
     installed => $self->installed,
@@ -55,7 +56,7 @@ sub process_praat {
   }
   catch {
     chomp;
-    $self->app->logger->warn($_);
+    $log->warn($_);
     die 'Could not list Praat releases', "\n";
   };
 }

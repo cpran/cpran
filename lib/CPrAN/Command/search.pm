@@ -2,6 +2,7 @@ package CPrAN::Command::search;
 # ABSTRACT: search among available CPrAN plugins
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 with 'MooseX::Getopt';
@@ -111,7 +112,7 @@ including their name, local and remote versions, and a short description.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing search');
+  $log->debug('Executing search');
 
   my %names;
   if (defined $self->installed) {
@@ -140,8 +141,7 @@ sub execute {
   } sort {
     "\L$a->{name}" cmp "\L$b->{name}"
   } map {
-    require CPrAN::Plugin;
-    CPrAN::Plugin->new( name => $_, cpran => $self->app )
+    $self->app->new_plugin( name => $_ );
   } keys %names;
 
   unless ($self->app->quiet) {
@@ -161,7 +161,7 @@ sub execute {
         GetTerminalSize();
       }
       catch {
-        $self->app->logger->debug('Unable to get terminal size:', $_)
+        $log->debug('Unable to get terminal size:', $_)
           if $self->debug;
         80;
       };
@@ -232,12 +232,7 @@ criteria they need to fulfill.
 
 sub list_installed {
   my ($self) = @_;
-
-  return map {
-    $1 if $_->basename =~ /^plugin_([\w\d_-]+)/;
-  } grep {
-    ($_->is_dir && $_->basename =~ /^plugin_[\w\d_-]+/)
-  } $self->app->praat->pref_dir->children;
+  return $self->app->praat->list_plugins;
 }
 
 =item list_known()
@@ -331,22 +326,25 @@ sub _make_output_row {
 
   use YAML::XS;
 
-  my $description;
-  my $local = my $remote = '';
+  my ($description, $local, $remote);
 
   if ($plugin->is_cpran) {
-    if ($plugin->is_installed) {
-      $local = $plugin->_local->{version};
-      $description = $plugin->_local->{description}->{short};
-    }
     if (defined $plugin->_remote) {
       $remote = $plugin->_remote->{version};
       $description = $plugin->_remote->{description}->{short};
+    }
+    if ($plugin->is_installed) {
+      $local = $plugin->_local->{version};
+      $description = $plugin->_local->{description}->{short};
     }
   }
   else {
     $description = '[Not a CPrAN plugin]';
   }
+
+  $description //= '';
+  $local       //= '';
+  $remote      //= '';
 
   return ($plugin->{name}, $local, $remote, $description);
 }

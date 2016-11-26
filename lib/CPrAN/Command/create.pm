@@ -2,6 +2,7 @@ package CPrAN::Command::create;
 # ABSTRACT: create a new plugin using a template
 
 use Moose;
+use Log::Any qw( $log );
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -77,17 +78,8 @@ has '+version' => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    SemVer->new('0.0.1');
-  },
-  trigger => sub {
-    my ($self, $new, $old) = @_;
-    my $v = try {
-      SemVer->new( $new );
-    }
-    catch {
-      warn "<$new> is not a valid version number. Ignoring\n";
-      $self->version($old);
-    };
+    require Praat::Version;
+    Praat::Version->new('0.0.1');
   },
 );
 
@@ -155,10 +147,7 @@ sub execute {
     exit 1;
   }
 
-  my $template =CPrAN::Plugin->new(
-    name => 'template',
-    cpran => $self->app,
-  );
+  my $template = $self->app->new_plugin( name => 'template' );
 
   unless ($template->is_installed) {
     print 'Installing plugin template...', "\n"
@@ -188,9 +177,8 @@ sub execute {
   dircopy $source, $target
     or die "Could not rename plugin: $!\n";
 
-  my $plugin = CPrAN::Plugin->new(
+  my $plugin = $self->app->new_plugin(
     name  => $self->name,
-    cpran => $self->app,
     root  => $target,
   );
 

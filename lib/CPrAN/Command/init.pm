@@ -2,6 +2,7 @@ package CPrAN::Command::init;
 # ABSTRACT: initialise a CPrAN installation
 
 use Moose;
+use Log::Any qw( $log );
 
 extends qw( MooseX::App::Cmd::Command );
 

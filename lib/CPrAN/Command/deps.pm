@@ -2,6 +2,7 @@ package CPrAN::Command::deps;
 # ABSTRACT: list the dependencies of plugins
 
 use Moose;
+use Log::Any qw( $log );
 
 with 'CPrAN::Role::Reads::WorkingPlugin';
 with 'CPrAN::Role::Reads::STDIN';
@@ -61,7 +62,7 @@ sub execute {
   my @plugins = map {
     require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   # Get a source dependency tree for the plugins to be installed.
@@ -110,7 +111,7 @@ sub get_dependencies {
   my @plugins = map {
     require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @args;
 
   my @dependencies = ();

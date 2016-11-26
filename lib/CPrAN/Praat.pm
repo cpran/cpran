@@ -1,41 +1,37 @@
 package CPrAN::Praat;
-# ABSTRACT: A Praat pseudo-class for CPrAN
-
-# use uni::perl;
 
 use Moose;
-use Log::Any;
-use Types::Path::Tiny qw( Path );
+use Log::Any qw( $log );
+
+extends 'Praat';
+
+use Types::Path::Tiny qw( File Dir );
 use Types::Praat qw( Version );
 use Types::Standard qw( Undef );
 
 require Carp;
 
-=head1 NAME
+has releases => (
+  is => 'ro',
+  isa => 'ArrayRef[HashRef]',
+  lazy => 1,
+  builder => '_build_releases',
+);
 
-=encoding utf8
+has latest => (
+  is => 'ro',
+  init_arg => undef,
+  lazy => 1,
+  coerce => 1,
+  isa => Version|Undef,
+  builder => 'fetch',
+);
 
-B<CPrAN::Praat> - Praat pseudo-class for CPrAN
-
-=head1 SYNOPSIS
-
-my $praat = CPrAN::Praat->new();
-
-# safely removes the locally installed copy of Praat
-$praat->remove
-
-# download the archive of the latest version of Praat
-$praat->download
-
-# respectively return the current or latest version of Praat for this platform
-$praat->current
-$praat->latest
-
-=head1 DESCRIPTION
-
-A pseudo-class to encapsulate CPrAN's handling of Praat itself.
-
-=cut
+has requested => (
+  is => 'rw',
+  isa => Version|Undef,
+  coerce => 1,
+);
 
 has _barren => (
   is => 'rw',
@@ -74,187 +70,70 @@ has [qw( _os _ext _bit )] => (
   is => 'ro',
 );
 
-has pref_dir => (
-  is => 'rw',
-  isa => Path,
-  lazy => 1,
-  coerce => 1,
-  builder => '_build_pref_dir',
-);
-
-has releases => (
+has _ext => (
   is => 'ro',
-  isa => 'ArrayRef[HashRef]',
+  init_arg => undef,
   lazy => 1,
-  builder => '_build_releases',
-);
-
-has bin => (
-  is => 'ro',
-  isa => Path,
-  lazy => 1,
-  coerce => 1,
   default => sub {
-    require File::Which;
-    File::Which->import;
-    which('praat') || which('praat.exe') || which('Praat') || which('praatcon');
+    ($^O =~ /darwin/) ? '.dmg' :
+    ($^O =~ /MSWin32/) ? '.zip' :
+    '.tar.gz';
   },
 );
 
-has version => (
+has _os => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => Version|Undef,
-  builder => '_build_version'
+  default => sub {
+    ($^O =~ /darwin/) ? 'mac' :
+    ($^O =~ /MSWin32/) ? 'win' :
+    'linux';
+  },
 );
 
-has latest => (
+has _bit => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  coerce => 1,
-  isa => Version|Undef,
-  builder => 'fetch',
-);
+  default => sub {
+    for ($^O) {
+      if (/MSWin32/) {
+        $ENV{PROCESSOR_ARCHITECTURE} //= '';
+        $ENV{PROCESSOR_ARCHITEW6432} //= '';
 
-has requested => (
-  is => 'rw',
-  isa => Version|Undef,
-  coerce => 1,
-);
-
-has logger => (
-  is => 'ro',
-  default => sub { Log::Any->get_logger },
+        return (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ or
+                uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) ? 64 : 32;
+      }
+      else {
+        use Try::Tiny;
+        return try {
+          my $cmd = 'uname -a';
+          open CMD, "$cmd 2>&1 |"
+            or die ("Could not execute $cmd: $!");
+          chomp(my $line = <CMD>);
+          return ($line =~ /\bx86_64\b/) ? 64 : 32;
+        }
+        catch {
+          $log->warn('Could not determine system bitness. Defaulting to 32bit');
+          return 32;
+        };
+      }
+    }
+  },
 );
 
 sub BUILDARGS {
   my $class = shift;
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
-
-  for ($^O) {
-    if (/darwin/) {
-      $args->{_os}  = "mac";
-      $args->{_ext} = "\.dmg";
-    }
-    elsif (/MSWin32/) {
-      $args->{_os}  = "win";
-      $args->{_ext} = "\.zip";
-
-      $ENV{PROCESSOR_ARCHITECTURE} //= '';
-      $ENV{PROCESSOR_ARCHITEW6432} //= '';
-
-      $args->{_bit} =
-        (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ or
-         uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) ? 64 : 32;
-    }
-    else {
-      $args->{_os}  = 'linux';
-      $args->{_ext} = '\.tar\.gz';
-    }
-  }
-
-  unless (defined $args->{_bit}) {
-    use Try::Tiny;
-
-    my $uname = try {
-      my $cmd = 'uname -a';
-      open CMD, "$cmd 2>&1 |" or die ("Could not execute $cmd: $!");
-      chomp(my $line = <CMD>);
-      $line;
-    }
-    catch {
-      warn "Could not determine system bitness. Defaulting to 32bit\n";
-    };
-    $args->{_bit} = (defined $uname and $uname =~ /\bx86_64\b/) ? 64 : 32;
-  }
-
   return $args;
 }
 
-=head1 METHODS
-
-=over
-
-=cut
-
-=item B<remove()>
-
-Removes praat from disk
-
-=cut
-
 sub remove {
-  my ($self, $opt) = @_;
-
-  die 'Binary is undefined!' unless defined $self->bin;
-
+  my ($self) = @_;
   my $removed = $self->bin->remove
     or warn sprintf("Could not remove %s: %s\n", $self->bin, $!);
-
   return $removed;
-}
-
-=item B<download(VERSION)>
-
-Downloads a specific archived version of Praat, or the latest version.
-
-=cut
-
-sub download {
-  my $self    = shift;
-  my $opt     = (ref $_[-1] eq 'HASH') ? pop @_ : {};
-  my $version = shift // $self->latest;
-
-  $opt->{quiet} //= 0;
-
-  use LWP::UserAgent;
-  my $ua = LWP::UserAgent->new;
-  $ua->show_progress( 1 - $opt->{quiet} );
-
-  $self->logger->trace('GET', $self->_package_url) if $self->logger->is_trace;
-  my $response = $ua->get( $self->_package_url );
-  if ($response->is_success) {
-    return $response->decoded_content;
-  }
-  else {
-    die $response->status_line;
-  }
-}
-
-=item B<execute(SCRIPT)>
-
-Reads instructions from file and executes them with Praat.
-
-=cut
-
-sub execute {
-  my ($self, $script, @args) = @_;
-
-  $self->logger->trace('Executing Praat command');
-
-  return undef unless defined $script;
-
-  my @opts = (ref $args[-1] eq 'ARRAY') ? @{pop @args} : (
-    '--pref-dir=' . $self->pref_dir,
-    '--ansi',
-    '--run'
-  );
-
-  $self->logger->trace('  ', $self->bin, @opts, $script, @args)
-    if $self->logger->is_trace;
-
-  use Capture::Tiny qw( capture );
-  return capture {
-    local $ENV{PATH} = '';
-    system(
-      $self->bin,
-      @opts,
-      $script,
-      @args
-    );
-  };
 }
 
 sub fetch {
@@ -268,7 +147,7 @@ sub fetch {
   $self->_package_url(undef);
   my $ua = LWP::UserAgent->new;
 
-  my ($os, $bit, $ext) = ($self->_os, $self->_bit, $self->_ext);
+  my ($os, $bit, $ext) = map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
   my $barren = $self->_barren ? 'barren' : '';
   my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${barren}${ext}/;
 
@@ -281,13 +160,15 @@ sub fetch {
     $url = URI->new( $self->_releases_endpoint . '/latest' )
   }
 
-  $self->logger->trace('GET', $url) if $self->logger->is_trace;
+  warn('GET ', $url);
+  $log->trace('GET', $url) if $log->is_trace;
+
   my $response = $ua->get( $url );
   if ($response->is_success) {
     @haystack = ( decode_json $response->decoded_content );
   }
   else {
-    $self->logger->warn($response->status_line);
+    $log->warn($response->status_line);
     return undef;
   }
 
@@ -299,7 +180,7 @@ sub fetch {
     ($found) = grep { $_->{name} =~ $pkgregex } @{$latest->{assets}};
 
     unless (defined $found) {
-      $self->logger->info('Did not find suitable release in latest, looking back');
+      $log->info('Did not find suitable release in latest, looking back');
       @haystack = @{$self->releases} unless $once;
       $once = 1;
     }
@@ -307,7 +188,7 @@ sub fetch {
     last if defined $found;
   }
 
-  $self->logger->warn('Could not find', ($self->requested // 'latest'), 'Praat release for this system')
+  $log->warn('Could not find', ($self->requested // 'latest'), 'Praat release for this system')
     and return(undef) unless defined $found;
 
   $self->_package_name($found->{name});
@@ -317,58 +198,31 @@ sub fetch {
   return $latest->{tag_name};
 }
 
-sub _build_pref_dir {
-  for ($^O) {
-    if (/darwin/) {
-      return join('/', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs');
-    }
-    elsif (/MSWin32/) {
-      return join('/', $ENV{HOMEPATH}, 'Praat');
-    }
-    else {
-      return join('/', $ENV{HOME}, '.praat-dir');
-    }
+sub download {
+  my $self    = shift;
+  my $opt     = (ref $_[-1] eq 'HASH') ? pop @_ : {};
+  my $version = shift // $self->latest;
+
+  $opt->{quiet} //= 0;
+
+  use LWP::UserAgent;
+  my $ua = LWP::UserAgent->new;
+  $ua->show_progress( 1 - $opt->{quiet} );
+
+  $log->trace('GET', $self->_package_url) if $log->is_trace;
+  my $response = $ua->get( $self->_package_url );
+  if ($response->is_success) {
+    return $response->decoded_content;
+  }
+  else {
+    die $response->status_line;
   }
 }
-
-sub _build_version {
-  my ($self) = @_;
-
-  $self->logger->trace('Detecting Praat version');
-
-  die 'Binary is undefined!' unless defined $self->bin;
-  use Praat::Version;
-
-  my ($buffer, $version);
-  open my $fh, '<:raw', $self->bin;
-  # Read binary into the buffer after any residual copied from the last chunk
-  while( my $read = read $fh, $buffer, 4096, pos( $buffer ) || 0 ) {
-    while( $buffer =~ m[([4-9]\.\d\.\d{2})]g ) {
-      $version = $1;
-      last;
-    }
-
-    ## Slide the unsearched remainer to the front of the buffer.
-    no warnings qw( uninitialized );
-    substr( $buffer, 0, pos( $buffer ) ) = substr $buffer, pos( $buffer );
-  }
-  close $fh;
-
-  $self->logger->trace('Version detection complete');
-
-  use Try::Tiny;
-  try {
-    Praat::Version->new($version);
-  }
-  catch {
-    die "Could not get Praat version: $_\n";
-  };
-};
 
 sub _build_releases {
   my ($self) = @_;
 
-  $self->logger->trace('Finding Praat releases');
+  $log->trace('Finding Praat releases');
 
   use JSON qw( decode_json );
 
@@ -379,10 +233,10 @@ sub _build_releases {
 
   $next = $self->_releases_endpoint;
   # Fetch only first page of results, to avoid busting through request limit
-  $self->logger->trace('GET', $next) if $self->logger->is_trace;
+  $log->trace('GET', $next) if $log->is_trace;
   $response = $ua->get($next);
   unless ($response->is_success) {
-    $self->logger->warn($response->status_line);
+    $log->warn($response->status_line);
     return [];
   }
 
@@ -400,35 +254,23 @@ sub _build_releases {
   return \@releases;
 }
 
-=back
+override map_plugins => sub {
+  my ($self) = @_;
 
-=head1 AUTHOR
+  my %h;
+  foreach ($_[0]->pref_dir->children(qr/^plugin_/)) {
+    my $name = $_->basename;
+    $name =~ s/^plugin_//;
 
-José Joaquín Atria <jjatria@gmail.com>
-
-=head1 LICENSE
-
-Copyright 2015-2016 José Joaquín Atria
-
-This module is free software; you may redistribute it and/or modify it under
-the same terms as Perl itself.
-
-=head1 SEE ALSO
-
-L<CPrAN|cpran>,
-L<CPrAN::Plugin|plugin>,
-L<CPrAN::Command::deps|deps>,
-L<CPrAN::Command::init|init>,
-L<CPrAN::Command::install|install>,
-L<CPrAN::Command::list|list>,
-L<CPrAN::Command::remove|remove>,
-L<CPrAN::Command::search|search>,
-L<CPrAN::Command::show|show>,
-L<CPrAN::Command::test|test>,
-L<CPrAN::Command::update|update>,
-L<CPrAN::Command::upgrade|upgrade>
-
-=cut
+    require CPrAN::Plugin;
+    $h{$name} = CPrAN::Plugin->new(
+      name  => $_->basename,
+      root  => $_,
+      cpran => $self->pref_dir->child('.cpran'),
+    );
+  }
+  return \%h;
+};
 
 # VERSION
 

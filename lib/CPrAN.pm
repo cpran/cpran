@@ -3,9 +3,9 @@ package CPrAN;
 
 use Moose;
 require Carp;
-use Log::Any ();
+use Log::Any qw( $log );
 use Types::Path::Tiny qw( Path );
-use Types::CPrAN;
+use Types::CPrAN qw( Praat );
 
 extends qw( MooseX::App::Cmd );
 
@@ -25,7 +25,7 @@ has root => (
 
 has praat => (
   is  => 'rw',
-  isa => 'CPrAN::Praat',
+  isa => Praat,
   traits => [qw(Getopt)],
   documentation => 'Praat binary',
   coerce => 1,
@@ -126,11 +126,6 @@ after execute_command => sub {
   }
 };
 
-has logger => (
-  is => 'ro',
-  default => sub { Log::Any->get_logger },
-);
-
 around BUILDARGS => sub {
   my $orig = shift;
   my $self = shift;
@@ -187,7 +182,7 @@ sub BUILD {
 
   $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
 
-  $self->logger->debug("Initialised CPrAN instance");
+  $log->debug("Initialised CPrAN instance");
 }
 
 =encoding utf8
@@ -339,11 +334,183 @@ sub run_command {
   my ($cmd) = $self->prepare_command(@argv);
 
   $cmd->$_($opt->{$_}) foreach keys %{$opt};
-  my @retval = $self->execute_command($cmd, {}, @args);
+  my @retval = $self->run_script_command($cmd, {}, @args);
 
   $self->$_($bkp{$_}) foreach keys %bkp;
 
   return @retval;
+}
+
+sub fetch_plugin {
+  my ($self, $plugin) = @_;
+
+  Carp::croak 'Cannot fetch an undefined plugin' unless defined $plugin;
+
+  $plugin->cpran( $self->root )
+    unless defined $plugin->cpran;
+
+  $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
+    unless defined $plugin->root;
+
+  use YAML::XS;
+  use Encode qw(encode decode);
+
+  my ($id, $url, $latest, $remote);
+
+  foreach (@{$self->api->projects(
+      { search => 'plugin_' . $plugin->name }
+    )}) {
+
+    if ($_->{name} eq 'plugin_' . $plugin->name and
+        $_->{visibility_level} >= 20) {
+
+      $id  = $_->{id};
+      $url = $_->{http_url_to_repo};
+      last;
+    }
+  }
+
+  unless (defined $id and defined $url) {
+    Carp::carp $plugin->name, ' not found remotely'
+      unless $self->quiet;
+    return undef;
+  }
+
+  require Praat::Version;
+  my $tags = $self->api->tags( $id );
+  my @releases;
+  foreach my $tag (@{$tags}) {
+    use Try::Tiny;
+    try {
+      $tag->{semver} = Praat::Version->new($tag->{name}) }
+    catch {
+      $log->warn($_);
+      next;
+    };
+    push @releases, $tag;
+  };
+  @releases = sort { $b->{semver} <=> $a->{semver} } @releases;
+
+  # Ignore projects with no tags
+  unless (scalar @releases) {
+    Carp::carp 'No releases for ', $plugin->name
+      unless $self->quiet;
+    return undef;
+  }
+
+  $latest = $releases[0]->{commit}->{id};
+  $remote = encode('utf-8', $self->api->blob(
+    $id, $latest, { filepath => 'cpran.yaml' }
+  ), Encode::FB_CROAK );
+
+  {
+    my $check = try {
+      YAML::XS::Load( $remote )
+    }
+    catch {};
+    unless (defined $check) {
+      Carp::carp 'Could not deserialise fetched remote for ', $plugin->name
+        unless $self->quiet;
+      return undef;
+    }
+  }
+
+  $plugin->url($url);
+  $plugin->_remote($plugin->parse_meta($remote));
+  $plugin->latest($plugin->_remote->{version});
+
+  return 1;
+}
+
+sub test_plugin {
+  my $self = shift;
+  my $plugin = shift;
+  my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+
+  Carp::croak 'Cannot test an undefined plugin' unless defined $plugin;
+
+  $plugin->cpran( $self->root )
+    unless defined $plugin->cpran;
+
+  $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
+    unless defined $plugin->root;
+
+  $log->debug('Testing', $plugin->name);
+
+  unless ($self->praat->version) {
+    Carp::croak "Praat is not installed; cannot test"
+      unless $self->quiet;
+  }
+
+  return undef unless ($plugin->is_installed);
+
+  my $oldwd = Path::Tiny->cwd;
+  chdir $plugin->root
+    or die 'Could not change directory';
+
+  unless ( -e 't' ) {
+    $log->debug('No tests for', $plugin->name);
+    return undef;
+  }
+
+  # Run the tests
+  require App::Prove;
+  my $prove = App::Prove->new;
+  my @args;
+
+  my $version = $self->praat->version;
+  $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
+  if ($version >= 6 and $version < 6.003) {
+    $log->warn('Automated tests not supported for this version of Praat')
+      unless $self->quiet;
+    return undef;
+  }
+  elsif ($version >= 6.003) {
+    push @args, ('--exec', $self->praat->bin . ' --ansi --run');
+  }
+  else {
+    push @args, ('--exec', $self->praat->bin . ' --ansi');
+  }
+
+  if ($self->verbose) {
+    push @args, '-v';
+  }
+
+  if ($opt->{log}) {
+    try {
+      require TAP::Harness::Archive;
+      TAP::Harness::Archive->import;
+
+      my $logdir = $self->root->child('.log');
+      $logdir->remove_tree({ safe => 0 }) if $logdir->is_dir;
+      $logdir->mkpath or die 'Could not create log directory';
+      push @args, ('--archive', $logdir->canonpath);
+    }
+    catch {
+      Carp::carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
+        unless $self->quiet;
+    };
+  }
+
+  $prove->process_args( @args );
+  my $results = $prove->run;
+
+  chdir $oldwd
+    or die "Could not change directory";
+
+  return ($results) ? 1 : 0;
+}
+
+sub new_plugin {
+  my $self = shift;
+  my $arg = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+
+  $arg->{cpran} //= $self->root;
+  $arg->{root} //= $self->praat->pref_dir->child( 'plugin_' . ($arg->{name} // '') );
+
+  require CPrAN::Plugin;
+  my $plugin = CPrAN::Plugin->new($arg);
+  return $plugin->refresh;
 }
 
 =back

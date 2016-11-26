@@ -2,6 +2,7 @@ package CPrAN::Command::upgrade;
 # ABSTRACT: upgrade plugins to their latest version
 
 use Moose;
+use Log::Any qw( $log );
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -84,8 +85,8 @@ sub validate_args {
       require Git::Repository;
     }
     catch {
-      $self->app->logger->warn('Disabling git support');
-      $self->app->logger->debug($_);
+      $log->warn('Disabling git support');
+      $log->debug($_);
       $self->git(0);
     }
   }
@@ -104,10 +105,10 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $self->app->logger->debug('Executing upgrade');
+  $log->debug('Executing upgrade');
 
   if (! scalar @{$args}) {
-    $self->app->logger->trace('Processing all installed plugins');
+    $log->trace('Processing all installed plugins');
     $args = [
       $self->app->run_command( list => { quiet => 1, installed => 1 } )
     ];
@@ -116,14 +117,13 @@ sub execute {
   use Lingua::EN::Inflexion;
 
   my @plugins = map {
-    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   if ($self->app->debug) {
     my $n = scalar @{$args};
-    $self->app->logger->debug(inflect "<#n:$n> <N:plugin> for processing");
+    $log->debug(inflect "<#n:$n> <N:plugin> for processing");
   }
 
   # Plugins that are not installed cannot be upgraded.
@@ -136,7 +136,7 @@ sub execute {
     if ($plugin->is_installed) {
       if ($plugin->is_cpran) {
         if ($plugin->is_latest // 1) {
-          $self->app->logger->debug($plugin->name, 'is already at its latest version')
+          $log->debug($plugin->name, 'is already at its latest version')
             if $self->app->debug;
         }
         else {
@@ -144,17 +144,17 @@ sub execute {
         }
       }
       else {
-        $self->app->logger->debug($plugin->name, 'is not a CPrAN plugin');
+        $log->debug($plugin->name, 'is not a CPrAN plugin');
       }
     }
     else {
-      $self->app->logger->warn($plugin->name, 'is not installed');
+      $log->warn($plugin->name, 'is not installed');
     }
   }
 
   if ($self->app->debug) {
     my $n = scalar @todo;
-    $self->app->logger->debug(inflect "<#n:$n> <N:plugin> <V:require> upgrading");
+    $log->debug(inflect "<#n:$n> <N:plugin> <V:require> upgrading");
   }
 
   # Make sure plugins are upgraded in order
@@ -212,8 +212,8 @@ sub git_upgrade {
       $repo = Git::Repository->new( work_tree => $plugin->root );
     }
     catch {
-      $self->app->logger->warn('No git repository at ', $plugin->root);
-      $self->app->logger->debug($_);
+      $log->warn('No git repository at ', $plugin->root);
+      $log->debug($_);
       exit 1;
     };
 
@@ -222,7 +222,7 @@ sub git_upgrade {
       $head = $repo->run( 'rev-parse' => 'HEAD', { fatal => '!0' } );
     }
     catch {
-      $self->app->logger->warn('Could not locate HEAD:', $_);
+      $log->warn('Could not locate HEAD:', $_);
     };
 
     try {
@@ -230,8 +230,8 @@ sub git_upgrade {
       $repo->run( pull => '--tags', $plugin->url, { fatal => '!0' } );
     }
     catch {
-      $self->app->logger->warn('Could not fetch from remote');
-      $self->app->logger->debug($_);
+      $log->warn('Could not fetch from remote');
+      $log->debug($_);
     };
 
     my $latest = $plugin->latest;
@@ -254,23 +254,23 @@ sub git_upgrade {
     try { $success = $plugin->test }
     catch {
       chomp;
-      $self->app->logger->warn('There were errors while testing:');
-      $self->app->logger->warn($_);
+      $log->warn('There were errors while testing:');
+      $log->warn($_);
     };
 
     if (defined $success and !$success) {
       if ($self->force) {
-        $self->app->logger->warn('Tests failed, but continuing anyway because of --force')
+        $log->warn('Tests failed, but continuing anyway because of --force')
           unless $self->app->quiet;
       }
       else {
         unless ($self->app->quiet) {
-          $self->app->logger->warn('Tests failed. Rolling back upgrade of', $plugin->name);
-          $self->app->logger->warn('Use --force to ignore this warning');
+          $log->warn('Tests failed. Rolling back upgrade of', $plugin->name);
+          $log->warn('Use --force to ignore this warning');
         }
         $repo->run( reset => '--hard', '--quiet', $head , { fatal => '!0' });
 
-        $self->app->logger->warn('Did not upgrade', $plugin->name)
+        $log->warn('Did not upgrade', $plugin->name)
           unless $self->app->quiet;
         return 0;
       }
@@ -278,8 +278,8 @@ sub git_upgrade {
     return 1;
   }
   catch {
-    $self->app->logger->warn($_);
-    $self->app->logger->warn('Aborting');
+    $log->warn($_);
+    $log->warn('Aborting');
     exit 1;
   };
 }
@@ -381,8 +381,8 @@ sub process_praat {
   }
   catch {
     chomp;
-    $self->app->logger->warn($_);
-    $self->app->logger->warn('Could not upgrade Praat');
+    $log->warn($_);
+    $log->warn('Could not upgrade Praat');
     exit 1;
   };
   exit 0;

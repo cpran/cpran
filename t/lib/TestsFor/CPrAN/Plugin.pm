@@ -29,8 +29,8 @@ sub test_constructor : Tests {
   my $test = shift;
   my $class = $test->class_name;
   can_ok $class, 'new';
-  ok my $self = $class->new,
-    'constructor succeeds';
+  ok my $self = $class->new( name => '' ),
+    'constructor succeeds with name';
 
   isa_ok $self, $class;
 }

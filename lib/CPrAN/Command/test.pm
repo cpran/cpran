@@ -2,6 +2,7 @@ package CPrAN::Command::test;
 # ABSTRACT: run tests for the given plugins
 
 use Moose;
+use Log::Any qw( $log );
 use uni::perl;
 
 extends qw( MooseX::App::Cmd::Command );
@@ -49,19 +50,17 @@ will only report success if all tests for all given plugins were successful.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  require CPrAN::Plugin;
-
   my $outcome = 1;
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new( name => $_, cpran => $self->app ) }
+    else { $self->app->new_plugin( name => $_ ) }
   } @{$args};
 
   use Try::Tiny;
   try {
     foreach my $plugin (@plugins) {
       my $result;
-      $result = $plugin->test($opt);
+      $result = $self->app->test_plugin($plugin, $opt);
       $outcome = $result if defined $result;
     }
   }

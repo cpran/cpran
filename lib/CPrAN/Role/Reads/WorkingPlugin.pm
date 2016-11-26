@@ -13,10 +13,9 @@ around execute => sub {
 
   if (!scalar @{$args}) {
     # If no arguments are given, read a plugin from the current directory
-    push @{$args}, CPrAN::Plugin->new(
+    push @{$args}, $self->app->new_plugin(
       name => Path::Tiny->cwd->basename,
       root => Path::Tiny->cwd,
-      cpran => $self->app,
     );
   }
 
