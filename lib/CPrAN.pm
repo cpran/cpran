@@ -342,7 +342,7 @@ sub run_command {
   my ($cmd) = $self->prepare_command(@argv);
 
   $cmd->$_($opt->{$_}) foreach keys %{$opt};
-  my @retval = $self->run_script_command($cmd, {}, @args);
+  my @retval = $self->execute_command($cmd, {}, @args);
 
   $self->$_($bkp{$_}) foreach keys %bkp;
 
