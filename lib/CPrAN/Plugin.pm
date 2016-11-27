@@ -94,19 +94,15 @@ sub refresh {
 
   if (defined $self->root) {
     my $local = $self->root->child('cpran.yaml');
-    if ($local->exists) {
-      $self->_local( $self->parse_meta( $local->slurp ));
-      $self->version($self->_local->{version});
-    }
+    $self->_local( $self->parse_meta( $local->slurp )) if $local->exists;
   }
+  $self->version($self->_local->{version}) if defined $self->_local;
 
   if (defined $self->cpran) {
     my $remote = $self->cpran->child( $self->name );
-    if ($remote->exists) {
-      $self->_remote( $self->parse_meta( $remote->slurp ));
-      $self->latest($self->_remote->{version});
-    }
+    $self->_remote( $self->parse_meta( $remote->slurp )) if $remote->exists;
   }
+  $self->latest($self->_remote->{version}) if defined $self->_remote;
 
   return $self;
 }
