@@ -113,7 +113,8 @@ sub is_latest {
   return undef unless scalar keys %{$self->_remote};
   return 0     unless scalar keys %{$self->_local};
 
-  return $self->version >= $self->latest;
+  $self->refresh;
+  return ($self->version >= $self->latest) ? 1 : 0;
 }
 
 sub remove {
