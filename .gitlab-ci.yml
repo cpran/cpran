@@ -5,7 +5,7 @@ variables:
 
 devel:
   variables:
-    AUTHOR_TEST: 1
+    AUTHOR_TEST: "1"
   script:
     - dzil test
   tags:
