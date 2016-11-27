@@ -281,7 +281,6 @@ sub global_opt_spec {
     [ "quiet"               => "quietly say no to everything" ],
     [ "yes"                 => "assume yes when prompted for confirmation" ],
     [ "debug+"              => "increase debug level" ],
-    [ "outfile=s"           => "redirect output to file" ],
   );
 }
 
