@@ -160,7 +160,6 @@ sub fetch {
     $url = URI->new( $self->_releases_endpoint . '/latest' )
   }
 
-  warn('GET ', $url);
   $log->trace('GET', $url) if $log->is_trace;
 
   my $response = $ua->get( $url );
