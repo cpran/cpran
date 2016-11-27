@@ -62,7 +62,7 @@ sub execute {
   my @plugins = map {
     require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { $self->app->new_plugin( name => $_ ) }
+    else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
   # Get a source dependency tree for the plugins to be installed.
@@ -111,7 +111,7 @@ sub get_dependencies {
   my @plugins = map {
     require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { $self->app->new_plugin( name => $_ ) }
+    else { $self->app->new_plugin( $_ ) }
   } @args;
 
   my @dependencies = ();

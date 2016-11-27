@@ -171,7 +171,7 @@ sub execute {
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { $self->app->new_plugin( name => $_ ) }
+    else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
   my @schedule = $self->make_schedule(@plugins);

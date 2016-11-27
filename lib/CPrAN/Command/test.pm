@@ -53,7 +53,7 @@ sub execute {
   my $outcome = 1;
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { $self->app->new_plugin( name => $_ ) }
+    else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
   use Try::Tiny;

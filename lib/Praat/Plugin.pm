@@ -27,6 +27,7 @@ sub is_installed {
 sub BUILDARGS {
   my $class = shift;
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+  $args = { name => $args } unless ref $args;
 
   $args->{name} =~ s/^plugin_([\w\d]+)/$1/ if defined $args->{name};
 

@@ -141,7 +141,7 @@ sub execute {
   } sort {
     "\L$a->{name}" cmp "\L$b->{name}"
   } map {
-    $self->app->new_plugin( name => $_ );
+    $self->app->new_plugin( $_ );
   } keys %names;
 
   unless ($self->app->quiet) {

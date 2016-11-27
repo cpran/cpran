@@ -16,7 +16,7 @@ MooseX::Getopt::OptionTypeMap->add_option_type_to_map( File, '=s', );
 
 require Carp;
 
-has name => (
+has (
   is  => 'rw',
   isa => 'Str',
   documentation => 'name of plugin',
@@ -147,7 +147,7 @@ sub execute {
     exit 1;
   }
 
-  my $template = $self->app->new_plugin( name => 'template' );
+  my $template = $self->app->new_plugin( 'template' );
 
   unless ($template->is_installed) {
     print 'Installing plugin template...', "\n"
@@ -262,7 +262,7 @@ sub write_descriptor {
   END_DESCRIPTOR
 
   my $descriptor = fill_in_string( $template, HASH => {
-    name => $plugin->name,
+    $plugin->name,
     url => $self->url,
     version => $self->version->stringify,
     author => $self->author,

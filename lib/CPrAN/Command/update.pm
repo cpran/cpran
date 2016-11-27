@@ -109,7 +109,7 @@ sub execute {
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { $self->app->new_plugin( name => $_ ) }
+    else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
   $self->request_plugin($_->name, 1) foreach @plugins;
@@ -244,7 +244,7 @@ sub fetch_cache {
       my $fh = $out->openw_utf8;
       $fh->print( $meta );
       $fh->close;
-      $self->app->new_plugin( name => $plugin->{Plugin} );
+      $self->app->new_plugin( $plugin->{Plugin} );
     }
 
     push @updated, $plugin;
