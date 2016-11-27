@@ -171,10 +171,10 @@ sub BUILD {
   my ($self) = @_;
 
   if (-e $self->root) {
-    Carp::croak 'Cannot read from CPrAN root at ', $self->root
+    Carp::croak 'Cannot read from CPrAN root at ', $self->root->canonpath
       unless (-r $self->root);
 
-    Carp::croak 'Cannot write to CPrAN root at ', $self->root
+    Carp::croak 'Cannot write to CPrAN root at ', $self->root->canonpath
       unless (-w $self->root);
   }
   else {
@@ -183,10 +183,10 @@ sub BUILD {
       or warn 'Could not make directory at ', $self->root;
   }
 
-  Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir
+  Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir->canonpath
     unless (-r $self->praat->pref_dir);
 
-  Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir
+  Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir->canonpath
     unless (-w $self->praat->pref_dir);
 
   $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
