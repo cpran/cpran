@@ -121,6 +121,9 @@ sub remove {
   my $self = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
+  return undef unless defined $self->root;
+  return 0     unless         $self->root->exists;
+
   $self->root->remove_tree({
     verbose => $opt->{verbose},
     safe => 0,
