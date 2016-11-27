@@ -42,6 +42,7 @@ has '+requested' => (
 
 has [qw( _remote _local )] => (
   is => 'rw',
+  isa => 'HashRef',
   lazy => 1,
   default => sub { {} },
 );
