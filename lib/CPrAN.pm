@@ -113,12 +113,22 @@ has _pref_dir => (
   init_arg => 'pref_dir',
 );
 
-after execute_command => sub {
-  my ($self, $cmd, $opt, $args) = @_;
+around execute_command => sub {
+  my $orig = shift;
+  my $self = shift;
+
+  my ($cmd, $opt, $args) = @_;
+
+  # If running version, make sure version is fetched before-hand
+  $self->praat->version
+    if ref $cmd eq 'App::Cmd::Command::version';
+
+  $self->$orig(@_);
+
   if (ref $cmd eq 'App::Cmd::Command::version') {
     if (defined $self->praat->version) {
       print sprintf "Using Praat version %s (%s)\n",
-        $self->praat->version, $self->praat->bin;
+        $self->praat->version->praatify, $self->praat->bin;
     }
     else {
       print "Praat not found in PATH\n",
@@ -131,8 +141,7 @@ around BUILDARGS => sub {
   my $self = shift;
 
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
-
-  $self->$orig($args);
+  $args = $self->$orig($args);
 
   my %deprecated = (
     'api-token' => 'token',
