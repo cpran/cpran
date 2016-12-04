@@ -2,6 +2,8 @@ package CPrAN::Role::Reads::WorkingPlugin;
 
 use Moose::Role;
 
+requires 'execute';
+
 around execute => sub {
   my $orig = shift;
   my $self = shift;
