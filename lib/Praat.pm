@@ -2,17 +2,18 @@ package Praat;
 
 use Moo;
 use MooX::HandlesVia;
+use MooX::late;
 
 use Log::Any qw( $log );
-use Types::Standard qw( HashRef Str );
-use Types::Path::Tiny qw( Path File );
+use Types::Standard qw( HashRef Str Undef );
+use Types::Path::Tiny qw( Path );
 use Types::Praat qw( Version );
 
 require Carp;
 
 has pref_dir => (
   is => 'ro',
-  isa => Path,
+  isa => 'Path',
   lazy => 1,
   coerce => 1,
   builder => '_build_pref_dir',
@@ -20,7 +21,7 @@ has pref_dir => (
 
 has bin => (
   is => 'ro',
-  isa => Path,
+  isa => 'Path|Undef',
   lazy => 1,
   coerce => 1,
   default => sub {
@@ -34,14 +35,14 @@ has version => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => Version,
+  isa => 'Version',
   coerce => 1,
   builder => '_build_version'
 );
 
 has plugins => (
   is => 'rw',
-  isa => HashRef,
+  isa => 'HashRef',
   handles_via => 'Hash',
   handles => {
     list_plugins => 'keys',
