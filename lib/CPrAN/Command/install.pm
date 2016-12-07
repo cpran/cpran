@@ -100,7 +100,7 @@ has path => (
     use English;
     require Path::Tiny;
     if ($OSNAME =~ /darwin/xmsi) {
-      $_[0]->app->logger->debug('Installing Praat binary to default Mac path');
+      $log->debug('Installing Praat binary to default Mac path');
       die "Praat installation not currently supported on MacOS\n";
       # Use hdiutil and cp?
       #     hdituil mount some.dmg
@@ -108,11 +108,11 @@ has path => (
       #     hdiutil umount "/Volumes/Praat"
     }
     elsif ($OSNAME =~ /mswin32/xmsi) {
-      $_[0]->app->logger->debug('Installing Praat binary to default Windows path');
+      $log->debug('Installing Praat binary to default Windows path');
       return Path::Tiny::path('C:', 'Program Files', 'Praat');
     }
     else {
-      $_[0]->app->logger->debug('Installing Praat binary to default path');
+      $log->debug('Installing Praat binary to default path');
       return Path::Tiny::path('/', 'usr', 'bin');
     }
   },
@@ -167,8 +167,6 @@ keyword "praat", the client will install Praat itself.
 
 sub execute {
   my ($self, $opt, $args) = @_;
-
-  $log->debug('Executing install');
 
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
