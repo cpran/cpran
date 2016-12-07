@@ -390,8 +390,9 @@ sub fetch_plugin {
   require Praat::Version;
   my $tags = $self->api->tags( $id );
   my @releases;
+
+  use Syntax::Keyword::Try;
   foreach my $tag (@{$tags}) {
-    use Syntax::Keyword::Try;
     try {
       $tag->{semver} = Praat::Version->new($tag->{name}) }
     catch {
@@ -414,16 +415,13 @@ sub fetch_plugin {
     $id, $latest, { filepath => 'cpran.yaml' }
   ), Encode::FB_CROAK );
 
-  {
-    my $check = try {
-      YAML::XS::Load( $remote )
-    }
-    catch {};
-    unless (defined $check) {
-      Carp::carp 'Could not deserialise fetched remote for ', $plugin->name
-        unless $self->quiet;
-      return undef;
-    }
+  try {
+    YAML::XS::Load( $remote );
+  }
+  catch {
+    Carp::carp 'Could not deserialise fetched remote for ', $plugin->name
+      unless $self->quiet;
+    return;
   }
 
   $plugin->url($url);
@@ -488,6 +486,7 @@ sub test_plugin {
   }
 
   if ($opt->{log}) {
+    use Syntax::Keyword::Try;
     try {
       require TAP::Harness::Archive;
       TAP::Harness::Archive->import;
@@ -500,7 +499,7 @@ sub test_plugin {
     catch {
       Carp::carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
         unless $self->quiet;
-    };
+    }
   }
 
   $prove->process_args( @args );
