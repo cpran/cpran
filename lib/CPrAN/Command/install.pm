@@ -99,7 +99,7 @@ has path => (
 
     use English;
     require Path::Tiny;
-    if ($OSNAME =~ /darwin/) {
+    if ($OSNAME =~ /darwin/xmsi) {
       $_[0]->app->logger->debug('Installing Praat binary to default Mac path');
       die "Praat installation not currently supported on MacOS\n";
       # Use hdiutil and cp?
@@ -107,7 +107,7 @@ has path => (
       #     cp -R "/Volumes/Praat/Praat.app" "/Applications" (as sudo)
       #     hdiutil umount "/Volumes/Praat"
     }
-    elsif ($OSNAME =~ /MSWin32/) {
+    elsif ($OSNAME =~ /mswin32/xmsi) {
       $_[0]->app->logger->debug('Installing Praat binary to default Windows path');
       return Path::Tiny::path('C:', 'Program Files', 'Praat');
     }
