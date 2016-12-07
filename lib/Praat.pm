@@ -12,7 +12,7 @@ use Types::Praat qw( Version );
 require Carp;
 
 has pref_dir => (
-  is => 'ro',
+  is => 'rw',
   isa => 'Path',
   lazy => 1,
   coerce => 1,

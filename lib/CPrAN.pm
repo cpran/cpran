@@ -186,13 +186,13 @@ sub BUILD {
       or warn 'Could not make directory at ', $self->root;
   }
 
+  $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
+
   Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir->canonpath
     unless (-r $self->praat->pref_dir);
 
   Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir->canonpath
     unless (-w $self->praat->pref_dir);
-
-  $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
 
   $log->debug("Initialised CPrAN instance");
 }
