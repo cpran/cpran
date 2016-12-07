@@ -156,7 +156,7 @@ sub fetch {
   my $ua = LWP::UserAgent->new;
 
   my ($os, $bit, $ext) = map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
-  my $barren = $self->_barren ? 'barren' : '';
+  my $barren = ($self->_barren) ? 'barren' : q{};
   my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${barren}${ext}/;
 
   my @haystack;
