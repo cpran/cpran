@@ -230,14 +230,11 @@ sub run_tests {
       unless $self->app->quiet;
 
     use Syntax::Keyword::Try;
-    my $success;
     try {
-      $plugin->test( log => $self->log );
-      $success = 1;
+      $success = $self->app->test_plugin($plugin, { log => $self->log });
     }
     catch {
       warn "There were errors while testing:\n$@\n";
-      $success = 0;
     }
   }
 
