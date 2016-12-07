@@ -44,8 +44,9 @@ has _package_name => (
   init_arg => undef,
   lazy => 1,
   default => sub {
-    $_[0]->latest;
-    return $_[0]->_package_name;
+    my $self = shift;
+    $self->latest;
+    return $self->_package_name;
   },
 );
 
@@ -54,8 +55,9 @@ has _package_url => (
   init_arg => undef,
   lazy => 1,
   default => sub {
-    $_[0]->latest;
-    return $_[0]->_package_url;
+    my $self = shift;
+    $self->latest;
+    return $self->_package_url;
   },
 );
 
