@@ -70,15 +70,15 @@ around git => sub {
     require Class::Load;
     my $enable = 1;
     if (!File::Which::which('git')) {
-      warn "Could not find path to git binary\n";
+      Carp::carp 'Could not find path to git binary';
       $enable = 0;
     }
     if (!Class::Load::try_load_class 'Git::Repository') {
-      warn "Could not load Git::Repository\n";
+      Carp::carp 'Could not load Git::Repository';
       $enable = 0;
     }
     if (!$enable) {
-      warn "Git is not enabled\n";
+      Carp::carp 'Git is not enabled';
       $return = $self->$orig($enable);
     }
   }
@@ -605,8 +605,8 @@ sub process_praat {
   }
   catch {
     chomp;
-    warn "$_\n";
-    die "Could not install Praat\n";
+    Carp::carp $_;
+    Carp::croak "Could not install Praat\n";
   };
 
   if (!$self->app->quiet) {
