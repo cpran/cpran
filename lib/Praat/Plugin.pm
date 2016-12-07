@@ -1,7 +1,6 @@
 package Praat::Plugin;
 
 use Moo;
-use MooX::late;
 use Log::Any qw( $log );
 
 use Types::Path::Tiny qw( Path );
@@ -9,13 +8,13 @@ use Types::Standard qw( Str Undef );
 
 has name => (
   is => 'ro',
-  isa => 'Str',
+  isa => Str,
   required => 1,
 );
 
 has root => (
   is => 'rw',
-  isa => 'Path|Undef',
+  isa => Path|Undef,
   coerce => 1,
 );
 
