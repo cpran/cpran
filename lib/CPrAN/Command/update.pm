@@ -180,7 +180,7 @@ sub fetch_raw {
       $log->trace('Working on', $plugin->name)
         unless $self->app->quiet;
 
-      $plugin->fetch;
+      $self->app->fetch_plugin($plugin);
 
       unless (defined $plugin->_remote) {
         $log->debug('Undefined remote for', $plugin->name, ', skipping');
