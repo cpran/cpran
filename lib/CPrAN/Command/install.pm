@@ -68,18 +68,16 @@ around git => sub {
   if ($return) {
     require File::Which;
     require Class::Load;
-
     my $enable = 1;
-    unless (File::Which::which('git')) {
+    if (!File::Which::which('git')) {
       warn "Could not find path to git binary\n";
       $enable = 0;
     }
-    unless (Class::Load::try_load_class 'Git::Repository') {
+    if (!Class::Load::try_load_class 'Git::Repository') {
       warn "Could not load Git::Repository\n";
       $enable = 0;
     }
-
-    unless ($enable) {
+    if (!$enable) {
       warn "Git is not enabled\n";
       $return = $self->$orig($enable);
     }
@@ -95,7 +93,9 @@ has path => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    return $_[0]->app->praat->bin->parent if $_[0]->app->praat->bin->exists;
+    if ($_[0]->app->praat->bin and $_[0]->app->praat->bin->exists) {
+      return $_[0]->app->praat->bin->parent;
+    }
 
     require Path::Tiny;
     if ($^O =~ /darwin/) {
@@ -222,7 +222,9 @@ sub execute {
       };
     }
     else {
-      print "Abort.\n" unless $self->app->quiet;
+      if (!$self->app->quiet) {
+        print "Abort.\n";
+      }
     }
   }
   return @installed;
@@ -262,8 +264,9 @@ sub run_tests {
 
       $plugin->remove( safe => 0, verbose => 0 );
 
-      print 'Did not install ', $plugin->name, ".\n"
-        unless $self->app->quiet;
+      if ($self->app->quiet) {
+        print 'Did not install ', $plugin->name, ".\n";
+      };
       die;
     }
   }
@@ -569,7 +572,6 @@ sub process_praat {
       my $archive = $praat->download;
 
       require Path::Tiny;
-
       my $package = Path::Tiny->tempfile(
         template => 'praat' . $praat->latest . '-XXXXX',
         suffix => $praat->_ext,
@@ -579,24 +581,24 @@ sub process_praat {
         template => 'praat-XXXXX',
       );
 
-      print "Saving archive to ", $package->basename, "\n"
-        unless $self->app->quiet;
+      if (!$self->app->quiet) {
+        print "Saving archive to ", $package->basename, "\n";
+      }
 
       my $fh = $package->openw_raw;
       $fh->print($archive);
 
-      print 'Extracting package to ', $self->path, "...\n"
-        unless $self->app->quiet;
+      if (!$self->app->quiet) {
+        print 'Extracting package to ', $self->path, "...\n";
+      }
 
       # Extract archives
       require Archive::Extract;
-
       my $ae = Archive::Extract->new( archive => $package->canonpath );
       $ae->extract( to => $extract )
         or die "Could not extract package: $ae->error";
 
       my $file = Path::Tiny::path( $ae->extract_path, $ae->files->[0] );
-
       $file->copy( $self->path->child('praat') ) and $file->remove
         or die "Could not move file: $!\n";
     }
@@ -607,8 +609,9 @@ sub process_praat {
     die "Could not install Praat\n";
   };
 
-  print "Praat succesfully installed\n"
-    unless $self->app->quiet;
+  if (!$self->app->quiet) {
+    print "Praat succesfully installed\n";
+  }
 }
 
 =back
