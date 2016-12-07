@@ -16,7 +16,7 @@ MooseX::Getopt::OptionTypeMap->add_option_type_to_map( File, '=s', );
 
 require Carp;
 
-has (
+has name => (
   is  => 'rw',
   isa => 'Str',
   documentation => 'name of plugin',
