@@ -57,8 +57,6 @@ remove. For each named passed as argument, all contents of the directory named
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $log->debug('Executing remove');
-
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
     else { $self->app->new_plugin( $_ ) }

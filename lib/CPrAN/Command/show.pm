@@ -57,8 +57,6 @@ whose descriptors will be displayed.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $log->debug('Executing show');
-
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
     else { $self->app->new_plugin( $_ ) }

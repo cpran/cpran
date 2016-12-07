@@ -36,8 +36,6 @@ has '+wrap' => (
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $log->debug('Executing list');
-
   return $self->app->run_command( search => '.*', {
     installed => $self->installed,
     wrap      => $self->wrap,

@@ -59,6 +59,7 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   # Make a list of CPrAN plugins from input, if they are not already
+
   my @plugins = map {
     require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }

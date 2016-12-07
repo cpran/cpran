@@ -112,8 +112,6 @@ including their name, local and remote versions, and a short description.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $log->debug('Executing search');
-
   my %names;
   if (defined $self->installed) {
     if ($self->installed) {

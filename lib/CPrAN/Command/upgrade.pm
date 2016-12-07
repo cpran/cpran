@@ -105,8 +105,6 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $log->debug('Executing upgrade');
-
   if (! scalar @{$args}) {
     $log->trace('Processing all installed plugins');
     $args = [

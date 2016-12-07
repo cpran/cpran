@@ -105,8 +105,6 @@ will be downloaded. This second case is the recommended use.
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  $log->debug('Executing update');
-
   my @plugins = map {
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
     else { $self->app->new_plugin( $_ ) }
