@@ -5,7 +5,6 @@ use Log::Any qw( $log );
 
 extends 'Praat';
 
-use Types::Path::Tiny qw( File Dir );
 use Types::Praat qw( Version );
 use Types::Standard qw( Undef );
 
