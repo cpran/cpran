@@ -87,7 +87,7 @@ around git => sub {
 
 has path => (
   is  => 'rw',
-  isa => Dir,
+  isa => Dir, # Target path for Praat _must_ exist
   traits => [qw(Getopt)],
   documentation => 'specify path for Praat installation',
   coerce => 1,
