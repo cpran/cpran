@@ -47,18 +47,16 @@ sub execute {
 sub process_praat {
   my ($self) = @_;
 
-  use Try::Tiny;
+  use Syntax::Keyword::Try;
   try {
-    my $praat = $self->app->praat;
-    my $releases = $praat->releases;
-
-    print $_->{semver}, "\n" foreach @{$releases};
+    foreach (@{$self->app->praat->releases}) {
+      print $_->{semver}, "\n";
+    }
   }
   catch {
-    chomp;
-    $log->warn($_);
+    $log->warn($@);
     die 'Could not list Praat releases', "\n";
-  };
+  }
 }
 
 =head1 AUTHOR

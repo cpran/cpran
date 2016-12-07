@@ -105,18 +105,18 @@ has _bit => (
                 uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) ? 64 : 32;
       }
       else {
-        use Try::Tiny;
-        return try {
+        use Syntax::Keyword::Try;
+        try {
           my $cmd = 'uname -a';
           open CMD, "$cmd 2>&1 |"
             or die ("Could not execute $cmd: $!");
           chomp(my $line = <CMD>);
-          return ($line =~ /\bx86_64\b/) ? 64 : 32;
+          return ($line =~ /\bx86_64\b/xmsi) ? 64 : 32;
         }
         catch {
-          $log->warn('Could not determine system bitness. Defaulting to 32bit');
+          $log->warn('Defaulting to 32 bit');
           return 32;
-        };
+        }
       }
     }
   },
@@ -240,11 +240,11 @@ sub _build_releases {
 
   my $tags = decode_json $response->decoded_content;
   foreach my $tag (@{$tags}) {
-    use Try::Tiny;
+    use Syntax::Keyword::Try;
     try { $tag->{semver} = Praat::Version->new($tag->{tag_name}) }
     finally {
       push @releases , $tag unless @_;
-    };
+    }
   };
 
   @releases = sort { $b->{semver} <=> $a->{semver} } @releases;

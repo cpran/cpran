@@ -389,13 +389,13 @@ sub fetch_plugin {
   my $tags = $self->api->tags( $id );
   my @releases;
   foreach my $tag (@{$tags}) {
-    use Try::Tiny;
+    use Syntax::Keyword::Try;
     try {
       $tag->{semver} = Praat::Version->new($tag->{name}) }
     catch {
-      $log->warn($_);
+      $log->warn($@);
       next;
-    };
+    }
     push @releases, $tag;
   };
   @releases = sort { $b->{semver} <=> $a->{semver} } @releases;

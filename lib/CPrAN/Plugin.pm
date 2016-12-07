@@ -189,32 +189,35 @@ sub _parse_meta {
   require YAML::XS;
   require Encode;
 
-  use Try::Tiny;
+  use Syntax::Keyword::Try;
   my $parsed;
   try {
     $parsed = YAML::XS::Load( Encode::encode_utf8( $meta ));
   }
   catch {
-    Carp::carp 'Could not deserialise meta: ', $meta
-      unless ref($class) or $class->cpran->quiet;
-  };
+    if (!ref($class) and !$class->cpran->quiet) {
+      Carp::carp 'Could not deserialise meta: ', $meta;
+    }
+  }
 
-  return undef unless defined $parsed and ref $parsed eq 'HASH';
+  return unless defined $parsed and ref $parsed eq 'HASH';
 
   _force_lc_hash($parsed);
 
   $parsed->{meta} = $meta;
   $parsed->{name} = $parsed->{plugin};
 
-  $parsed->{version} = try {
-    require Praat::Version;
-    Praat::Version->new($parsed->{version})
-      unless ref $parsed->{version} eq 'Praat::Version';
+  if (ref $parsed->{version} ne 'Praat::Version') {
+    try {
+      require Praat::Version;
+      $parsed->{version} = Praat::Version->new($parsed->{version})
+    }
+    catch {
+      if (!ref($class) or !$class->cpran->quiet) {
+        Carp::carp 'Not a valid version number: ', $parsed->{version};
+      }
+    }
   }
-  catch {
-    Carp::carp 'Not a valid version number: ', $parsed->{version}
-      unless ref($class) or $class->cpran->quiet;
-  };
 
   return $parsed;
 }

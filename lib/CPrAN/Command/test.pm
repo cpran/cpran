@@ -56,7 +56,7 @@ sub execute {
     else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
-  use Try::Tiny;
+  use Syntax::Keyword::Try;
   try {
     foreach my $plugin (@plugins) {
       my $result;
@@ -65,9 +65,8 @@ sub execute {
     }
   }
   catch {
-    chomp;
-    die "There were errors while testing:\n$_\n";
-  };
+    die "There were errors while testing:\n$@\n";
+  }
 
   return $outcome;
 }

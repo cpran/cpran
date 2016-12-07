@@ -6,7 +6,6 @@ use Log::Any qw( $log );
 require Carp;
 use Types::Path::Tiny qw( Path );
 use Types::Standard qw( Str Undef );
-use Try::Tiny;
 
 has name => (
   is => 'ro',

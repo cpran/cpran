@@ -153,18 +153,18 @@ sub execute {
     $self->_add_output_row($_) foreach @found;
 
     if (@found) {
-      require Term::ReadKey;
-      Term::ReadKey->import;
-
-      use Try::Tiny;
-      my ($wchar) = try {
-        GetTerminalSize();
+      use Syntax::Keyword::Try;
+      my $wchar;
+      try {
+        require Term::ReadKey;
+        ($wchar) = Term::ReadKey::GetTerminalSize();
       }
       catch {
-        $log->debug('Unable to get terminal size:', $_)
-          if $self->debug;
-        80;
-      };
+        if ($self->debug) {
+          $log->debug('Unable to get terminal size:', $@);
+        }
+        $wchar = 80;
+      }
       print $self->{output}->render($self->wrap ? $wchar : 1000);
     }
     else {

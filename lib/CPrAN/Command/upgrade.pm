@@ -77,7 +77,7 @@ sub validate_args {
   # 2. Git::Repository is installed
   # 3. The user has not turned it off by setting --nogit
   if ($self->git) {
-    use Try::Tiny;
+    use Syntax::Keyword::Try;
     try {
       require File::Which;
       $self->git( File::Which::which('git') ? 1 : 0 )
@@ -86,7 +86,7 @@ sub validate_args {
     }
     catch {
       $log->warn('Disabling git support');
-      $log->debug($_);
+      $log->debug($@);
       $self->git(0);
     }
   }
@@ -203,8 +203,7 @@ sub execute {
 sub git_upgrade {
   my ($self, $plugin) = @_;
 
-  use Try::Tiny;
-
+  use Syntax::Keyword::Try;
   try {
     require Git::Repository;
     my $repo;
@@ -213,17 +212,17 @@ sub git_upgrade {
     }
     catch {
       $log->warn('No git repository at ', $plugin->root);
-      $log->debug($_);
+      $log->debug($@);
       exit 1;
-    };
+    }
 
     my $head;
     try {
       $head = $repo->run( 'rev-parse' => 'HEAD', { fatal => '!0' } );
     }
     catch {
-      $log->warn('Could not locate HEAD:', $_);
-    };
+      $log->warn('Could not locate HEAD:', $@);
+    }
 
     try {
       $plugin->fetch unless defined $plugin->url;
@@ -231,8 +230,8 @@ sub git_upgrade {
     }
     catch {
       $log->warn('Could not fetch from remote');
-      $log->debug($_);
-    };
+      $log->debug($@);
+    }
 
     my $latest = $plugin->latest;
     my @args = ( '--quiet', $latest->{commit}->{id} );
@@ -245,18 +244,18 @@ sub git_upgrade {
       }
     }
     catch {
-      die "Unable to move HEAD. Do you have uncommited local changes? ",
-        "Commit or stash them before upgrade to keep them, or discard them with --force.\n";
-    };
+      die "Unable to move HEAD. Do you have uncommited local changes?",
+        "Commit or stash them before upgrade to keep them,",
+        "or discard them with --force.\n";
+    }
 
     $plugin->refresh;
     my $success = 0;
     try { $success = $plugin->test }
     catch {
-      chomp;
       $log->warn('There were errors while testing:');
-      $log->warn($_);
-    };
+      $log->warn($@);
+    }
 
     if (defined $success and !$success) {
       if ($self->force) {
@@ -278,10 +277,10 @@ sub git_upgrade {
     return 1;
   }
   catch {
-    $log->warn($_);
+    $log->warn($@);
     $log->warn('Aborting');
     exit 1;
-  };
+  }
 }
 
 sub raw_upgrade {
@@ -352,8 +351,7 @@ but will disregard those that fail.
 sub process_praat {
   my ($self) = @_;
 
-  use Try::Tiny;
-
+  use Syntax::Keyword::Try;
   try {
     my $praat = $self->app->praat;
     print 'Querying server for latest version...', "\n"
@@ -380,11 +378,10 @@ sub process_praat {
     }
   }
   catch {
-    chomp;
-    $log->warn($_);
+    $log->warn($@);
     $log->warn('Could not upgrade Praat');
     exit 1;
-  };
+  }
   exit 0;
 }
 

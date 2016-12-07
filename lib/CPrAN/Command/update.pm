@@ -150,7 +150,6 @@ sub fetch_raw {
   }
 
   foreach my $source (@projects) {
-
     unless ($source->{name} =~ /^plugin_/) {
       $log->debug('Not a plugin, ignoring', $source->{name});
       next;
@@ -166,15 +165,15 @@ sub fetch_raw {
       next;
     }
 
-    use Try::Tiny;
-    my $plugin = try {
-      $self->app->new_plugin( meta => $source );
+    use Syntax::Keyword::Try;
+    my $plugin;
+    try {
+      $plugin = $self->app->new_plugin( meta => $source );
     }
     catch {
-      $log->debug('Could not initialise plugin ', $source->{name});
-    };
-
-    next unless defined $plugin;
+      $log->debug('Could not initialise plugin', $source->{name});
+      next;
+    }
 
     if ($plugin->is_cpran) {
       $log->trace('Working on', $plugin->name)
