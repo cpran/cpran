@@ -514,12 +514,16 @@ sub test_plugin {
 sub new_plugin {
   my $self = shift;
   my $arg = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+  if (!ref $arg) {
+    $arg = { name => $arg };
+  }
 
   $arg->{cpran} //= $self->root;
   $arg->{root} //= $self->praat->pref_dir->child( 'plugin_' . ($arg->{name} // '') );
 
   require CPrAN::Plugin;
   my $plugin = CPrAN::Plugin->new($arg);
+
   return $plugin->refresh;
 }
 
