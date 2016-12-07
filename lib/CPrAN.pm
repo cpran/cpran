@@ -118,6 +118,7 @@ around execute_command => sub {
   my $self = shift;
 
   my ($cmd, $opt, $args) = @_;
+  $log->trace("Executing", ref $cmd);
 
   # If running version, make sure version is fetched before-hand
   $self->praat->version
