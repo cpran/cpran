@@ -150,29 +150,29 @@ sub remove {
   }
 }
 
-# =item print(I<FIELD>)
-#
-# Prints the contents of the plugin descriptors, either local or remote. These
-# must be asked for by name. Any other names are an error.
-#
-# =cut
-#
-# sub print {
-#   use Encode qw( decode );
-#
-#   my ($self, $name) = @_;
-#   $name = '_' . $name;
-#
-#   die "Not a valid field"
-#     unless $name =~ /^_(local|remote)$/;
-#
-#   die "No descriptor found"
-#     unless defined $self->$name;
-#
-#   print decode('utf8',
-#     $self->$name->{meta}
-#   );
-# }
+=item print(I<FIELD>)
+
+Prints the contents of the plugin descriptors, either local or remote. These
+must be asked for by name. Any other names are an error.
+
+=cut
+
+sub print {
+  use Encode qw( decode );
+
+  my ($self, $name) = @_;
+  $name = '_' . $name;
+
+  die "Not a valid field"
+    unless $name =~ /^_(local|remote)$/;
+
+  die "No descriptor found"
+    unless defined $self->$name;
+
+  print decode('utf8',
+    $self->$name->{meta}
+  );
+}
 
 sub parse_meta {
   my ($self, $meta) = @_;
