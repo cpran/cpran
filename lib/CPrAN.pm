@@ -124,7 +124,7 @@ around execute_command => sub {
   $self->praat->version
     if ref $cmd eq 'App::Cmd::Command::version';
 
-  $self->$orig(@_);
+  my @return = $self->$orig(@_);
 
   if (ref $cmd eq 'App::Cmd::Command::version') {
     if (defined $self->praat->version) {
@@ -135,6 +135,8 @@ around execute_command => sub {
       print "Praat not found in PATH\n",
     }
   }
+
+  return @return;
 };
 
 around BUILDARGS => sub {
