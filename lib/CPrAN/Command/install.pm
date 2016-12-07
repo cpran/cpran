@@ -280,7 +280,7 @@ sub git_install {
         unless $remotes{cpran} =~ /^http/;
     }
     else {
-      $plugin->fetch;
+      $self->app->fetch_plugin($plugin);
       $repo->run( remote => qw( add cpran ), $plugin->url );
     }
   }
@@ -289,7 +289,7 @@ sub git_install {
 
     unless ($plugin->url) {
       print 'Querying repository URL...', "\n" unless $self->app->quiet;
-      $plugin->fetch
+      $self->app->fetch_plugin($plugin);
     }
 
     print 'Cloning from ', $plugin->url, "\n" unless $self->app->quiet;

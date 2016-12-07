@@ -235,7 +235,7 @@ sub fetch_cache {
       if $self->app->debug;
 
     if ($self->virtual) {
-      $self->app->new_plugin( meta => $meta );
+      $plugin = $self->app->new_plugin( meta => $meta );
     }
     else {
       my $out = $self->app->root->child( $plugin->{Plugin} )->touchpath;
@@ -243,7 +243,7 @@ sub fetch_cache {
       my $fh = $out->openw_utf8;
       $fh->print( $meta );
       $fh->close;
-      $self->app->new_plugin( $plugin->{Plugin} );
+      $plugin = $self->app->new_plugin( $plugin->{Plugin} );
     }
 
     push @updated, $plugin;
