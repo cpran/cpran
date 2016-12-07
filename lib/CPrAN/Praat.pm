@@ -76,9 +76,12 @@ has _ext => (
   init_arg => undef,
   lazy => 1,
   default => sub {
-    ($^O =~ /darwin/) ? '.dmg' :
-    ($^O =~ /MSWin32/) ? '.zip' :
-    '.tar.gz';
+    use English;
+    return ($OSNAME =~ /darwin/xmsi)
+      ? '.dmg'
+      : ($OSNAME =~ /mswin32/xmsi)
+        ? '.zip'
+        : '.tar.gz';
   },
 );
 
@@ -87,9 +90,12 @@ has _os => (
   init_arg => undef,
   lazy => 1,
   default => sub {
-    ($^O =~ /darwin/) ? 'mac' :
-    ($^O =~ /MSWin32/) ? 'win' :
-    'linux';
+    use English;
+    return ($OSNAME =~ /darwin/)
+      ? 'mac'
+      : ($OSNAME =~ /mswin32/xmsi)
+        ? 'win'
+        : 'linux';
   },
 );
 
@@ -98,27 +104,28 @@ has _bit => (
   init_arg => undef,
   lazy => 1,
   default => sub {
-    for ($^O) {
-      if (/MSWin32/) {
-        $ENV{PROCESSOR_ARCHITECTURE} //= '';
-        $ENV{PROCESSOR_ARCHITEW6432} //= '';
+    use English;
+    if ($OSNAME =~ /mswin32/xmsi) {
+      $ENV{PROCESSOR_ARCHITECTURE} //= q{};
+      $ENV{PROCESSOR_ARCHITEW6432} //= q{};
 
-        return (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ or
-                uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) ? 64 : 32;
+      return (
+        $ENV{PROCESSOR_ARCHITECTURE} =~ /(amd64|ia64)/xmsi or
+        $ENV{PROCESSOR_ARCHITEW6432} =~ /(amd64|ia64)/xmsi
+      ) ? 64 : 32;
+    }
+    else {
+      use Syntax::Keyword::Try;
+      try {
+        my $cmd = 'uname -a';
+        open CMD, "$cmd 2>&1 |"
+          or die ("Could not execute $cmd: $!");
+        chomp(my $line = <CMD>);
+        return ($line =~ /\bx86_64\b/xmsi) ? 64 : 32;
       }
-      else {
-        use Syntax::Keyword::Try;
-        try {
-          my $cmd = 'uname -a';
-          open CMD, "$cmd 2>&1 |"
-            or die ("Could not execute $cmd: $!");
-          chomp(my $line = <CMD>);
-          return ($line =~ /\bx86_64\b/xmsi) ? 64 : 32;
-        }
-        catch {
-          $log->warn('Defaulting to 32 bit');
-          return 32;
-        }
+      catch {
+        $log->warn('Defaulting to 32 bit');
+        return 32;
       }
     }
   },
