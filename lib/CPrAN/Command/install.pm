@@ -185,41 +185,33 @@ sub execute {
       use Lingua::EN::Inflexion;
 
       print inflect("<#d:$n>The following <N:plugin> will be INSTALLED:"), "\n";
-      print '  ', join(' ', map { $_->name } @schedule), "\n";
+      print q{  }, join(' ', map { $_->name } @schedule), "\n";
       print 'Do you want to continue?';
     }
     if ($self->app->_yesno('y')) {
+      use Syntax::Keyword::Try;
       try {
         foreach my $plugin (@schedule) {
 
           # Now that we know what plugins to install and in what order, we
           # install them
-
           if ($self->git) {
             try { $self->git_install( $plugin ) }
-            catch {
-              chomp;
-              die "Error: could not clone repository.\n$_\n";
-            };
+            catch { die "Error: could not clone repository.\n$@\n" };
           }
-
           else {
             try { $self->raw_install( $plugin ) }
-            catch {
-              chomp;
-              die "Error: could not install.\n$_\n";
-            };
+            catch { die "Error: could not install.\n$@\n" };
           }
 
           $plugin->refresh;
-
           push @installed, $plugin if $self->run_tests($plugin);
         }
       }
       catch {
-        warn "There were errors during installation: $_\n";
+        warn "There were errors during installation: $@\n";
         exit 1;
-      };
+      }
     }
     else {
       if (!$self->app->quiet) {
@@ -238,13 +230,16 @@ sub run_tests {
     print 'Testing ', $plugin->name, "...\n"
       unless $self->app->quiet;
 
-    $success = try {
+    use Syntax::Keyword::Try;
+    my $success;
+    try {
       $plugin->test( log => $self->log );
+      $success = 1;
     }
     catch {
-      chomp;
-      warn "There were errors while testing:\n$_\n";
-    };
+      warn "There were errors while testing:\n$@\n";
+      $success = 0;
+    }
   }
 
   if ($success // 1) {
@@ -485,9 +480,10 @@ sub get_archive {
   print 'Downloading archive for ', $plugin->name, "\n"
     unless $self->app->quiet;
 
-  use Try::Tiny;
+  use Syntax::Keyword::Try;
 
-  my $archive = try {
+  my $archive;
+  try {
     my $project = shift @{$self->app->api->projects(
       { search => 'plugin_' . $plugin->name }
     )};
@@ -500,23 +496,23 @@ sub get_archive {
     foreach my $tag (@tags) {
       require Praat::Version;
       try { $tag->{semver} = Praat::Version->new($tag->{name}) }
-      catch { next };
+      catch { next }
       push @releases , $tag;
     };
     @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
 
     my $tag = pop @releases;
 
-    $self->app->api->archive(
+    $archive = $self->app->api->archive(
       $project->{id},
       { sha => $tag->{commit}->{id} },
     );
   }
   catch {
     chomp;
-    warn "Could not contact server:\n$_\nPlease check your connection and/or try again in a few minutes.\n";
+    warn "Could not contact server:\n$@\nPlease check your connection and/or try again in a few minutes.\n";
     exit 1;
-  };
+  }
 
   require Path::Tiny;
   # TODO(jja) Improve error checking. Does this work on Windows?
@@ -538,9 +534,9 @@ sub process_praat {
   $praat->requested($requested) if $requested;
   $praat->_barren($self->barren) if $self->barren;
 
-  use Try::Tiny;
+  use Syntax::Keyword::Try;
   try {
-    if ($praat->bin->stringify) {
+    if ($praat->bin and $praat->bin->exists) {
       unless ($self->reinstall) {
         warn "Praat is already installed. Use --reinstall to ignore this warning\n";
         exit 0;
@@ -604,10 +600,9 @@ sub process_praat {
     }
   }
   catch {
-    chomp;
-    Carp::carp $_;
+    Carp::carp $@;
     Carp::croak "Could not install Praat\n";
-  };
+  }
 
   if (!$self->app->quiet) {
     print "Praat succesfully installed\n";
