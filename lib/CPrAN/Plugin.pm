@@ -11,7 +11,7 @@ use Types::Standard qw( Bool Undef );
 
 has cpran => (
   is => 'rw',
-  isa => Path|Undef,
+  isa => 'Path|Undef',
   coerce => 1,
 );
 
@@ -21,7 +21,7 @@ has url => (
 
 has [qw( version latest requested )] => (
   is => 'rw',
-  isa => Version|Undef,
+  isa => 'Version|Undef',
   coerce => 1,
 );
 
@@ -49,7 +49,7 @@ has [qw( _remote _local )] => (
 
 has [qw( is_cpran )] => (
   is => 'rw',
-  isa => Bool,
+  isa => 'Bool',
   lazy => 1,
   default => 0,
 );
