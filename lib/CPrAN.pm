@@ -457,7 +457,7 @@ sub test_plugin {
   chdir $plugin->root
     or die 'Could not change directory';
 
-  unless ( -e 't' ) {
+  if (!$plugin->root->child('t')->exists) {
     $log->debug('No tests for', $plugin->name);
     return undef;
   }
