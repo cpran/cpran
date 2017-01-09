@@ -212,29 +212,23 @@ sub write_setup {
 sub write_readme {
   my ($self, $plugin) = @_;
 
-  my $default = 1;
+  my $target = Path::Tiny::path( $plugin->root, 'readme.md' );
+  my $source = ($self->readme) ? $self->readme : $target;
 
-  if (-f $self->readme) {
-    $default = 0;
-  }
-  else {
-    $self->readme(Path::Tiny::path( $plugin->root, 'readme.md' ));
-  }
+  my $content = $source->slurp_utf8;
 
-  my $readme = $self->readme->slurp_utf8;
-
-  if ($default) {
+  if ($source eq $target) {
     my $name = $plugin->name;
-    $readme =~ s/<plugin>/$name/g;
+    $content =~ s/<plugin>/$name/g;
 
     my $ul = '=' x length($name);
-    $readme =~ s/={8}/$ul/;
-    $readme =~ s/\* `\S+`/None/;
-    $readme =~ s/\* `\S+`//g;
+    $content =~ s/={8}/$ul/;
+    $content =~ s/\* `\S+`/None/;
+    $content =~ s/\* `\S+`//g;
   }
 
-  my $fh = $self->readme->openw;
-  print $fh $readme;
+  my $fh = $target->openw;
+  print $fh $content;
 }
 
 sub write_descriptor {
