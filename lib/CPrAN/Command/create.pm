@@ -170,7 +170,7 @@ sub execute {
   use File::Copy::Recursive qw( dircopy );
 
   my $source = $template->root;
-  my $target = Path::Tiny::path->cwd->child( 'plugin_' . $self->name );
+  my $target = Path::Tiny->cwd->child( 'plugin_' . $self->name );
 
   dircopy $source, $target
     or die "Could not rename plugin: $!\n";
