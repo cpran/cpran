@@ -106,9 +106,7 @@ around BUILDARGS => sub {
   my $self = shift;
   my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  $self->$orig($args);
-
-  return $args;
+  return $self->$orig($args);
 };
 
 =head1 NAME
