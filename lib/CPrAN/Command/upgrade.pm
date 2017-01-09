@@ -361,7 +361,7 @@ sub process_praat {
         print 'Do you want to continue?';
       }
 
-      if ($self->_yesno('y')) {
+      if ($self->app->_yesno('y')) {
         # TODO: Silence everything _but_ the download progress bar
         $self->app->run_command( install => 'praat', {
           yes => 1,
