@@ -2,6 +2,7 @@ package CPrAN::Praat;
 
 use Moose;
 use Log::Any qw( $log );
+# use Log::Any::Adapter ('File', '/var/log/praat');
 
 extends 'Praat';
 
@@ -140,7 +141,7 @@ sub BUILDARGS {
 sub remove {
   my ($self) = @_;
   my $removed = $self->bin->remove
-    or warn sprintf("Could not remove %s: %s\n", $self->bin, $!);
+    or Carp::carp sprintf("Could not remove %s: %s\n", $self->bin, $!);
   return $removed;
 }
 
@@ -250,10 +251,16 @@ sub _build_releases {
   my $tags = decode_json $response->decoded_content;
   foreach my $tag (@{$tags}) {
     use Syntax::Keyword::Try;
-    try { $tag->{semver} = Praat::Version->new($tag->{tag_name}) }
-    finally {
-      push @releases , $tag unless @_;
+    try {
+      $tag->{semver} = Praat::Version->new($tag->{tag_name});
     }
+    catch {
+      $log->trace("  Skipping '" . ($tag->{tag_name} // '') . "'");
+      next;
+    }
+
+    $log->trace("  Pushing '" . $tag->{tag_name} . "'");
+    push @releases, $tag;
   };
 
   @releases = sort { $b->{semver} <=> $a->{semver} } @releases;
