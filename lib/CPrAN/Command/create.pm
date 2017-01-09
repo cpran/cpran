@@ -195,7 +195,6 @@ sub write_setup {
   my ($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
   $year += 1900;
 
-
   my $setup = Path::Tiny::path( $plugin->root, 'setup.praat' )->slurp_utf8;
 
   my ($name, $author, $url) = ($plugin->name, $self->author, $self->url);

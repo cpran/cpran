@@ -554,7 +554,7 @@ sub process_praat {
 
     unless ($self->app->quiet) {
       print 'Querying server for latest version...', "\n";
-      print 'Praat v', $praat->latest, ' will be INSTALLED in ', $self->path, "\n";
+      print 'Praat ', $praat->latest, ' will be INSTALLED in ', $self->path, "\n";
       print 'Do you want to continue?';
     }
     if ($self->app->_yesno('y')) {
