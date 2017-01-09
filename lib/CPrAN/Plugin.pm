@@ -131,19 +131,17 @@ sub remove {
   });
 
   if (@{$e}) {
-    Carp::carp 'Could not completely remove ', $self->root, "\n"
-      unless $self->cpran->quiet;
-
     foreach (@{$e}) {
       my ($file, $message) = %{$_};
-        if ($file eq '') {
-        warn "General error: $message\n";
+      if ($file eq '') {
+        Carp::carp "General error: $message\n";
       }
       else {
-        warn "Problem unlinking $file: $message\n";
+        Carp::carp "Problem unlinking $file: $message\n";
       }
     }
-    return 0;
+
+    Carp::croak 'Could not completely remove ', $self->root;
   }
   else {
     return 1;
@@ -195,12 +193,8 @@ sub _parse_meta {
     $parsed = YAML::XS::Load( Encode::encode_utf8( $meta ));
   }
   catch {
-    if (!ref($class) and !$class->cpran->quiet) {
-      Carp::carp 'Could not deserialise meta: ', $meta;
-    }
+    Carp::croak 'Could not deserialise meta: ', $meta;
   }
-
-  return unless defined $parsed and ref $parsed eq 'HASH';
 
   _force_lc_hash($parsed);
 
@@ -213,9 +207,7 @@ sub _parse_meta {
       $parsed->{version} = Praat::Version->new($parsed->{version})
     }
     catch {
-      if (!ref($class) or !$class->cpran->quiet) {
-        Carp::carp 'Not a valid version number: ', $parsed->{version};
-      }
+      Carp::croak 'Not a valid version number: ', $parsed->{version};
     }
   }
 
