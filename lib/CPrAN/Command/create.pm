@@ -141,7 +141,8 @@ sub execute {
 
   print 'Creating plugin "', $self->name, '"...', "\n" unless $self->app->quiet;
   if (-e 'plugin_' . $self->name) {
-    warn "There is already a plugin by that name! (in 'plugin_", $self->name, "')\n";
+    warn "There is already a plugin by that name! (in 'plugin_", $self->name, "')\n"
+      unless $self->app->quiet;
     exit 1;
   }
 
@@ -184,7 +185,8 @@ sub execute {
   $self->write_descriptor ($plugin);
   $self->write_setup      ($plugin);
 
-  print 'Plugin "', $plugin->name, '" succesfully created!', "\n";
+  print 'Plugin "', $plugin->name, '" succesfully created!', "\n"
+    unless $self->app->quiet;
 
   return $plugin->refresh;
 }
