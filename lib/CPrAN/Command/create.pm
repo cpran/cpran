@@ -254,7 +254,7 @@ sub write_descriptor {
   END_DESCRIPTOR
 
   my $descriptor = fill_in_string( $template, HASH => {
-    $plugin->name,
+    name => $plugin->name,
     url => $self->url,
     version => $self->version->stringify,
     author => $self->author,
