@@ -120,7 +120,8 @@ sub get_dependencies {
   foreach my $plugin (@plugins) {
     $log->trace("Working on", $plugin->name);
 
-    my $deps = $plugin->_remote // $plugin->_local;
+    my $deps = $plugin->_remote;
+    $deps = $plugin->_local unless scalar keys %{$deps};
     $deps = $deps->{depends}->{plugins};
 
     if (defined $deps and ref $deps eq 'HASH') {
