@@ -3,6 +3,7 @@ package CPrAN::Command::deps;
 
 use Moose;
 use Log::Any qw( $log );
+# use Log::Any::Adapter 'Stderr';
 
 with 'CPrAN::Role::Reads::WorkingPlugin';
 with 'CPrAN::Role::Reads::STDIN';
@@ -117,6 +118,7 @@ sub get_dependencies {
 
   my @dependencies = ();
   foreach my $plugin (@plugins) {
+    $log->trace("Working on", $plugin->name);
 
     my $deps = $plugin->_remote // $plugin->_local;
     $deps = $deps->{depends}->{plugins};
