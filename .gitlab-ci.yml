@@ -1,4 +1,4 @@
-image: cpran:latest
+image: jjatria/cpran:latest
 
 variables:
   CPRAN_PREF_DIR: "/builds/$CI_PROJECT_NAMESPACE"
