@@ -1,9 +1,201 @@
 package CPrAN;
 # ABSTRACT: A package manager for Praat
 
-use App::Cmd::Setup -app;
-use Try::Tiny;
-use Carp;
+use Moose;
+require Carp;
+use Log::Any qw( $log );
+use Types::Path::Tiny qw( Path );
+use Types::CPrAN qw( Praat );
+
+extends qw( MooseX::App::Cmd );
+
+with 'MooseX::Getopt';
+
+has root => (
+  is  => 'rw',
+  isa => Path,
+  traits => [qw(Getopt)],
+  documentation => 'CPrAN root',
+  coerce => 1,
+  lazy => 1,
+  default => sub {
+    $_[0]->praat->pref_dir->child('.cpran');
+  },
+);
+
+has praat => (
+  is  => 'rw',
+  isa => Praat,
+  traits => [qw(Getopt)],
+  documentation => 'Praat binary',
+  coerce => 1,
+  lazy => 1,
+  default => sub {
+    require CPrAN::Praat;
+    CPrAN::Praat->new;
+  },
+);
+
+has api => (
+  is  => 'rw',
+  isa => 'WWW::GitLab::v3',
+  documentation => 'GitLab API connection',
+  lazy => 1,
+  default => sub {
+    require WWW::GitLab::v3;
+    WWW::GitLab::v3->new(
+      url   => $_[0]->url,
+      token => $_[0]->token,
+    );
+  },
+);
+
+has token => (
+  is  => 'rw',
+  isa => 'Str',
+  traits => [qw(Getopt)],
+  documentation => 'GitLab API token',
+  lazy => 1,
+  default => 'Myz-wxxGLnV_syejdkWx',
+);
+
+has url => (
+  is  => 'rw',
+  isa => 'Str',
+  traits => [qw(Getopt)],
+  documentation => 'base URL for GitLab API',
+  lazy => 1,
+  default => 'https://gitlab.com/api/v3/',
+);
+
+has quiet => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  cmd_aliases   => 'q',
+  documentation => 'quietly say no',
+  lazy => 1,
+  default => 0,
+);
+
+has debug => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  cmd_aliases   => 'q',
+  documentation => 'print debug information',
+  lazy => 1,
+  default => 0,
+);
+
+has verbose => (
+  is  => 'rw',
+  isa => 'Int',
+  traits => [qw(Getopt)],
+  cmd_aliases => 'v',
+  documentation => 'increase verbosity',
+  lazy => 1,
+  default => 0,
+);
+
+has yes => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  cmd_aliases => 'y',
+  documentation => 'assume yes when prompted for confirmation',
+  lazy => 1,
+  default => 0,
+);
+
+has _pref_dir => (
+  is  => 'rw',
+  init_arg => 'pref_dir',
+);
+
+around execute_command => sub {
+  my $orig = shift;
+  my $self = shift;
+
+  my ($cmd, $opt, $args) = @_;
+  $log->trace("Executing", ref $cmd);
+
+  # If running version, make sure version is fetched before-hand
+  $self->praat->version
+    if ref $cmd eq 'App::Cmd::Command::version';
+
+  my @return = $self->$orig(@_);
+
+  if (ref $cmd eq 'App::Cmd::Command::version') {
+    if (defined $self->praat->version) {
+      print sprintf "Using Praat version %s (%s)\n",
+        $self->praat->version->praatify, $self->praat->bin;
+    }
+    else {
+      print "Praat not found in PATH\n",
+    }
+  }
+
+  return @return;
+};
+
+around BUILDARGS => sub {
+  my $orig = shift;
+  my $self = shift;
+
+  my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+  $args = $self->$orig($args);
+
+  my %deprecated = (
+    'api-token' => 'token',
+    'api-group' => 'group',
+    'api-url'   => 'url',
+    'cpran'     => 'root',
+  );
+
+  foreach (keys %deprecated) {
+    if (defined $args->{$_}) {
+      warn "The --$_ option is deprecated, use instead --$deprecated{$_}\n";
+
+      $args->{$deprecated{$_}} = $args->{$_}
+        unless defined $args->{$deprecated{$_}};
+      delete $args->{$_};
+    }
+  }
+
+  if (defined $args->{praat}) {
+    warn "The behaviour of the --praat option has recently changed.\nPlease make sure it does what you think it does!\n";
+  }
+
+  return $args;
+};
+
+sub BUILD {
+  my ($self) = @_;
+
+  if (-e $self->root) {
+    Carp::croak 'Cannot read from CPrAN root at ', $self->root->canonpath
+      unless (-r $self->root);
+
+    Carp::croak 'Cannot write to CPrAN root at ', $self->root->canonpath
+      unless (-w $self->root);
+  }
+  else {
+    use File::Path qw();
+    File::Path::make_path( $self->root, {} )
+      or warn 'Could not make directory at ', $self->root;
+  }
+
+  $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
+
+  Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir->canonpath
+    unless (-r $self->praat->pref_dir);
+
+  Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir->canonpath
+    unless (-w $self->praat->pref_dir);
+
+  $log->debug("Initialised CPrAN instance");
+}
 
 =encoding utf8
 
@@ -15,188 +207,6 @@ B<CPrAN> - A package manager for Praat
 
     use CPrAN;
     CPrAN->run;
-
-=cut
-
-# ROOT and PRAAT hold the paths to the preferences directory and the CPrAN root
-# respectively. Being in this enclosure, acces to them is limited to the
-# accessors below.
-# NOTE(jja) Should this be made into a class, and this into proper attributes?
-{
-  use Path::Class 0.35;
-  use Config;
-  my ($CPRANROOT, $PRAATPREF);
-
-  if (defined $ENV{CPRAN_PRAAT_DIR}) {
-    $PRAATPREF = $ENV{CPRAN_PRAAT_DIR};
-  }
-  else {
-    if ($Config{osname} eq 'darwin') {
-      # Mac
-      $PRAATPREF = dir('', $ENV{HOME}, 'Library', 'Preferences', 'Praat Prefs')->stringify;
-    }
-    elsif ($Config{osname} eq 'MSWin32') {
-      # Windows
-      $PRAATPREF = dir('', $ENV{HOMEPATH}, 'Praat')->stringify;
-    }
-    elsif ($Config{osname} eq 'cygwin') {
-      # cygwin
-      warn "Cygwin not tested. Treating as if GNU/Linux\n";
-      $PRAATPREF = dir('', $ENV{HOME}, '.praat-dir')->stringify;
-    }
-    else {
-      # GNU/Linux
-      $PRAATPREF = dir('', $ENV{HOME}, '.praat-dir')->stringify;
-    }
-  }
-  $CPRANROOT = $ENV{CPRAN_ROOT_NAME} // '.cpran';
-
-  sub cpran_root  {
-    shift;
-    if (scalar @_) { $CPRANROOT = shift }
-    return dir( CPrAN::praat_prefs(), $CPRANROOT )->stringify;
-  }
-
-  sub praat_prefs {
-    shift;
-    if (scalar @_) { $PRAATPREF = shift }
-    return $PRAATPREF;
-  }
-}
-
-# TOKEN, APIURL and GROUP are API dependant values. Being in this enclosure,
-# access is limited to the accessors below.
-{
-  my ($TOKEN, $APIURL, $GROUP);
-  $TOKEN  = 'Myz-wxxGLnV_syejdkWx';
-  # NOTE (jja) This does not seem to work. HTTPS requirement somehow propagates
-  #            all the way to WWW::GitLab::v3->_get()
-  try {
-    require LWP::Protocol::https;
-    $APIURL = 'https://gitlab.com/api/v3/';
-  }
-  catch {
-    warn "Falling back to HTTP. Install LWP::Protocol::https for HTTPS\n";
-    $APIURL = 'http://gitlab.com/api/v3/';
-  };
-  $GROUP  = '133578';
-
-  sub api_token { shift; if (@_) { $TOKEN  = shift } else { return $TOKEN  } }
-  sub api_url   { shift; if (@_) { $APIURL = shift } else { return $APIURL } }
-  sub api_group { shift; if (@_) { $GROUP  = shift } else { return $GROUP  } }
-}
-
-# A reference to a global CPrAN::Praat instance
-{
-  my $PRAAT;
-
-  sub praat {
-    my ($self, $opt) = @_;
-
-    unless (defined $PRAAT) {
-      use CPrAN::Praat;
-      $PRAAT = CPrAN::Praat->new($opt);
-    }
-    return $PRAAT;
-  }
-}
-
-sub run {
-  my ($self) = @_;
-
-  # We should probably use Class::Default.
-  $self = $self->new unless ref $self;
-
-  # Prepare the command we're going to run
-  my @argv = $self->prepare_args();
-  my ($cmd, $opt, @args) = $self->prepare_command(@argv);
-
-  # If we are not running interactively, and the command's input argument
-  # list is empty, read in arguments from STDIN. If any have been read, then
-  # activate the --yes flag.
-  unless (-t) {
-    my $pre = scalar @args;
-    unless ($pre) {
-      while (<STDIN>) {
-        chomp;
-        push @args, $_;
-      }
-    }
-    my $post = scalar @args;
-
-    $opt->{yes} = 1 if $post > $pre;
-  }
-
-  # Remove duplicate arguments
-  my %seen;
-  @args = grep { ! $seen{$_}++ } @args;
-
-  # Glob global optional paths
-  use File::Glob ':bsd_glob';
-  my $gopt = $self->global_options;
-  $gopt->{bin}   = bsd_glob($gopt->{bin})   if $gopt->{bin};
-  $gopt->{praat} = bsd_glob($gopt->{praat}) if $gopt->{praat};
-  $gopt->{cpran} = bsd_glob($gopt->{cpran}) if $gopt->{cpran};
-
-  # Make a global reference to Praat
-  my $praat = $self->praat($gopt);
-
-  unless (defined $praat->current) {
-    print "Praat not found. Some features will be disabled\n"
-      unless (ref($cmd) =~ /(install|remove)$/ and $args[0] eq 'praat') or $opt->{quiet};
-    $opt->{test} = 0;
-  }
-
-  # Run the requested command
-  $self->execute_command($cmd, $opt, @args);
-}
-
-# By redefining this subroutine, we lightly modify the behaviour of the App::Cmd
-# app. In this case, we process the global options, and pass them to
-# the invoked commands together with their local options.
-sub execute_command {
-  my ($self, $cmd, $opt, @args) = @_;
-
-  $self->set_globals($cmd, $opt);
-  $self->check_permissions($cmd, $opt) unless ($cmd =~ /(version|help)/);
-
-  # A verbose level of 1 prints default messages to STDOUT. --quiet
-  # sets verbosity to 0, omitting all output. Higher values of verbose
-  # will increase verbosity.
-  $opt->{$_} = $self->global_options->{$_} foreach keys %{$self->global_options};
-  if (defined $opt->{quiet}) {
-    $opt->{verbose} = 0;
-  }
-  else {
-    $opt->{verbose} = ++$opt->{verbose};
-  }
-
-  if ($opt->{debug}) {
-    my @c = split(/::/, ref $cmd);
-    warn "DEBUG: Running ", pop @c, "\n";
-    warn "DEBUG: Arguments:\n";
-    warn "DEBUG:   $_\n" foreach @args;
-    warn "DEBUG:\n";
-    warn "DEBUG: Options:\n";
-    warn "DEBUG:   $_: $opt->{$_}\n" foreach keys %{$opt};
-    warn "DEBUG:\n";
-  }
-
-  $cmd->validate_args($opt, \@args);
-  my @result = $cmd->execute($opt, \@args);
-
-  if (ref $cmd eq 'App::Cmd::Command::version') {
-    my $praat = $self->praat;
-    if (defined $praat->current) {
-      print 'Using Praat ', $praat->current, ' (', $praat->{path}, ")\n";
-    }
-    else {
-      print "Praat not found on PATH\n";
-    }
-  }
-
-  return @result;
-}
 
 =head1 DESCRIPTION
 
@@ -214,25 +224,36 @@ methods described below to perform general B<CPrAN>-related actions.
 
 =over
 
-=item B<--praat>=PATH
+=item B<--praat>=FILE
+
+The path to use as binary for Praat. See the FILES section for information
+on the platform-dependant default values used.
+
+=item B<--pref-dir>=DIR
 
 The path to use as the preferences directory for Praat. See the FILES section
 for information on the platform-dependant default values used.
 
-=item B<--cpran>=PATH
+This option used to be called C<--praat>.
+
+=item B<--root>=DIR
 
 The path to use as the CPrAN root directory. See the FILES section
 for information on the platform-dependant default values used.
 
-=item B<--api-token>=TOKEN
+This option used to be called C<--cpran>.
 
-=item B<--api-group>=GROUP_ID
+=item B<--token>=TOKEN
 
-=item B<--api-url>=URL
+=item B<--group>=NUMBER
+
+=item B<--url>=URL
 
 These options set the credentials to talk to the GitLab API to obtain the
 plugin archives and descriptors. As such, it is implementation-dependant, and is
 currently tied to GitLab.
+
+These options used to be called C<--api-XXX>, where XXX is their current name.
 
 =item B<--verbose>, B<--v>
 
@@ -253,85 +274,28 @@ used multiple times to increase the number of debug messages that are printed.
 
 sub global_opt_spec {
   return (
-    [ "bin=s"       => "set path to the Praat binary" ],
-    [ "praat=s"     => "set path to Praat preferences directory" ],
-    [ "cpran=s"     => "set path to CPrAN root" ],
-    [ "api-token=s" => "set private token for GitLab API access" ],
-    [ "api-url=s"   => "set url of GitLab API" ],
-    [ "api-group=s" => "set the id for the GitLab CPrAN group" ],
-    [ "verbose|v+"  => "increase verbosity" ],
-    [ "quiet|q"     => "quietly say no to everything" ],
-    [ "debug|D+"    => "print debug messages" ],
-    [ "outfile|o=s" => "redirect output to file" ],
+    [ "praat=s"             => "set path to the Praat binary" ],
+    [ "pref_dir|pref-dir=s" => "set path to Praat preferences directory" ],
+    [ "root=s"              => "set path to CPrAN root" ],
+    [ "token=s"             => "set private token for GitLab API access" ],
+    [ "url=s"               => "set url of GitLab API" ],
+    [ "group=s"             => "set the id for the GitLab CPrAN group" ],
+    [ "verbose|v+"          => "increase verbosity" ],
+    [ "quiet"               => "quietly say no to everything" ],
+    [ "yes"                 => "assume yes when prompted for confirmation" ],
+    [ "debug+"              => "increase debug level" ],
   );
 }
 
-=back
-
-=head1 METHODS
-
-=over
-
-=cut
-
-=item set_globals()
-
-Processes global variables to change shared variables. This probably should be
-re-worked to more closely match the way App::Cmd expects to be used.
-
-=cut
-
-sub set_globals {
-  my ($self, $cmd, $opt) = @_;
-  my $gopt = $self->global_options;
-
-  $self->praat_prefs ($gopt->{praat})     if defined $gopt->{praat};
-  $self->cpran_root  ($gopt->{cpran})     if defined $gopt->{cpran};
-
-  $self->api_token   ($gopt->{api-token}) if defined $gopt->{'api-token'};
-  $self->api_group   ($gopt->{api-group}) if defined $gopt->{'api-group'};
-  $self->api_url     ($gopt->{api-url})   if defined $gopt->{'api-url'};
-}
-
-=item check_permissions()
-
-CPrAN needs read and write access to the path set as root, and to Praat's
-# preferences directory. This subroutine makes sure this is the case, or croaks.
-
-=cut
-
-# TODO(jja) If this is a fresh install, CPrAN root will not exist, so will not
-# readable/writable. What needs to be checked is whether the root could be
-# created.
-sub check_permissions {
-  my ($self, $cmd, $opt) = @_;
-
-  if (-e $self->cpran_root) {
-    croak "Cannot read from CPrAN root at " . $self->cpran_root
-      unless (-r $self->cpran_root);
-    croak "Cannot write to CPrAN root at " . $self->cpran_root
-      unless (-w $self->cpran_root);
-  }
-  else {
-    File::Path::make_path( $self->cpran_root )
-      or carp "Could not make directory at " . $self->cpran_root;
-  }
-
-  croak "Cannot read from preferences directory at " . $self->praat_prefs
-    unless (-r $self->praat_prefs);
-  croak "Cannot write to preferences directory at " . $self->praat_prefs
-    unless (-w $self->praat_prefs);
-}
-
-=item yesno()
+=item _yesno()
 
 Gets either a I<yes> or a I<no> answer from STDIN. As arguments, it first
 receives a reference to the options hash, followed by the default answer (ie,
 the answer that will be entered if the user simply presses enter).
 
-    my $opt = ( yes => 1 );            # Will automatically say 'yes'
+    $self->yes(1);            # Will automatically say 'yes'
     print "Yes or no?";
-    if (yesno( $opt )) { print "You said yes\n" }
+    if ($self->_yesno( $default )) { print "You said yes\n" }
     else { print "You said no\n" }
 
 By default, responses matching /^y(es)?$/i are considered to be I<yes>
@@ -339,30 +303,228 @@ responses.
 
 =cut
 
-sub yesno {
-  my ($opt, $default) = @_;
+sub _yesno {
+  my ($self, $default) = @_;
 
   $default = $default // 'y';
   $default = substr($default, 0, 1);
 
-  if ($opt->{quiet} && !$opt->{yes}) {
-    return 0;
-  }
+  return 0 if $self->quiet and !$self->yes;
 
-  if ($opt->{yes}) {
-    print " yes\n" unless ($opt->{quiet});
+  if ($self->yes) {
+    print " yes\n" unless $self->quiet;
     return 1;
   }
 
   my $prompt = " [y/n] ";
   $prompt =~ s/($default)/\U$1/;
-  print $prompt unless $opt->{quiet};
+  print $prompt unless $self->quiet;
 
   my $input;
   $input = <STDIN>;
   chomp $input;
   $input = $default if ($input eq "");
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
+}
+
+sub run_command {
+  my ($self, $command, @args) = @_;
+  my $opt = (ref $args[-1] eq 'HASH') ? pop @args : {};
+
+  my %bkp;
+  foreach (qw( root praat api token quiet debug yes )) {
+    if (defined $opt->{$_}) {
+      $bkp{$_} = $self->$_;
+      $self->$_($opt->{$_});
+      delete $opt->{$_};
+    }
+  }
+
+  local @ARGV = ( $command );
+  my @argv = $self->prepare_args;
+  my ($cmd) = $self->prepare_command(@argv);
+
+  $cmd->$_($opt->{$_}) foreach keys %{$opt};
+  my @retval = $self->execute_command($cmd, {}, @args);
+
+  $self->$_($bkp{$_}) foreach keys %bkp;
+
+  return @retval;
+}
+
+sub fetch_plugin {
+  my ($self, $plugin) = @_;
+
+  Carp::croak 'Cannot fetch an undefined plugin' unless defined $plugin;
+
+  $plugin->cpran( $self->root )
+    unless defined $plugin->cpran;
+
+  $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
+    unless defined $plugin->root;
+
+  use YAML::XS;
+  use Encode qw(encode decode);
+
+  my ($id, $url, $latest, $remote);
+
+  foreach (@{$self->api->projects(
+      { search => 'plugin_' . $plugin->name }
+    )}) {
+
+    if ($_->{name} eq 'plugin_' . $plugin->name and
+        $_->{visibility_level} >= 20) {
+
+      $id  = $_->{id};
+      $url = $_->{http_url_to_repo};
+      last;
+    }
+  }
+
+  unless (defined $id and defined $url) {
+    Carp::carp $plugin->name, ' not found remotely'
+      unless $self->quiet;
+    return undef;
+  }
+
+  require Praat::Version;
+  my $tags = $self->api->tags( $id );
+  my @releases;
+
+  use Syntax::Keyword::Try;
+  foreach my $tag (@{$tags}) {
+    try {
+      $tag->{semver} = Praat::Version->new($tag->{name}) }
+    catch {
+      $log->warn($@);
+      next;
+    }
+    push @releases, $tag;
+  };
+  @releases = sort { $b->{semver} <=> $a->{semver} } @releases;
+
+  # Ignore projects with no tags
+  unless (scalar @releases) {
+    Carp::carp 'No releases for ', $plugin->name
+      unless $self->quiet;
+    return undef;
+  }
+
+  $latest = $releases[0]->{commit}->{id};
+  $remote = encode('utf-8', $self->api->blob(
+    $id, $latest, { filepath => 'cpran.yaml' }
+  ), Encode::FB_CROAK );
+
+  try {
+    YAML::XS::Load( $remote );
+  }
+  catch {
+    Carp::carp 'Could not deserialise fetched remote for ', $plugin->name
+      unless $self->quiet;
+    return;
+  }
+
+  $plugin->url($url);
+  $plugin->_remote($plugin->parse_meta($remote));
+  $plugin->latest($plugin->_remote->{version});
+
+  return 1;
+}
+
+sub test_plugin {
+  my $self = shift;
+  my $plugin = shift;
+  my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+
+  Carp::croak 'Cannot test an undefined plugin' unless defined $plugin;
+
+  $plugin->cpran( $self->root )
+    unless defined $plugin->cpran;
+
+  $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
+    unless defined $plugin->root;
+
+  $log->debug('Testing', $plugin->name);
+
+  unless ($self->praat->version) {
+    Carp::croak "Praat is not installed; cannot test"
+      unless $self->quiet;
+  }
+
+  return undef unless ($plugin->is_installed);
+
+  my $oldwd = Path::Tiny->cwd;
+  chdir $plugin->root
+    or die 'Could not change directory';
+
+  if (!$plugin->root->child('t')->exists) {
+    $log->debug('No tests for', $plugin->name);
+    return undef;
+  }
+
+  # Run the tests
+  require App::Prove;
+  my $prove = App::Prove->new;
+  my @args;
+
+  my $version = $self->praat->version;
+  $version =~ s/(\d+\.\d+)\.?(\d*)/$1$2/;
+  if ($version >= 6 and $version < 6.003) {
+    $log->warn('Automated tests not supported for this version of Praat')
+      unless $self->quiet;
+    return undef;
+  }
+  elsif ($version >= 6.003) {
+    push @args, ('--exec', $self->praat->bin . ' --ansi --run');
+  }
+  else {
+    push @args, ('--exec', $self->praat->bin . ' --ansi');
+  }
+
+  if ($self->verbose) {
+    push @args, '-v';
+  }
+
+  if ($opt->{log}) {
+    use Syntax::Keyword::Try;
+    try {
+      require TAP::Harness::Archive;
+      TAP::Harness::Archive->import;
+
+      my $logdir = $self->root->child('.log');
+      $logdir->remove_tree({ safe => 0 }) if $logdir->is_dir;
+      $logdir->mkpath or die 'Could not create log directory';
+      push @args, ('--archive', $logdir->canonpath);
+    }
+    catch {
+      Carp::carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
+        unless $self->quiet;
+    }
+  }
+
+  $prove->process_args( @args );
+  my $results = $prove->run;
+
+  chdir $oldwd
+    or die "Could not change directory";
+
+  return ($results) ? 1 : 0;
+}
+
+sub new_plugin {
+  my $self = shift;
+  my $arg = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+  $arg = { name => $arg } unless ref $arg;
+
+  $arg->{cpran} //= $self->root;
+  $arg->{root}  //= $self->praat->pref_dir->child(
+    'plugin_' . ($arg->{name} // '')
+  );
+
+  require CPrAN::Plugin;
+  my $plugin = CPrAN::Plugin->new($arg);
+
+  return $plugin->refresh;
 }
 
 =back
@@ -395,6 +557,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 1;

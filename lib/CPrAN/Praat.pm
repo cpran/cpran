@@ -1,312 +1,291 @@
 package CPrAN::Praat;
-# ABSTRACT: A Praat pseudo-class for CPrAN
 
-use strict;
-use warnings;
+use Moose;
+use Log::Any qw( $log );
+# use Log::Any::Adapter ('File', '/var/log/praat');
 
-use Carp;
-use Try::Tiny;
-binmode STDOUT, ':utf8';
+extends 'Praat';
 
-=head1 NAME
+use Types::Praat qw( Version );
+use Types::Standard qw( Undef );
 
-=encoding utf8
+require Carp;
 
-B<CPrAN::Praat> - Praat pseudo-class for CPrAN
+has releases => (
+  is => 'ro',
+  isa => 'ArrayRef[HashRef]',
+  lazy => 1,
+  builder => '_build_releases',
+);
 
-=head1 SYNOPSIS
+has latest => (
+  is => 'ro',
+  init_arg => undef,
+  lazy => 1,
+  coerce => 1,
+  isa => Version|Undef,
+  builder => 'fetch',
+);
 
-my $praat = CPrAN::Praat->new();
+has requested => (
+  is => 'rw',
+  isa => Version|Undef,
+  coerce => 1,
+);
 
-# safely removes the locally installed copy of Praat
-$praat->remove
+has _barren => (
+  is => 'rw',
+  lazy => 1,
+  default => 0,
+);
 
-# download the archive of the latest version of Praat
-$praat->download
+# Set during first call to latest
+has _package_name => (
+  is => 'rw',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    $self->latest;
+    return $self->_package_name;
+  },
+);
 
-# respectively return the current or latest version of Praat for this platform
-$praat->current
-$praat->latest
+has _package_url => (
+  is => 'rw',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    $self->latest;
+    return $self->_package_url;
+  },
+);
 
-=head1 DESCRIPTION
+has _releases_endpoint => (
+  is => 'ro',
+  lazy => 1,
+  default => 'https://api.github.com/repos/praat/praat/releases',
+);
 
-A pseudo-class to encapsulate CPrAN's handling of Praat itself.
+has [qw( _os _ext _bit )] => (
+  is => 'ro',
+);
 
-=cut
+has _ext => (
+  is => 'ro',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    use English;
+    return ($OSNAME =~ /darwin/xmsi)
+      ? '.dmg'
+      : ($OSNAME =~ /mswin32/xmsi)
+        ? '.zip'
+        : '.tar.gz';
+  },
+);
 
-sub new {
-  my ($class, $opt) = @_;
+has _os => (
+  is => 'ro',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    use English;
+    return ($OSNAME =~ /darwin/)
+      ? 'mac'
+      : ($OSNAME =~ /mswin32/xmsi)
+        ? 'win'
+        : 'linux';
+  },
+);
 
-  my $self = {
-    home    => 'http://www.fon.hum.uva.nl/praat/',
-    options => $opt // {},
-  };
+has _bit => (
+  is => 'ro',
+  init_arg => undef,
+  lazy => 1,
+  default => sub {
+    use English;
+    if ($OSNAME =~ /mswin32/xmsi) {
+      $ENV{PROCESSOR_ARCHITECTURE} //= q{};
+      $ENV{PROCESSOR_ARCHITEW6432} //= q{};
 
-  for ($^O) {
-    if (/darwin/) {
-      $self->{os}  = "mac";
-      $self->{ext} = "\.dmg";
-    }
-    elsif (/MSWin32/) {
-      $self->{os}  = "win";
-      $self->{ext} = "\.zip";
-      if (uc $ENV{PROCESSOR_ARCHITECTURE} =~ /(AMD64|IA64)/ and
-          uc $ENV{PROCESSOR_ARCHITEW6432} =~ /(AMD64|IA64)/) {
-        $self->{bit} = 64;
-      }
-      else {
-        $self->{bit} = 32;
-      }
+      return (
+        $ENV{PROCESSOR_ARCHITECTURE} =~ /(amd64|ia64)/xmsi or
+        $ENV{PROCESSOR_ARCHITEW6432} =~ /(amd64|ia64)/xmsi
+      ) ? 64 : 32;
     }
     else {
-      $self->{os}  = "linux";
-      $self->{ext} = "\.tar\.gz";
+      use Syntax::Keyword::Try;
+      try {
+        my $cmd = 'uname -a';
+        open CMD, "$cmd 2>&1 |"
+          or die ("Could not execute $cmd: $!");
+        chomp(my $line = <CMD>);
+        return ($line =~ /\bx86_64\b/xmsi) ? 64 : 32;
+      }
+      catch {
+        $log->warn('Defaulting to 32 bit');
+        return 32;
+      }
     }
-  }
+  },
+);
 
-  {
-    use File::Which;
-
-    if (defined $opt->{bin}) {
-      $self->{path} = which($opt->{bin});
-    }
-    else {
-      $self->{path} =
-        which('praat.exe') ||
-        which('praatcon')  ||
-        which('Praat')     ||
-        which('praat');
-    }
-
-    $self = bless($self, $class);
-
-    use Path::Class;
-    if (defined $self->{path}) {
-      $self->{path} = file($self->{path});
-    }
-  }
-
-  $self->current;
-
-  if (!defined $self->{bit}) {
-    try {
-      my $cmd = 'uname -a';
-      open CMD, "$cmd 2>&1 |"
-        or die ("Could not execute $cmd: $!");
-      chomp(my $uname = <CMD>);
-      $self->{bit} = ($uname =~ /\bx86_64\b/) ? 64 : 32;
-    }
-    catch {
-      warn "Could not determine system bitness. Defaulting to 32bit\n";
-      $self->{bit} = 32;
-    };
-  }
-
-  return $self;
-
+sub BUILDARGS {
+  my $class = shift;
+  my $args = (@_) ? (@_ > 1) ? { @_ } : shift : {};
+  return $args;
 }
 
-=head1 METHODS
-
-=over
-
-=cut
-
-=item B<remove()>
-
-Removes praat from disk
-
-=cut
-
 sub remove {
-  my ($self, $opt) = @_;
-
-  use Path::Class;
-
-  die "Could not find path to " . ( $opt->{bin} // 'praat' ) . "\n"
-    unless defined $self->{path};
-
-  my $removed = unlink($self->{path})
-    or die "Could not remove $self->{path}: $!\n";
-
+  my ($self) = @_;
+  my $removed = $self->bin->remove
+    or Carp::carp sprintf("Could not remove %s: %s\n", $self->bin, $!);
   return $removed;
 }
 
-=item B<release()>
+sub fetch {
+  my ($self) = @_;
 
-List available releases of Praat
+  use URI;
+  use JSON qw( decode_json );
+  use LWP::UserAgent;
 
-=cut
+  $self->_package_name(undef);
+  $self->_package_url(undef);
+  my $ua = LWP::UserAgent->new;
 
-sub releases {
-  my ($self, $opt) = @_;
+  my ($os, $bit, $ext) = map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
+  my $barren = ($self->_barren) ? 'barren' : q{};
+  my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${barren}${ext}/;
 
-  return @{$self->{releases}} if defined $self->{releases};
+  my @haystack;
+  my $url;
+  if ($self->requested) {
+    $url = URI->new( $self->_releases_endpoint . '/tags/v' . $self->requested->praatify )
+  }
+  else {
+    $url = URI->new( $self->_releases_endpoint . '/latest' )
+  }
 
-  use Path::Class;
-  use JSON::Tiny q(decode_json);
+  $log->trace('GET', $url) if $log->is_trace;
 
-  my @releases;
+  my $response = $ua->get( $url );
+  if ($response->is_success) {
+    @haystack = ( decode_json $response->decoded_content );
+  }
+  else {
+    $log->warn($response->status_line);
+    return undef;
+  }
 
-  my $ua = LWP::UserAgent->new();
-  my ($next, $response);
+  my ($latest, $found);
+  my $once = 0;
 
-  $next = 'https://api.github.com/repos/praat/praat/releases';
-  do {
-    $response = $ua->get($next);
-    die $response->status_line unless $response->is_success;
+  foreach (@haystack) {
+    $latest = $_;
+    ($found) = grep { $_->{name} =~ $pkgregex } @{$latest->{assets}};
 
-    my $tags = decode_json $response->decoded_content;
-    foreach my $tag (@{$tags}) {
-      try { $tag->{semver} = SemVer->new($tag->{tag_name}) }
-      finally {
-        push @releases , $tag unless @_;
-      };
-    };
-
-    ($next) = split /,/, $response->header('link');
-    if ($next =~ /rel="next"/) {
-      $next =~ s/.*<([^>]+)>.*/$1/;
+    unless (defined $found) {
+      $log->info('Did not find suitable release in latest, looking back');
+      @haystack = @{$self->releases} unless $once;
+      $once = 1;
     }
-    else {
-      $next = undef;
-    }
-  } until !defined $next;
 
-  @releases = sort { $a->{semver} <=> $b->{semver} } @releases;
-  $self->{releases} = \@releases;
-  return @{$self->{releases}};
+    last if defined $found;
+  }
+
+  $log->warn('Could not find', ($self->requested // 'latest'), 'Praat release for this system')
+    and return(undef) unless defined $found;
+
+  $self->_package_name($found->{name});
+  $self->_package_url($found->{browser_download_url});
+
+  $self->requested($latest->{tag_name}) unless defined $self->requested;
+  return $latest->{tag_name};
 }
 
-=item B<download(VERSION)>
-
-Downloads a specific archived version of Praat, or the latest version.
-
-=cut
-
 sub download {
-  my ($self, $version) = @_;
+  my $self    = shift;
+  my $opt     = (ref $_[-1] eq 'HASH') ? pop @_ : {};
+  my $version = shift // $self->latest;
 
-  $version = $version // $self->latest;
-  my $opt = $self->{options};
-  $opt->{quiet} = $opt->{quiet} // 0;
+  $opt->{quiet} //= 0;
 
   use LWP::UserAgent;
-  my $ua = LWP::UserAgent->new();
+  my $ua = LWP::UserAgent->new;
   $ua->show_progress( 1 - $opt->{quiet} );
 
-  my $response = $ua->get( $self->{home} . $self->{package} );
+  $log->trace('GET', $self->_package_url) if $log->is_trace;
+  my $response = $ua->get( $self->_package_url );
   if ($response->is_success) {
     return $response->decoded_content;
   }
   else {
     die $response->status_line;
   }
-
 }
 
-=item B<current()>
-
-Gets the current version of Praat
-
-=cut
-
-sub current {
+sub _build_releases {
   my ($self) = @_;
 
-  return undef unless defined $self->{path};
-  return $self->{current} if defined $self->{current};
+  $log->trace('Finding Praat releases');
 
-  use SemVer;
-  try {
-    my $tmpin  = File::Temp->new(TEMPLATE => 'pscXXXXX',  SUFFIX => '.praat' );
-    my $tmpout = File::Temp->new(TEMPLATE => 'praat_versionXXXXX' );
+  use JSON qw( decode_json );
 
-    my $script = "praatVersion\$ > $tmpout";
-    print $tmpin $script;
+  my @releases;
 
-    use Path::Class;
-    system($self->{path}, $tmpin);
-    $self->{current} = SemVer->new(file($tmpout)->slurp);
+  my $ua = LWP::UserAgent->new();
+  my ($next, $response);
+
+  $next = $self->_releases_endpoint;
+  # Fetch only first page of results, to avoid busting through request limit
+  $log->trace('GET', $next) if $log->is_trace;
+  $response = $ua->get($next);
+  unless ($response->is_success) {
+    $log->warn($response->status_line);
+    return [];
   }
-  catch {
-    die "Could not get current version of Praat: $_\n";
+
+  my $tags = decode_json $response->decoded_content;
+  foreach my $tag (@{$tags}) {
+    use Syntax::Keyword::Try;
+    try {
+      $tag->{semver} = Praat::Version->new($tag->{tag_name});
+    }
+    catch {
+      $log->trace("  Skipping '" . ($tag->{tag_name} // '') . "'");
+      next;
+    }
+
+    $log->trace("  Pushing '" . $tag->{tag_name} . "'");
+    push @releases, $tag;
   };
 
-  return $self->{current};
+  @releases = sort { $b->{semver} <=> $a->{semver} } @releases;
+
+  return \@releases;
 }
 
-=item B<latest()>
-
-Gets the latest version of Praat
-
-=cut
-
-sub latest {
+override map_plugins => sub {
   my ($self) = @_;
 
-  return $self->{latest} if defined $self->{latest};
+  my %h;
+  foreach ($_[0]->pref_dir->children(qr/^plugin_/)) {
+    my $name = $_->basename;
+    $name =~ s/^plugin_//;
 
-  use HTML::Tree;
-  use LWP::UserAgent;
-  use SemVer;
-
-  my $tree    = HTML::Tree->new();
-  my $ua      = LWP::UserAgent->new;
-  my $package = qr/^praat(?'version'[0-9]{4})_$self->{os}$self->{bit}$self->{ext}/;
-
-  my $response = $ua->get( $self->{home} . "download_$self->{os}.html" );
-  if ($response->is_success) {
-    $tree->parse( $response->decoded_content );
-    $tree->elementify;
-    my $pkglink = $tree->look_down(
-      '_tag', 'a',
-      sub { $_[0]->as_text =~ /$package/; }
+    require CPrAN::Plugin;
+    $h{$name} = CPrAN::Plugin->new(
+      name  => $_->basename,
+      root  => $_,
+      cpran => $self->pref_dir->child('.cpran'),
     );
-    $self->{'package'} = $pkglink->as_trimmed_text;
-    if ($self->{package} =~ /$package/) {
-      $self->{latest} = $+{version};
-      $self->{latest} =~ s/(\d)(\d{2})$/.$1.$2/;
-      $self->{latest} = SemVer->new($self->{latest});
-    }
   }
-  else {
-    die $response->status_line;
-  }
+  return \%h;
+};
 
-  return $self->{latest};
-}
-
-=back
-
-=head1 AUTHOR
-
-José Joaquín Atria <jjatria@gmail.com>
-
-=head1 LICENSE
-
-Copyright 2015-2016 José Joaquín Atria
-
-This module is free software; you may redistribute it and/or modify it under
-the same terms as Perl itself.
-
-=head1 SEE ALSO
-
-L<CPrAN|cpran>,
-L<CPrAN::Plugin|plugin>,
-L<CPrAN::Command::deps|deps>,
-L<CPrAN::Command::init|init>,
-L<CPrAN::Command::install|install>,
-L<CPrAN::Command::list|list>,
-L<CPrAN::Command::remove|remove>,
-L<CPrAN::Command::search|search>,
-L<CPrAN::Command::show|show>,
-L<CPrAN::Command::test|test>,
-L<CPrAN::Command::update|update>,
-L<CPrAN::Command::upgrade|upgrade>
-
-=cut
-
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 1;

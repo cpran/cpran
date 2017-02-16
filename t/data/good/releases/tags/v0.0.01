@@ -1,0 +1,16 @@
+{
+  "tag_name" : "v0.0.01",
+  "assets": [{
+      "browser_download_url" : "https://fake.example.com/praat0001_linux32.tar.gz",
+      "name" : "praat0001_linux32.tar.gz"
+    },
+    {
+      "browser_download_url" : "https://fake.example.com/praat0001_linux64.tar.gz",
+      "name" : "praat0001_linux64.tar.gz"
+    },
+    {
+      "browser_download_url" : "https://fake.example.com/praat0001_linux64barren.tar.gz",
+      "name" : "praat0001_linux64barren.tar.gz"
+    }
+  ]
+}

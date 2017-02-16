@@ -1,0 +1,16 @@
+{
+  "tag_name" : "v4.2.03",
+  "assets": [{
+      "browser_download_url" : "https://fake.example.com/praat4203_linux32.tar.gz",
+      "name" : "praat4203_linux32.tar.gz"
+    },
+    {
+      "browser_download_url" : "https://fake.example.com/praat4203_linux64.tar.gz",
+      "name" : "praat4203_linux64.tar.gz"
+    },
+    {
+      "browser_download_url" : "https://fake.example.com/praat4203_linux64barren.tar.gz",
+      "name" : "praat4203_linux64barren.tar.gz"
+    }
+  ]
+}

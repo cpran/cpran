@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Params::Validate qw(:all);
-use Carp;
+require Carp;
 
 =head1 NAME
 
@@ -45,7 +45,7 @@ requests to the API do return values, even when the spec is vague.
 When a request is sent to the GitLab API, WWW::GitLab::v3 captures the response
 and attempts to read it as JSON (except when files or archives are requested).
 When the serialization is successful, the serialized data is returned. When it
-isn't (or when it is not applicable) the return value is whatever was received 
+isn't (or when it is not applicable) the return value is whatever was received
 from the API.
 
 All requests are done using LWP::UserAgent, and a failed request of any
@@ -102,7 +102,7 @@ A GitLab user password, needed if no token is provided.
 
 =head2 debug
 
-A boolean to enable printing the request URLs before calling them. Off by 
+A boolean to enable printing the request URLs before calling them. Off by
 default. If set, the requests will be printed to STDERR.
 
 =cut
@@ -136,14 +136,14 @@ sub new {
         });
       }
       else {
-        croak "Need credentials to connect to API: provide token or login details";
+        Carp::croak "Need credentials to connect to API: provide token or login details";
       }
       $self{token} = $session->{private_token};
       # NOTE(jja) Should we keep the password saved?
       delete $self{password};
     }
     else {
-      croak "Need credentials to connect to API: provide token or login details";
+      Carp::croak "Need credentials to connect to API: provide token or login details";
     }
   }
   bless \%self, $class;
@@ -337,7 +337,7 @@ sub edit_user {
       $user_id,
     );
 
-Sends a C<DELETE> request to C</users/:user_id> and returns the serialised 
+Sends a C<DELETE> request to C</users/:user_id> and returns the serialised
 deleted user on success.
 
 =cut
@@ -477,7 +477,7 @@ sub create_current_user_ssh_key {
       \%params,
     );
 
-Sends a C<POST> request to C</users/:user_id/keys>. This method requires admin 
+Sends a C<POST> request to C</users/:user_id/keys>. This method requires admin
 rights. Possible parameters are the same as those for
 C<create_current_user_ssh_key>.
 
@@ -557,7 +557,7 @@ See L<http://doc.gitlab.com/ce/api/session.html>.
       \%params,
     );
 
-Sends a C<POST> request to C</session> and returns the decoded/deserialized 
+Sends a C<POST> request to C</session> and returns the decoded/deserialized
 response body. Possible optional parameters are:
 
 =over 4
@@ -579,8 +579,8 @@ sub session {
     { type => HASHREF, default => {} }
   );
   # TODO(jja) Figure out optional parameters
-  confess "No password provided" unless defined $params->{password};
-  confess "No email or login provided"
+  Carp::confess "No password provided" unless defined $params->{password};
+  Carp::confess "No email or login provided"
     unless defined($params->{email}) || defined($params->{login});
 
   my $url = $self->build_url( ['session'], {});
@@ -785,7 +785,7 @@ sub create_project {
       \%params,
     );
 
-Sends a C<POST> request to C</projects/user/:user_id>. This method requires admin 
+Sends a C<POST> request to C</projects/user/:user_id>. This method requires admin
 rights. Possible parameters are the same as for C<create_project()>.
 
 =cut
@@ -1863,7 +1863,7 @@ sub commit_diff {
     );
 
 Sends a C<GET> request to
-C</projects/:project_id/repository/commits/:commit_sha/comments> and returns the 
+C</projects/:project_id/repository/commits/:commit_sha/comments> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -1960,7 +1960,7 @@ sub branches {
     );
 
 Sends a C<GET> request to
-C</projects/:project_id/repository/branches/:branch_name> and returns the 
+C</projects/:project_id/repository/branches/:branch_name> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -2083,7 +2083,7 @@ See L<http://doc.gitlab.com/ce/api/merge_requests.html>.
       $project_id,
     );
 
-Sends a C<GET> request to C</projects/:project_id/merge_requests> and returns the 
+Sends a C<GET> request to C</projects/:project_id/merge_requests> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -2106,8 +2106,8 @@ sub merge_requests {
       $merge_request_id,
     );
 
-Sends a C<GET> request to 
-C</projects/:project_id/merge_request/:merge_request_id> and returns the 
+Sends a C<GET> request to
+C</projects/:project_id/merge_request/:merge_request_id> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -2131,7 +2131,7 @@ sub merge_request {
       \%params,
     );
 
-Sends a C<POST> request to C</projects/:project_id/merge_requests> and returns 
+Sends a C<POST> request to C</projects/:project_id/merge_requests> and returns
 the decoded/deserialized response body.
 
 =cut
@@ -2156,8 +2156,8 @@ sub create_merge_request {
       \%params,
     );
 
-Sends a C<PUT> request to 
-C</projects/:project_id/merge_requests/:merge_request_id> and returns the 
+Sends a C<PUT> request to
+C</projects/:project_id/merge_requests/:merge_request_id> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -2183,7 +2183,7 @@ sub edit_merge_request {
       \%params,
     );
 
-Sends a C<PUT> request to 
+Sends a C<PUT> request to
 C</projects/:project_id/merge_requests/:merge_request_id/merge>.
 
 =cut
@@ -2209,7 +2209,7 @@ sub accept_merge_request {
       \%params,
     );
 
-Sends a C<POST> request to 
+Sends a C<POST> request to
 C</projects/:project_id/merge_requests/:merge_request_id/comments>.
 
 =cut
@@ -2235,7 +2235,7 @@ sub add_merge_request_comment {
     );
 
 Sends a C<GET> request to
-C</projects/:project_id/merge_requests/:merge_request_id/comments> and returns 
+C</projects/:project_id/merge_requests/:merge_request_id/comments> and returns
 the decoded/deserialized response body.
 
 =cut
@@ -2262,7 +2262,7 @@ See L<http://doc.gitlab.com/ce/api/issues.html>.
       \%params,
     );
 
-Sends a C<GET> request to C</issues> and returns the decoded/deserialized 
+Sends a C<GET> request to C</issues> and returns the decoded/deserialized
 response body.
 
 =cut
@@ -2308,7 +2308,7 @@ sub issues {
       $issue_id,
     );
 
-Sends a C<GET> request to C</projects/:project_id/issues/:issue_id> and returns 
+Sends a C<GET> request to C</projects/:project_id/issues/:issue_id> and returns
 the decoded/deserialized response body.
 
 =cut
@@ -2357,7 +2357,7 @@ sub create_issue {
       \%params,
     );
 
-Sends a C<PUT> request to C</projects/:project_id/issues/:issue_id> and returns 
+Sends a C<PUT> request to C</projects/:project_id/issues/:issue_id> and returns
 the decoded/deserialized response body.
 
 =cut
@@ -2408,7 +2408,7 @@ sub labels {
       \%params,
     );
 
-Sends a C<POST> request to C</projects/:project_id/labels> and returns the 
+Sends a C<POST> request to C</projects/:project_id/labels> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -2584,7 +2584,7 @@ See L<http://doc.gitlab.com/ce/api/notes.html>.
       $merge_request_id,
     );
 
-Sends a C<GET> request to 
+Sends a C<GET> request to
 C</projects/:project_id/:note_type/:merge_request_id/notes> and returns the
 decoded/deserialized response body.
 
@@ -2808,7 +2808,7 @@ sub create_hook {
       $hook_id,
     );
 
-Sends a C<GET> request to C</hooks/:hook_id> and returns the 
+Sends a C<GET> request to C</hooks/:hook_id> and returns the
 decoded/deserialized response body.
 
 =cut
@@ -2863,7 +2863,7 @@ response body.
 sub groups {
   my $self = shift;
 
-  my ($params) = validate_pos( @_, 
+  my ($params) = validate_pos( @_,
     { type => HASHREF, default => {} }
   );
 
@@ -3145,7 +3145,7 @@ sub _serialize {
     $obj = decode_json( $content );
   };
   if (!defined $obj) {
-    carp "Could not parse" if $self->{debug};
+    Carp::carp "Could not parse" if $self->{debug};
     return $content;
   }
 
@@ -3180,7 +3180,7 @@ sub _get {
     return $response->decoded_content;
   }
   else {
-    croak $response->message;
+    Carp::croak $response->message;
   }
 }
 
@@ -3210,7 +3210,7 @@ sub _delete {
     return $response->decoded_content;
   }
   else {
-    croak $response->message;
+    Carp::croak $response->message;
   }
 }
 
@@ -3249,7 +3249,7 @@ sub _put {
   }
   else {
     # print Dumper($response);
-    confess $response->message;
+    Carp::confess $response->message;
   }
 }
 
@@ -3288,7 +3288,7 @@ sub _post {
   }
   else {
 #     print Dumper($response);
-    confess $response->message;
+    Carp::confess $response->message;
   }
 }
 
@@ -3312,8 +3312,8 @@ Jose Joaquin Atria, C<< <jjatria at gmail.com> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to 
-C<bug-www-gitlab-v3 at rt.cpan.org>, or through the web interface at 
+Please report any bugs or feature requests to
+C<bug-www-gitlab-v3 at rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=WWW-GitLab-v3>. I will be
 notified, and then you'll automatically be notified of progress on your bug as I
 make changes.

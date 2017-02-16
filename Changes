@@ -1,11 +1,38 @@
 Revision history for CPrAN
 
-0.0305    2016-07-14 19:06:33+01:00 Europe/London
+0.04      2017-02-16 00:52:43+00:00 Europe/London
 
+  * New:
+    * deps, show, and test read a plugin from the working directory
+      when no arguments are passed
+    * Read some global options from environment variables:
+      * Praat preferences directory: CPRAN_PREF_DIR
+      * CPrAN root:                  CPRAN_ROOT_DIR
+      * Path to Praat binary:        CPRAN_PRAAT_BIN
+      * GitLab API token:            CPRAN_API_TOKEN  
+    * install now accepts requested versions of both plugins and
+      Praat. They are provided by separating the name and the
+      version with a colon: `cpran install utils:0.0.15`
+    * install takes new --barren option to install "barren" version
+      of Praat, suitable for running in headless servers
+    * init takes new --reinstall option for forcing re-initialisation
+  * Changes:
+    * Commands that take arguments from STDIN now read STDIN 
+      only when their only argument is a hyphen ("-"): deps, 
+      test, show, install, remove, update, and upgrade.
+    * Fetching of Praat releases and packages done through Github
+      API, which is more stable than that of the Praat website
+    * Install sets up a "cpran" remote qhen using git, so as to not 
+      interfere with user remotes
+    * Partial list of Praat releases is now delivered in decreasing 
+      order
   * Fixes:
-    * Fixed an issue with outdated API calls breaking create
-    * Improved detection of "praat-mode" for install
-    * Fixed inconsistencies in praat-modes for remove
+    * Major refactor: client now uses Moose
+    * New method for detecting Praat versions by directly parsing
+      binary. More robust for versions before and after 6.0.0, but
+      untested in Mac.
+    * Better support for specified paths for plugins
+    * Multiple minor bug fixes and improvements throughout
 
 0.0304    2016-07-14 14:22:46+01:00 Europe/London
 

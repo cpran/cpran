@@ -1,12 +1,14 @@
 package CPrAN::Command::deps;
-# ABSTRACT: list plugin dependencies
+# ABSTRACT: list the dependencies of plugins
 
-use CPrAN -command;
+use Moose;
+use Log::Any qw( $log );
+# use Log::Any::Adapter 'Stderr';
 
-use strict;
-use warnings;
+with 'CPrAN::Role::Reads::WorkingPlugin';
+with 'CPrAN::Role::Reads::STDIN';
 
-binmode STDOUT, ':utf8';
+extends qw( MooseX::App::Cmd::Command );
 
 =head1 NAME
 
@@ -31,10 +33,6 @@ things for the installation of the plugins passed as arguments.
 
 =cut
 
-sub description {
-  return "List the dependencies of CPrAN plugins";
-}
-
 =pod
 
 Arguments to B<deps> must be at least one and optionally more plugin names.
@@ -46,19 +44,6 @@ If no arguments are passed, these can be read from STDIN. In this case, the
 B<--yes> flag is set, since no user interaction is possible.
 
 =cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-
-  unless (@{$args}) {
-    if (-t) {
-      $self->usage_error("Missing arguments");
-    }
-    else {
-      exit;
-    }
-  }
-}
 
 =head1 EXAMPLES
 
@@ -75,31 +60,26 @@ sub execute {
   my ($self, $opt, $args) = @_;
 
   # Make a list of CPrAN plugins from input, if they are not already
+
   my @plugins = map {
+    require CPrAN::Plugin;
     if (ref $_ eq 'CPrAN::Plugin') { $_ }
-    else { CPrAN::Plugin->new($_) }
+    else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
-  # Get a source dependency tree for the plugins that are to be installed.
-  # The get_dependencies subroutine calls itself recursively to include the
-  # dependencies of the dependencies, and so on.
+  # Get a source dependency tree for the plugins to be installed.
   @plugins = $self->get_dependencies( $opt, @plugins );
 
-  # The source tree is then ordered to get a schedule of plugin
-  # installation. In the resulting list, plugins with no dependencies
-  # come first, and those that depend on them come later.
-  # Duplicates introduced in the previous step are automatically
-  # removed here.
+  # Sort dependency tree from fewer to more dependencies
+  # Duplicates are automatically removed
   my ($sorted, $top) = $self->order_dependencies( @plugins );
 
-  # The printed list contains all but the elements without dependants,
-  # since we want to print the aggregated dependencies of the plugin set,
-  # and not the set itself.
-  unless (defined $opt->{quiet}) {
-    print $_->{name} . "\n" foreach @{$sorted};
+  # Do not print the top nodes of the dependency tree if printing
+  unless ($self->app->quiet) {
+    print $_->name, "\n" foreach @{$sorted};
   }
 
-  # We return the full list;
+  # But the return value includes all plugins, not just dependencies
   return (@{$sorted}, @{$top});
 }
 
@@ -111,11 +91,6 @@ sub execute {
 
 =cut
 
-sub opt_spec {
-  return (
-#     [ "opt" => "desc" ],
-  );
-}
 
 =head1 METHODS
 
@@ -135,40 +110,43 @@ an array of hashes properly formatted for processing with order_dependencies()
 sub get_dependencies {
   my ($self, $opt, @args) = @_;
 
-  use WWW::GitLab::v3;
-  use CPrAN::Plugin;
-
-  my $api = WWW::GitLab::v3->new(
-    url   => $opt->{api_url}   // CPrAN::api_url({}),
-    token => $opt->{api_token} // CPrAN::api_token({}),
-  );
+  my @plugins = map {
+    require CPrAN::Plugin;
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { $self->app->new_plugin( $_ ) }
+  } @args;
 
   my @dependencies = ();
-  foreach my $plugin (@args) {
-    unless (ref $plugin eq 'CPrAN::Plugin') {
-      $plugin = CPrAN::Plugin->new( $plugin );
-    }
-    my $plugins = $plugin->{remote}->{depends}->{plugins};
-    if (defined $plugins and ref $plugins eq 'HASH') {
-      my %raw = %{$plugins};
+  foreach my $plugin (@plugins) {
+    $log->trace("Working on", $plugin->name);
+
+    my $deps = $plugin->_remote;
+    $deps = $plugin->_local unless scalar keys %{$deps};
+    $deps = $deps->{depends}->{plugins};
+
+    if (defined $deps and ref $deps eq 'HASH') {
+      my %raw = %{$deps};
 
       foreach my $key (keys %raw) {
         $plugin->{reqname} = [ keys %raw   ];
         $plugin->{reqver}  = [ values %raw ];
         push @dependencies, $plugin;
       }
+
       # Recursively query dependencies for all dependencies
       @dependencies = (
         @dependencies,
         $self->get_dependencies($opt, keys %raw)
       );
     }
+
     else {
       $plugin->{reqname} = [];
       $plugin->{reqver}  = [];
       push @dependencies, $plugin;
     }
   }
+
   return @dependencies;
 }
 
@@ -250,6 +228,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;

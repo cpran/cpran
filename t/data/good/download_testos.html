@@ -1,0 +1,77 @@
+<html><head><meta name="robots" content="index,follow"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Downloading Praat for Linux</title></head><body bgcolor="#CCCCFF">
+<table border=0 cellpadding=0 cellspacing=0><tr><td bgcolor="#CCCC00"><table border=4 cellpadding=9><tr><td align=middle bgcolor="#000000"><font face="Palatino,Times" size=6 color="#999900"><b>
+Downloading Praat for Linux
+</b></font></table></table>
+
+<hr><h3>1. Downloading the Linux edition</h3>
+<p>To get the <b>Linux</b> edition of <b>Praat</b>,
+you either do <b>sudo apt-get install praat</b>,
+or you get it from <a href=http://packages.debian.org/unstable/science/praat>Debian</a>,
+or you compile it yourself from the <a href=download_sources.html>source code</a>,
+or you download a 64- or 32-bit binary executable on this page.
+These binaries will only work on Intel and compatible computers.</p>
+<p>The binary executable requires the GTK and asound libraries on your computer,
+and at least version 2.11 of the C library.</p>
+<p>To download Praat from this page, click on the appropriate compressed archive:</p>
+<dl>
+<dd><b>64-bit edition: <a href=praat1064_testos64.tar.gz>praat1064_testos64.tar.gz</a></b> (25 September 2016; 7.0 MB)
+<dd><b>32-bit edition: <a href=praat1032_testos32.tar.gz>praat1032_testos32.tar.gz</a></b> (25 September 2016; 8.8 MB)
+<dd>&nbsp;
+<dd><b>barren server edition</b> (64-bit, no GUI, no network, no graphics, no sound): <b><a href=praat6021_testos64barren.tar.gz>praat6021_testos64barren.tar.gz</a></b> (25 September 2016; 8.0 MB)
+</dl>
+<p>Unpack with <b>gunzip</b> and <b>tar xvf</b>. This will create the executable file <b>praat</b>.
+You can remove the <b>tar</b> file.</p>
+
+<hr><h3>2. Do I need the 64-bit edition or the 32-bit edition?</h3>
+<p>That depends on your operating system: if you have a 64-bit Linux, use the 64-bit edition,
+and if you have a 32-bit Linux, use the 32-bit edition.
+However, Praat's 64-bit edition can work with much larger sound files than the 32-bit edition
+and is not restricted to having 2 GB in its memory,
+so if you are still using a 32-bit operating system,
+consider upgrading to a 64-bit operating system if your computer supports it.</p>
+
+<hr><h3>3. How to start</h3>
+<p>Praat will work fine wherever it is on your disk; just type <b>praat</b> or click the icon.
+If you use Praat for the first time, choose <b>Intro</b> from the Help menu.</p>
+
+<hr><h3>4. Phonetic symbols</h3>
+<p>If you want to see good phonetic characters,
+you have to install the Charis SIL and the Doulos SIL font,
+for instance from the packages <b>ttf-sil-charis</b> and <b>ttt-sil-doulos</b> on Debian or Ubuntu.
+If you cannot install those packages, you can download the two fonts
+from <a href=http://www.sil.org>Summer Institute of Linguistics</a> and follow the installation instructions there.</p>
+
+<hr><h3>5. Running Praat from the command line</h3>
+<p>To run Praat from a terminal window,
+write a Praat script and specify that script on the command line, optionally with arguments, e.g.:</p>
+<code>&nbsp;&nbsp;&nbsp;praat playsinewave.praat 377 0.9</code>
+<p>For details see <a href=http://www.fon.hum.uva.nl/praat/manual/Scripting_6_9__Calling_from_the_command_line.html>Calling from the command line</a> in the Scripting manual.</p>
+
+<hr><h3>6. Known possible problems, and their solution</h3>
+<p><b>1. Sound not working?</b></p>
+<p>Audio on Linux is notoriously fragile. Praat either uses PulseAudio or Alsa,
+and you choose between these with Praat -> Preferences -> Sound playing preferences.
+If neither option works,
+the Ubuntu website suggests <a href="https://help.ubuntu.com/community/SoundTroubleshootingProcedure">16 steps</a> that you may try
+to get audio to work.</p>
+
+<hr><h3>7. Debian info</h3>
+
+<p>Praat is <a href=https://packages.debian.org/source/sid/praat>included</a> in
+the Debian distribution. To install Praat on your Debian computer, do</p>
+
+<code>&nbsp;&nbsp;&nbsp;aptitude install praat</code>
+
+<p>The Debian package (since version 5.3.56-1) includes a <code>praat-open-files</code>
+command that allows opening files from the command line inside a Praat
+process that is already running.
+
+<p>Recent upstream versions of the Praat package backported to the stable
+and testing distributions of Debian are available in an
+<a href=http://praat.cefala.org>APT repository</a>.</p>
+
+<hr>
+by Paul Boersma.<br>
+Back to the <a href=/praat/>Praat home page</a>.
+</body></html>

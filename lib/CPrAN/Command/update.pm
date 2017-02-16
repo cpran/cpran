@@ -1,14 +1,72 @@
 package CPrAN::Command::update;
 # ABSTRACT: update local plugin list
 
-use CPrAN -command;
+use Moose;
+use Log::Any qw( $log );
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
-use Try::Tiny;
-binmode STDOUT, ':utf8';
+with 'MooseX::Getopt';
+with 'CPrAN::Role::Reads::STDIN';
+
+require Carp;
+
+has [qw(
+  virtual print raw
+)] => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+);
+
+has '+virtual' => (
+  lazy => 1,
+  default => 0,
+  documentation => 'do not write anything to disk',
+);
+
+has '+print' => (
+  lazy => 1,
+  default => 0,
+  documentation => 'print the stream of updated descriptors to STDOUT',
+);
+
+has '+raw' => (
+  lazy => 1,
+  default => 0,
+  documentation => 'compute a new list of plugins from scratch',
+);
+
+has _project => (
+  is  => 'rw',
+  isa => 'HashRef',
+  lazy => 1,
+  default => sub {
+    $_[0]->app->api->projects( { search => 'plugin_cpran' } )->[0];
+  },
+);
+
+has _list => (
+  is  => 'rw',
+  isa => 'HashRef',
+  lazy => 1,
+  default => sub {
+    my $snippets = $_[0]->app->api->snippets($_[0]->_project->{id});
+    (grep { $_->{file_name} eq 'cpran.list' } @{$snippets})[0];
+  },
+);
+
+has _requested => (
+  is  => 'ro',
+  isa => 'HashRef',
+  traits => ['Hash'],
+  lazy => 1,
+  default => sub { {} },
+  handles => {
+    request_plugin => 'set',
+    get_requested  => 'kv',
+  },
+);
 
 =head1 NAME
 
@@ -27,10 +85,6 @@ versions.
 
 =cut
 
-sub description {
-  return "Updates the catalog of CPrAN plugins";
-}
-
 =pod
 
 B<update> can take as argument a list of plugin names. If provided, only
@@ -38,10 +92,6 @@ information about those plugins will be retrieved. Otherwise, a complete list
 will be downloaded. This second case is the recommended use.
 
 =cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-}
 
 =head1 EXAMPLES
 
@@ -55,129 +105,146 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use WWW::GitLab::v3;
-  use CPrAN::Plugin;
-  use Path::Class;
-  use YAML::XS;
-  use Encode qw( encode decode );
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { $self->app->new_plugin( $_ ) }
+  } @{$args};
 
-  $self->{api} = WWW::GitLab::v3->new(
-    url   => $opt->{api_url}   // CPrAN::api_url({}),
-    token => $opt->{api_token} // CPrAN::api_token({}),
-  );
-  my $api = $self->{api};
+  $self->request_plugin($_->name, 1) foreach @plugins;
 
-  $opt->{verbose}-- if defined $opt->{print};
+  my @updated = ($self->raw) ? $self->fetch_raw : $self->fetch_cache;
 
-  # The package list lives as a snippet in the plugin_cpran project
-  # To get it, we need the project and snippet ids
-  my $pid = $api->projects( { search => 'plugin_cpran' } )->[0]->{id};
-  my $snippets = $api->snippets($pid);
-  my $sid;
-  foreach (@{$snippets}) { $sid = $_->{id} if $_->{file_name} eq 'cpran.list' }
+  unless ($self->app->quiet) {
+    my $n = scalar @updated;
+
+    use Lingua::EN::Inflexion;
+    print inflect "Updated <#n:$n> <N:package>\n";
+  }
+
+  if ($self->print) {
+    $_->print('remote') foreach @updated;
+  }
+
+  return @updated;
+}
+
+sub fetch_raw {
+  my ($self) = @_;
+
+  print 'Contacting remote repositories for latest data...', "\n"
+    unless $self->app->quiet;
 
   my @updated;
+  my @requested = keys %{$self->_requested};
 
-  my %requested;
-  $requested{$_} = 1 foreach @{$args};
-
-  if (defined $opt->{raw}) {
-    print "Contacting remote repositories for latest data...\n" if $opt->{verbose};
-
-    my $projects;
-    try {
-      $projects = list_projects($self, $opt, $args);
-    }
-    catch {
-      chomp;
-      warn "Could not connect to the server: $_\n";
-      exit 1;
-    };
-
-    foreach my $source (@{$projects}) {
-
-      unless ((defined $source->{name} && $source->{name} =~ /^plugin_/)) {
-        warn "Not a plugin, ignoring $source->{name}\n" if $opt->{debug};
-        next;
-      }
-      unless ((defined $source->{visibility_level} && $source->{visibility_level} eq 20)) {
-        warn "Not publicly visible, ignoring $source->{name}\n" if $opt->{debug};
-        next;
-      }
-      if ((scalar @{$args} > 1) && !defined $requested{$source->{name}}) {
-        warn "Not in requested plugins, ignoring $source->{name}\n" if $opt->{debug};
-        next;
-      }
-
-      my $plugin;
-      try {
-        $plugin = CPrAN::Plugin->new( $source );
-      }
-      catch {
-        warn "Could not initialise plugin \"$source->{name}\"" if $opt->{debug};
-      };
-      next unless defined $plugin;
-
-      if ($plugin->is_cpran) {
-        print "Working on $plugin->{name}...\n" if $opt->{verbose} > 1;
-
-        $plugin->fetch;
-
-        unless (defined $plugin->{remote}) {
-          warn "Undefined remote for $plugin->{name}, skipping" if $opt->{debug};
-          next;
-        }
-        push @updated, $plugin;
-
-        unless (defined $opt->{virtual}) {
-          if (defined $plugin->{remote}->{descriptor} && $plugin->{remote}->{descriptor} ne '') {
-            my $out = file( $opt->{cpran} // CPrAN::cpran_root({}), $plugin->{name} );
-
-            my $fh = $out->openw();
-            $fh->print( $plugin->{remote}->{descriptor} );
-          }
-          else {
-            warn "Nothing to write for $plugin->{name}" if $opt->{debug};
-          }
-        }
-      }
-      else {
-        warn "$source->{name} is not a CPrAN plugin\n";
-      }
-    }
+  my @projects;
+  if (scalar @requested) {
+    @projects = map {
+      @{$self->app->api->projects( { search => 'plugin_' . $_ } )};
+    } @requested;
   }
   else {
-    print "Updating plugin data...\n" if $opt->{verbose};
+    @projects = @{$self->app->api->projects};
+  }
 
-    foreach (split /---/, $api->raw_snippet($pid, $sid)) {
-      next unless $_;
+  foreach my $source (@projects) {
+    unless ($source->{name} =~ /^plugin_/) {
+      $log->debug('Not a plugin, ignoring', $source->{name});
+      next;
+    }
 
-      my $encoded = "---" . encode('utf-8', $_);
-      my $plugin = Load(encode('utf-8', $encoded));
+    unless ($source->{visibility_level} eq 20) {
+      $log->debug('Not publicly visible, ignoring', $source->{name});
+      next;
+    }
 
-      next if (scalar @{$args} >= 1) && !defined $requested{$plugin->{Plugin}};
+    if (scalar @requested > 1 and !defined $self->_requested->{$source->{name}}) {
+      $log->debug('Not in requested plugins, ignoring', $source->{name});
+      next;
+    }
 
-      warn "Working on $plugin->{Plugin}...\n" if $opt->{verbose} > 1;
+    use Syntax::Keyword::Try;
+    my $plugin;
+    try {
+      $plugin = $self->app->new_plugin( meta => $source );
+    }
+    catch {
+      $log->debug('Could not initialise plugin', $source->{name});
+      next;
+    }
 
-      if (defined $opt->{virtual}) {
-        $plugin = CPrAN::Plugin->new( $encoded );
-      }
-      else {
-        my $out = file( $opt->{cpran} // CPrAN::cpran_root({}), $plugin->{Plugin} );
+    if ($plugin->is_cpran) {
+      $log->trace('Working on', $plugin->name)
+        unless $self->app->quiet;
 
-        my $fh = $out->openw();
-        $fh->print( $encoded );
-        $fh->close;
-        $plugin = CPrAN::Plugin->new( $plugin->{Plugin} );
+      $self->app->fetch_plugin($plugin);
+
+      unless (defined $plugin->_remote) {
+        $log->debug('Undefined remote for', $plugin->name, ', skipping');
+        next;
       }
 
       push @updated, $plugin;
+
+      unless ($self->virtual) {
+        if (defined $plugin->_remote->{meta} and $plugin->_remote->{meta} ne '') {
+          my $fh = $self->app->root->child( $plugin->name )->touchpath->openw;
+          $fh->print( $plugin->_remote->{meta} );
+        }
+        else {
+          $log->debug('Nothing to write for', $plugin->name);
+        }
+      }
+    }
+    else {
+      $log->warn($plugin->name, 'is not a CPrAN plugin')
+        unless $self->app->quiet;
     }
   }
-  print "Updated " . scalar @updated . " packages\n" if $opt->{verbose};
+  return @updated;
+}
 
-  if (defined $opt->{print}) {
-    $_->print('remote') foreach (@updated);
+sub fetch_cache {
+  my ($self) = @_;
+
+  print 'Updating plugin data...', "\n"
+    unless $self->app->quiet;
+
+  my @meta = split /---/, $self->app->api->raw_snippet(
+    $self->_project->{id}, $self->_list->{id}
+  );
+
+
+  my @updated;
+  foreach (@meta) {
+    next unless $_;
+
+    require Encode;
+    require YAML::XS;
+    require CPrAN::Plugin;
+
+    my $meta = "---" . $_;
+    my $plugin = YAML::XS::Load(Encode::encode_utf8 $meta);
+
+    next if scalar keys %{$self->_requested} >= 1 and
+      !exists $self->_requested->{$plugin->{Plugin}};
+
+    $log->debug('Working on', $plugin->{Plugin})
+      if $self->app->debug;
+
+    if ($self->virtual) {
+      $plugin = $self->app->new_plugin( meta => $meta );
+    }
+    else {
+      my $out = $self->app->root->child( $plugin->{Plugin} )->touchpath;
+
+      my $fh = $out->openw_utf8;
+      $fh->print( $meta );
+      $fh->close;
+      $plugin = $self->app->new_plugin( $plugin->{Plugin} );
+    }
+
+    push @updated, $plugin;
   }
 
   return @updated;
@@ -188,32 +255,6 @@ sub execute {
 =over
 
 =cut
-
-=item B<list_projects()>
-
-Provided with a list of plugin search terms, it returns a list of serialised
-plugin objects. If the provided list is empty, it returns all the plugins it
-can find in the CPrAN group.
-
-=cut
-
-sub list_projects {
-  use WWW::GitLab::v3;
-
-  my ($self, $opt, $args) = @_;
-
-  my $api = $self->{api};
-
-  if (@{$args}) {
-    my @projects = map {
-      @{$api->projects( { search => 'plugin_' . $_ } )};
-    } @{$args};
-    return \@projects;
-  }
-  else {
-    return $api->projects;
-  }
-}
 
 =back
 
@@ -229,13 +270,6 @@ Increase verbosity of output.
 
 =cut
 
-sub opt_spec {
-  return (
-    [ "virtual" => "do not write anything to disk" ],
-    [ "print"   => "print the stream of updated descriptors to STDOUT" ],
-    [ "raw"     => "compute a new list of plugins from scratch" ],
-  );
-}
 
 =head1 AUTHOR
 
@@ -264,6 +298,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;

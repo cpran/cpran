@@ -1,14 +1,25 @@
 package CPrAN::Command::test;
-# ABSTRACT: run tests for the given plugin
+# ABSTRACT: run tests for the given plugins
 
-use CPrAN -command;
-use Carp;
-use Try::Tiny;
+use Moose;
+use Log::Any qw( $log );
+use uni::perl;
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
-binmode STDOUT, ':utf8';
+with 'MooseX::Getopt';
+with 'CPrAN::Role::Reads::WorkingPlugin';
+with 'CPrAN::Role::Reads::STDIN';
+
+require Carp;
+
+has log => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'enable / disable test logs',
+  cmd_aliases => 'l',
+);
 
 =head1 NAME
 
@@ -29,16 +40,6 @@ will only report success if all tests for all given plugins were successful.
 
 =cut
 
-sub description {
-  return "Run tests for a single plugin";
-}
-
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-  $opt->{log} = 1 unless defined $opt->{log};
-}
-
 =head1 EXAMPLES
 
     # Run tests for the specified plugin
@@ -49,29 +50,25 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use CPrAN::Plugin;
-
   my $outcome = 1;
-  my @plugins = map { CPrAN::Plugin->new( $_ ) } @{$args};
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { $self->app->new_plugin( $_ ) }
+  } @{$args};
 
+  use Syntax::Keyword::Try;
   try {
     foreach my $plugin (@plugins) {
       my $result;
-      $result = $plugin->test($opt);
+      $result = $self->app->test_plugin($plugin, $opt);
       $outcome = $result if defined $result;
     }
   }
   catch {
-    chomp;
-    die "There were errors while testing:\n$_\n";
-  };
-  return $outcome;
-}
+    die "There were errors while testing:\n$@\n";
+  }
 
-sub opt_spec {
-  return (
-    [ "log|l!" => "enable / disable test logs" ],
-  );
+  return $outcome;
 }
 
 =head1 AUTHOR
@@ -101,6 +98,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;

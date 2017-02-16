@@ -1,14 +1,50 @@
 package CPrAN::Command::init;
-# ABSTRACT: Initialise a CPrAN installation
+# ABSTRACT: initialise a CPrAN installation
 
-use CPrAN -command;
+use Moose;
+use Log::Any qw( $log );
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
-use Path::Class;
-binmode STDOUT, ':utf8';
+require Carp;
+
+has [qw(
+  git test log reinstall force
+)] => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+);
+
+has '+git' => (
+  lazy => 1,
+  documentation => 'request / disable git support',
+  default => 1,
+);
+
+has '+test' => (
+  lazy => 1,
+  default => 1,
+  documentation => 'request / disable tests',
+);
+
+has '+log' => (
+  lazy => 1,
+  default => 1,
+  documentation => 'request / disable log of tests',
+);
+
+has '+reinstall' => (
+  lazy => 1,
+  default => 0,
+  documentation => 're-install requested plugins',
+);
+
+has '+force' => (
+  lazy => 1,
+  default => 0,
+  documentation => 'ignore failing tests',
+);
 
 =head1 NAME
 
@@ -35,15 +71,6 @@ This command installs the [cpran plugin][] on an otherwise empty system.
 
 =cut
 
-sub description {
-  return "Perform the initial setup for CPrAN, to install it as a Praat plugin";
-}
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-
-}
-
 =head1 EXAMPLES
 
     # Initialise CPrAN
@@ -54,37 +81,45 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  my $praatdir = $opt->{praat} // CPrAN::praat_prefs($opt);
-  if (-e dir($praatdir, 'plugin_cpran')) {
-    print "CPrAN is already initialised. Nothing to do here!\n" unless $opt->{quiet};
+  if (!$self->reinstall and -e $self->app->praat->pref_dir->child('plugin_cpran')) {
+    print 'CPrAN is already initialised. Nothing to do here!', "\n"
+      unless $self->app->quiet;
     return;
   }
 
-  my $app = CPrAN->new();
-  my %params;
+  print 'Initialising CPrAN bridge...', "\n"
+    unless $self->app->quiet;
 
-  %params = %{$opt};
-  $params{virtual} = 1;
-  $params{verbose} = 0;
+  my ($cpran) = $self->app->run_command( update => 'cpran', {
+    quiet => 1,
+  });
 
-  my $cmd;
-  $cmd = CPrAN::Command::update->new({});
-  my @cpran = $app->execute_command($cmd, \%params, 'cpran');
+  my @plugins = $self->app->run_command( deps => $cpran, {
+    quiet => 1,
+  });
+  pop @plugins;
 
-  %params = %{$opt};
-  $params{yes} = 1;
-  $params{test} = $opt->{test} // 1;
-  $params{git} = $opt->{git} // 1;
+  $self->app->run_command( update => @plugins, {
+    quiet => 1,
+  });
 
-  $cmd = CPrAN::Command::install->new({});
-  $app->execute_command($cmd, \%params, pop @cpran);
-}
+  $self->app->run_command( install => @plugins, $cpran, {
+    quiet => 1,
+    yes => 1,
+    map { $_ => $self->$_ } qw( git test force reinstall )
+  });
 
-sub opt_spec {
-  return (
-    [ "git|g!"  => "request / disable git support" ],
-    [ "test|T!" => "enable / disable tests while installing" ],
-  );
+  if ($cpran->is_installed) {
+    print 'CPrAN is initialised!', "\n",
+          'You should now run \'cpran update\' to refresh the plugin directory', "\n"
+      unless $self->app->quiet;
+    return 1;
+  }
+  else {
+    print 'Could not initialise CPrAN', "\n"
+      unless $self->app->quiet;
+    return 0;
+  }
 }
 
 =head1 AUTHOR
@@ -114,6 +149,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;

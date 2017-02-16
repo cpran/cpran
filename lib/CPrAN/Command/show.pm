@@ -1,13 +1,23 @@
 package CPrAN::Command::show;
-# ABSTRACT: show specified plugin descriptor
+# ABSTRACT: show information about plugins
 
-use CPrAN -command;
+use Moose;
+use Log::Any qw( $log );
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
-binmode STDOUT, ':utf8';
+with 'MooseX::Getopt';
+with 'CPrAN::Role::Reads::STDIN';
+
+require Carp;
+
+has installed => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'search in installed plugins',
+  cmd_aliases => 'i',
+);
 
 =head1 NAME
 
@@ -27,9 +37,6 @@ currently installed version.
 
 =cut
 
-sub description {
-  return "Show details for specified CPrAN plugins";
-}
 
 =pod
 
@@ -37,15 +44,6 @@ Arguments to B<search> must be at least one and optionally more plugin names
 whose descriptors will be displayed.
 
 =cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-
-  $self->usage_error("Must provide a plugin name") unless @{$args};
-  foreach (@{$args}) {
-    croak "Empty argument" unless $_;
-  }
-}
 
 =head1 EXAMPLES
 
@@ -59,33 +57,36 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  use CPrAN::Plugin;
-  use YAML::XS;
+  my @plugins = map {
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { $self->app->new_plugin( $_ ) }
+  } @{$args};
 
   my @stream;
-  foreach my $name (@{$args}) {
-    my $plugin = CPrAN::Plugin->new( $name );
-    if ($opt->{installed}) {
-      if ($plugin->is_installed) {
-        push @stream, $plugin->{'local'};
-        $plugin->print('local') unless ($opt->{quiet});
+  foreach my $plugin (@plugins) {
+    $log->trace('Showing', $plugin->name);
+
+    if ($plugin->is_cpran) {
+      if ($self->installed) {
+        if ($plugin->is_installed) {
+          push @stream, $plugin->_local;
+          $plugin->print('local') unless $self->app->quiet;
+        }
+        else {
+          $log->warn($plugin->name, 'is not installed');
+        }
       }
       else {
-        croak "$name is not installed";
+        push @stream, $plugin->_remote;
+        $plugin->print('remote') unless $self->app->quiet;
       }
     }
     else {
-      if ($plugin->is_cpran) {
-        push @stream, $plugin->{'remote'};
-        $plugin->print('remote') unless ($opt->{quiet});
-      }
-      else {
-        croak "$name is not a CPrAN plugin";
-      }
+      $log->warn($plugin->name, 'is not a CPrAN plugin');
     }
   }
 
-  return \@stream;
+  return @stream;
 }
 
 =head1 OPTIONS
@@ -100,11 +101,6 @@ Show the descriptor of installed CPrAN plugins.
 
 =cut
 
-sub opt_spec {
-  return (
-    [ "installed|i" => "only consider installed plugins" ],
-  );
-}
 
 =head1 METHODS
 
@@ -141,6 +137,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;

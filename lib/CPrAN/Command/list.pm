@@ -1,100 +1,60 @@
 package CPrAN::Command::list;
 # ABSTRACT: list all available plugins
 
-use CPrAN -command;
+use Moose;
+use Log::Any qw( $log );
+use uni::perl;
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
-use Try::Tiny;
-binmode STDOUT, ':utf8';
+with 'MooseX::Getopt';
+with 'CPrAN::Role::Processes::Praat';
+with 'CPrAN::Role::Reads::STDIN';
 
-=head1 NAME
+require Carp;
 
-=encoding utf8
+has [qw(
+  installed wrap
+)] => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+);
 
-B<list> - List all known CPrAN plugins
+has '+installed' => (
+  documentation => 'search in installed plugins',
+  cmd_aliases => 'i',
+);
 
-=head1 SYNOPSIS
-
-cpran list [options]
-
-=head1 DESCRIPTION
-
-List plugins available through the CPrAN catalog.
-
-=cut
-
-sub description {
-  return "List plugins available through the CPrAN catalog";
-}
-
-=pod
-
-B<list> will show a list of all plugins available to CPrAN.
-
-=cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-}
-
-=head1 EXAMPLES
-
-    # Show all available plugins
-    cpran list
-
-=cut
+has '+wrap' => (
+  documentation => 'wrap output table when printing',
+  cmd_aliases => 'w',
+  lazy => 1,
+  default => 1,
+);
 
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (grep { /\bpraat\b/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      return $self->_praat($opt);
-    }
-  }
-
-  my $app = CPrAN->new();
-  my %params = %{$opt};
-
-  my $cmd = CPrAN::Command::search->new({});
-  return $app->execute_command($cmd, \%params, '.*');
+  return $self->app->run_command( search => '.*', {
+    installed => $self->installed,
+    wrap      => $self->wrap,
+  });
 }
 
-sub opt_spec {
-  return (
-    [ "installed|i"   => "search on installed plugins" ],
-    [ "wrap!"         => "enable / disable line wrap for result table" ],
-  );
-}
+sub process_praat {
+  my ($self) = @_;
 
-=item _praat()
-
-Process praat
-
-=cut
-
-sub _praat {
-  use Path::Class;
-
-  my ($self, $opt) = @_;
-
+  use Syntax::Keyword::Try;
   try {
-    my $praat = $self->{app}->praat;
-    my @releases = $praat->releases($opt);
-
-    print "$_->{semver}\n" foreach @releases;
+    foreach (@{$self->app->praat->releases}) {
+      print $_->{semver}, "\n";
+    }
   }
   catch {
-    chomp;
-    warn "$_\n";
-    die "Could not list Praat releases\n";
-  };
+    $log->warn($@);
+    die 'Could not list Praat releases', "\n";
+  }
 }
 
 =head1 AUTHOR
@@ -124,6 +84,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;

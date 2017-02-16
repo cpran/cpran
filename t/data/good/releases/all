@@ -1,0 +1,69 @@
+[
+  {
+    "tag_name" : "v3.2.03",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat3203_linux32.tar.gz",
+        "name" : "praat3203_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat3203_linux64.tar.gz",
+        "name" : "praat3203_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat3203_linux64barren.tar.gz",
+        "name" : "praat3203_linux64barren.tar.gz"
+      }
+    ]
+  },
+  {
+    "tag_name" : "v4.2.03",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat4203_linux32.tar.gz",
+        "name" : "praat4203_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat4203_linux64.tar.gz",
+        "name" : "praat4203_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat4203_linux64barren.tar.gz",
+        "name" : "praat4203_linux64barren.tar.gz"
+      }
+    ]
+  },
+  {
+    "tag_name" : "v2.2.03",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat2203_linux32.tar.gz",
+        "name" : "praat2203_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat2203_linux64.tar.gz",
+        "name" : "praat2203_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat2203_linux64barren.tar.gz",
+        "name" : "praat2203_linux64barren.tar.gz"
+      }
+    ]
+  },
+  {
+    "bad_data" : null
+  },
+  {
+    "tag_name" : "v1.2.03",
+    "assets": [{
+        "browser_download_url" : "https://fake.example.com/praat1203_linux32.tar.gz",
+        "name" : "praat1203_linux32.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat1203_linux64.tar.gz",
+        "name" : "praat1203_linux64.tar.gz"
+      },
+      {
+        "browser_download_url" : "https://fake.example.com/praat1203_linux64barren.tar.gz",
+        "name" : "praat1203_linux64barren.tar.gz"
+      }
+    ]
+  }
+]

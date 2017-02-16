@@ -1,13 +1,25 @@
 package CPrAN::Command::remove;
-# ABSTRACT: delete an installed plugin from disk
+# ABSTRACT: delete installed plugins from disk
 
-use CPrAN -command;
+use Moose;
+use Log::Any qw( $log );
 
-use strict;
-use warnings;
+extends qw( MooseX::App::Cmd::Command );
 
-use Carp;
-binmode STDOUT, ':utf8';
+with 'MooseX::Getopt';
+with 'CPrAN::Role::Processes::Praat';
+with 'CPrAN::Role::Reads::STDIN';
+
+require Carp;
+
+has force => (
+  is  => 'rw',
+  isa => 'Bool',
+  traits => [qw(Getopt)],
+  documentation => 'attempt to work around errors',
+  lazy => 1,
+  default => undef,
+);
 
 =head1 NAME
 
@@ -25,33 +37,13 @@ Deletes a CPrAN plugin that has been installed.
 
 =cut
 
-sub description {
-  return "Delete an installed CPrAN plugin";
-}
-
 =pod
 
 Arguments to B<remove> must be at least one and optionally more plugin names to
 remove. For each named passed as argument, all contents of the directory named
-"plugin_<name>" will be removed from disk.
+"plugin_<name>" (and the directory itself) will be removed from disk.
 
 =cut
-
-sub validate_args {
-  my ($self, $opt, $args) = @_;
-
-  $self->usage_error("Missing arguments") unless @{$args};
-
-  my $prefix_warning = 0;
-  foreach (0..$#{$args}) {
-    if ($args->[$_] =~ /^plugin_/) {
-      $prefix_warning = 1;
-    }
-    $args->[$_] =~ s/^plugin_//;
-  }
-  warn "W: Plugin names do not include the 'plugin_' prefix. Ignoring prefix.\n"
-    if ($prefix_warning);
-}
 
 =head1 EXAMPLES
 
@@ -65,91 +57,84 @@ sub validate_args {
 sub execute {
   my ($self, $opt, $args) = @_;
 
-  if (grep { /\bpraat\b/i } @{$args}) {
-    if (scalar @{$args} > 1) {
-      die "Praat must be the only argument for processing\n";
-    }
-    else {
-      return $self->_praat($opt);
-    }
-  }
-
-  use Path::Class;
-  use CPrAN::Plugin;
-
   my @plugins = map {
-    if (ref $_ eq 'CPrAN::Plugin') {
-      $_;
-    }
-    else {
-      CPrAN::Plugin->new( $_ );
-    }
+    if (ref $_ eq 'CPrAN::Plugin') { $_ }
+    else { $self->app->new_plugin( $_ ) }
   } @{$args};
 
   my @todo;
   foreach my $plugin (@plugins) {
     if ($plugin->is_installed) {
-      if ($plugin->is_cpran || $opt->{force}) {
-        warn "W: $plugin->{name} is not a CPrAN plugin, but processing anyway.\n"
-          unless $plugin->is_cpran;
+      if ($plugin->is_cpran || $self->force) {
+        warn $plugin->name, ' is not a CPrAN plugin, but processing anyway.', "\n"
+          if !$plugin->is_cpran and !$self->app->quiet;
         push @todo, $plugin;
       }
       else {
-        warn "W: $plugin->{name} is not a CPrAN plugin. Use --force to process anyway.\n";
+        warn $plugin->name, ' is not a CPrAN plugin. Use --force to process anyway.', "\n"
+          unless $self->app->quiet;
       }
     }
     else {
-      warn "W: $plugin->{name} is not installed; cannot remove.\n";
+      warn 'Plugin ', $plugin->name, ' is not installed; cannot remove', "\n"
+        unless $self->app->quiet;
     }
   }
 
+  my $retval = 1;
   if (@todo) {
+
     my @names;
-    unless ($opt->{quiet}) {
-      print "The following plugins will be REMOVED:\n";
-      print '  ', join(' ', map { $_->{name} } @todo ), "\n";
+    unless ($self->app->quiet) {
+      my $n = scalar @todo;
+      use Lingua::EN::Inflexion;
+
+      print inflect("<#d:$n>The following <N:plugin> will be REMOVED:"), "\n";
+      print '  ', join(' ', map { $_->name } @todo ), "\n";
       print "Do you want to continue?";
     }
-    if (CPrAN::yesno( $opt )) {
-      foreach my $plugin (@todo) {
-        print "Removing $plugin->{name}...\n" unless ($opt->{quiet});
 
-        # TODO(jja) Improve error checking
-        my $ret = dir($plugin->root)->rmtree($opt->{verbose} - 1, $opt->{cautious});
-        unless ($ret) {
-          warn "Could not completely remove ", $plugin->root, "\n" unless ($opt->{quiet});
-        }
+    if ($self->app->_yesno('y')) {
+      foreach my $plugin (@todo) {
+        print 'Removing ', $plugin->name, '...', "\n"
+          unless $self->app->quiet;
+
+        $retval = $plugin->remove(
+          verbose => $self->app->verbose,
+        );
       }
     }
     else {
-      print "Abort.\n" unless ($opt->{quiet});
+      print 'Abort.', "\n" unless $self->app->quiet;
     }
+
   }
+  return $retval;
 }
 
-sub _praat {
+sub process_praat {
   my ($self, $opt) = @_;
 
-  my $praat = $self->{app}->praat;
+  my $praat = $self->app->praat;
 
-  unless (defined $praat->current) {
+  unless (defined $praat->version) {
     warn "Praat is not installed. Use 'cpran install praat' to install it\n";
     return undef;
   }
 
-  unless ($opt->{quiet}) {
+  unless ($self->app->quiet) {
     print "Praat will be permanently REMOVED:\n";
     print "Do you want to continue?";
   }
 
-  if (CPrAN::yesno( $opt )) {
-    $praat->remove($opt);
+  if ($self->_yesno('y')) {
+    $praat->remove;
 
-    print "Done.\n" unless $opt->{quiet};
+    print 'Done.', "\n" unless $self->app->quiet;
     return 1;
   }
   else {
-    print "Abort.\n" unless $opt->{quiet};
+    print 'Abort.', "\n" unless $self->app->quiet;
     return 0;
   }
 }
@@ -158,35 +143,13 @@ sub _praat {
 
 =over
 
-=item B<--yes, -y>
-
-Assumes yes for all questions.
-
 =item B<--force>
 
 Tries to work around problems.
 
-=item B<--debug>
-
-Print debug messages.
-
-=item B<--verbose>
-
-=item B<--quiet>
-
-=item B<--cautious>
-
 =back
 
 =cut
-
-sub opt_spec {
-  return (
-    [ "yes|y"    => "do not ask for confirmation" ],
-    [ "force"    => "attempt to work around errors" ],
-    [ "cautious" => "be extra-careful while removing files" ],
-  );
-}
 
 =head1 METHODS
 
@@ -221,6 +184,9 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0305'; # VERSION
+our $VERSION = '0.04'; # VERSION
+
+__PACKAGE__->meta->make_immutable;
+no Moose;
 
 1;
