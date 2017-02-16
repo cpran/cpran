@@ -1,4 +1,11 @@
+image: jjatria/cpran:latest
+
+variables:
+  CPRAN_PREF_DIR: "/builds/$CI_PROJECT_NAMESPACE"
+
 devel:
+  variables:
+    AUTHOR_TEST: "1"
   script:
     - dzil test
   tags:
@@ -8,7 +15,7 @@ devel:
 
 master:
   script:
-    - prove
+    - prove -lv
   tags:
     - cpran
   only:
