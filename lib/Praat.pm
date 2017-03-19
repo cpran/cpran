@@ -35,7 +35,7 @@ has version => (
   is => 'ro',
   init_arg => undef,
   lazy => 1,
-  isa => 'Version',
+  isa => 'Version|Undef',
   coerce => 1,
   builder => '_build_version'
 );
@@ -98,7 +98,7 @@ sub _build_version {
 
   $log->trace('Detecting current version of Praat');
 
-  die 'Binary is undefined!' unless defined $self->bin;
+  return unless defined $self->bin;
 
   my ($buffer, $version);
   open my $fh, '<:raw', $self->bin;
