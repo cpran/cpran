@@ -223,10 +223,7 @@ sub test_execute : Tests {
     pref_dir => "$FindBin::Bin/data/good",
   );
 
-  ok( (
-    try { $self->version; 0 }
-    catch { 1 }
-  ), 'version dies when unable to get version');
+  is $self->version, undef, 'version undefined when unable to get version';
 
   my ($stdout, $stderr, $retval) = $self->run_script(qw( 1 2 3 ), []);
   chomp $stdout;
@@ -249,10 +246,7 @@ sub test_execute : Tests {
 
   $self = $class->new;
   $self->{bin} = undef;
-  ok( (
-    try { $self->version; 0 }
-    catch { 1 }
-  ), 'version dies when binary is undefined');
+  is $self->version, undef, 'version undefined when binary is undefined';
 }
 
 sub test_remove : Tests {
