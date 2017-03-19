@@ -46,4 +46,5 @@ t/data/good/version
 t/data/good/version.cpp
 t/lib/TestsFor/CPrAN/Plugin.pm
 t/lib/TestsFor/CPrAN/Praat.pm
+t/lib/TestsFor/CPrAN/Praat.pm~
 t/run.t

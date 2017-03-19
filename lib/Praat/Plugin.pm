@@ -36,6 +36,6 @@ sub BUILDARGS {
   return $args;
 }
 
-our $VERSION = '0.04'; # VERSION
+our $VERSION = '0.0401'; # VERSION
 
 1;

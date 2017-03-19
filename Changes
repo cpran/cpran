@@ -1,5 +1,10 @@
 Revision history for CPrAN
 
+0.0401    2017-03-19 23:07:31+00:00 Europe/London
+
+  * Fixes:
+    * --version does not die if Praat is not found on $PATH
+
 0.04      2017-02-16 00:52:43+00:00 Europe/London
 
   * New:
