@@ -56,7 +56,7 @@ has token => (
   traits => [qw(Getopt)],
   documentation => 'GitLab API token',
   lazy => 1,
-  default => 'Myz-wxxGLnV_syejdkWx',
+  default => '9zAWrV4B5XxJyp1ZcG3V',
 );
 
 has url => (
