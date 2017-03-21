@@ -56,7 +56,7 @@ has token => (
   traits => [qw(Getopt)],
   documentation => 'GitLab API token',
   lazy => 1,
-  default => 'Myz-wxxGLnV_syejdkWx',
+  default => '9zAWrV4B5XxJyp1ZcG3V',
 );
 
 has url => (
@@ -557,6 +557,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0401'; # VERSION
+our $VERSION = '0.0402'; # VERSION
 
 1;
