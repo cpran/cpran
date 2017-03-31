@@ -26,7 +26,6 @@ my %WriteMakefileArgs = (
     "Capture::Tiny" => 0,
     "Carp" => 0,
     "Class::Load" => 0,
-    "DDP" => 0,
     "Data::Dumper" => 0,
     "Data::Random::WordList" => 0,
     "Encode" => 0,
@@ -89,7 +88,7 @@ my %WriteMakefileArgs = (
     "Test::TCP" => 0,
     "Try::Tiny" => 0
   },
-  "VERSION" => "0.0404",
+  "VERSION" => "0.0405",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -104,7 +103,6 @@ my %FallbackPrereqs = (
   "Capture::Tiny" => 0,
   "Carp" => 0,
   "Class::Load" => 0,
-  "DDP" => 0,
   "Data::Dumper" => 0,
   "Data::Random::WordList" => 0,
   "Encode" => 0,

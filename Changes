@@ -1,5 +1,10 @@
 Revision history for CPrAN
 
+0.0405    2017-03-31 19:32:21+01:00 Europe/London
+
+  * Fixes:
+    * Removed debug code that was left by accident
+
 0.0404    2017-03-31 19:21:21+01:00 Europe/London
 
   * Changes:
