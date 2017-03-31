@@ -5,6 +5,8 @@ Revision history for CPrAN
   * Changes:
     * The test command no longer returns a value: it now exists
       with a value reflecting the test result
+    * When reading a list of plugins from STDIN, the --yes flag
+      is turned on by default
 
 0.0405    2017-03-31 19:32:21+01:00 Europe/London
 
