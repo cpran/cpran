@@ -68,7 +68,8 @@ sub execute {
     die "There were errors while testing:\n$@\n";
   }
 
-  return $outcome;
+  # The test command does not return a value: it exits with one
+  exit !$outcome;
 }
 
 =head1 AUTHOR
