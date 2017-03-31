@@ -11,6 +11,7 @@ around execute => sub {
   my ($opt, $args) = @_;
 
   if (scalar @{$args} eq 1 and $args->[0] eq '-') {
+    $self->app->yes(1) if $self->app->can('yes');
     while (<STDIN>) {
       chomp;
       push @{$args}, $_;

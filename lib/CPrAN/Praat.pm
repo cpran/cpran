@@ -286,6 +286,6 @@ override map_plugins => sub {
   return \%h;
 };
 
-our $VERSION = '0.0405'; # VERSION
+our $VERSION = '0.0406'; # VERSION
 
 1;

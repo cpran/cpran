@@ -68,7 +68,8 @@ sub execute {
     die "There were errors while testing:\n$@\n";
   }
 
-  return $outcome;
+  # The test command does not return a value: it exits with one
+  exit !$outcome;
 }
 
 =head1 AUTHOR
@@ -98,7 +99,7 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0405'; # VERSION
+our $VERSION = '0.0406'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;
