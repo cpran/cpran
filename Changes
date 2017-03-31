@@ -3,6 +3,11 @@ Revision history for CPrAN
 {{$NEXT}}
 
   * Fixes:
+    * Tests do not crash if Praat is not in $PATH
+
+0.0402    2017-03-21 11:05:24+00:00 Europe/London
+
+  * Fixes:
     * Replaced minimum-privilege API key
 
 0.0401    2017-03-19 23:07:31+00:00 Europe/London
