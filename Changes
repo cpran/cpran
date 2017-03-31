@@ -2,6 +2,12 @@ Revision history for CPrAN
 
 {{$NEXT}}
 
+  * Changes:
+    * Temporarily increased page size for retrieving project list
+      from server. A more permanent solution is needed.
+
+0.0403    2017-03-31 18:01:49+01:00 Europe/London
+
   * Fixes:
     * Tests do not crash if Praat is not in $PATH
 
