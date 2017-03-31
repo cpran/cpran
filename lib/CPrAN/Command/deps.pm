@@ -169,6 +169,13 @@ sub order_dependencies {
 
   my $self = shift;
 
+  use DDP;
+  my @recs = map {{
+    name => $_->name,
+    reqname => $_->{reqname},
+  }} @_;
+  p @recs;
+
   my %recs;
   my $graph = Graph->new;
   foreach my $rec (@_) {
@@ -228,7 +235,7 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0403'; # VERSION
+our $VERSION = '0.0404'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

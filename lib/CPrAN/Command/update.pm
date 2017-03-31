@@ -140,11 +140,15 @@ sub fetch_raw {
   my @projects;
   if (scalar @requested) {
     @projects = map {
-      @{$self->app->api->projects( { search => 'plugin_' . $_ } )};
+      @{$self->app->api->projects({
+        search => 'plugin_' . $_,
+      })};
     } @requested;
   }
   else {
-    @projects = @{$self->app->api->projects};
+    @projects = @{$self->app->api->projects({
+      per_page => 100
+    })};
   }
 
   foreach my $source (@projects) {
@@ -298,7 +302,7 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0403'; # VERSION
+our $VERSION = '0.0404'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;
