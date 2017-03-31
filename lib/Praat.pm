@@ -137,6 +137,6 @@ sub map_plugins {
   return \%h;
 }
 
-our $VERSION = '0.0402'; # VERSION
+our $VERSION = '0.0403'; # VERSION
 
 1;

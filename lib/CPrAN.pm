@@ -446,9 +446,10 @@ sub test_plugin {
 
   $log->debug('Testing', $plugin->name);
 
-  unless ($self->praat->version) {
-    Carp::croak "Praat is not installed; cannot test"
+  unless (defined $self->praat->version) {
+    $log->warn("Praat is not installed; cannot test")
       unless $self->quiet;
+    return undef;
   }
 
   return undef unless ($plugin->is_installed);
@@ -557,6 +558,6 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0402'; # VERSION
+our $VERSION = '0.0403'; # VERSION
 
 1;
