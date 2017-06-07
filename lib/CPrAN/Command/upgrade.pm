@@ -241,7 +241,7 @@ sub git_upgrade {
       }
     }
     catch {
-      die "Unable to move HEAD. Do you have uncommited local changes?",
+      die "Unable to move HEAD. Do you have uncommited local changes?\n",
         "Commit or stash them before upgrade to keep them,",
         "or discard them with --force.\n";
     }
