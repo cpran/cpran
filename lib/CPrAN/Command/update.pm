@@ -171,6 +171,7 @@ sub fetch_raw {
     my $plugin;
     try {
       $plugin = $self->app->new_plugin( meta => $source );
+      $self->app->fetch_plugin( $plugin );
     }
     catch {
       $log->debug('Could not initialise plugin', $source->{name});
