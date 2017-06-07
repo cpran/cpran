@@ -2,7 +2,6 @@ package CPrAN::Praat;
 
 use Moose;
 use Log::Any qw( $log );
-# use Log::Any::Adapter ('File', '/var/log/praat');
 
 extends 'Praat';
 
