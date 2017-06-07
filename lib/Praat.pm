@@ -1,6 +1,6 @@
 package Praat;
 
-our $VERSION = 0.01
+our $VERSION = 0.01;
 
 use Moo;
 use MooX::HandlesVia;
