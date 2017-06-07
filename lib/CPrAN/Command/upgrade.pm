@@ -177,7 +177,7 @@ sub execute {
     if ($self->app->_yesno('y')) {
       foreach my $plugin (@todo) {
         print 'Upgrading ', $plugin->name, ' from v',
-          $plugin->current, ' to v',
+          $plugin->version, ' to v',
           $plugin->requested, "...\n" unless $self->app->quiet;
 
         my $success = ($self->git) ?
@@ -223,7 +223,7 @@ sub git_upgrade {
     }
 
     try {
-      $plugin->fetch unless defined $plugin->url;
+      $self->app->fetch_plugin( $plugin ) unless defined $plugin->url;
       $repo->run( pull => '--tags', $plugin->url, { fatal => '!0' } );
     }
     catch {
@@ -232,7 +232,7 @@ sub git_upgrade {
     }
 
     my $latest = $plugin->latest;
-    my @args = ( '--quiet', $latest->{commit}->{id} );
+    my @args = ( '--quiet', 'v' . $latest );
     push @args, '--force' if defined $self->force;
 
     try {
@@ -248,7 +248,7 @@ sub git_upgrade {
 
     $plugin->refresh;
     my $success = 0;
-    try { $success = $plugin->test }
+    try { $success = $self->app->test_plugin( $plugin )}
     catch {
       $log->warn('There were errors while testing:');
       $log->warn($@);
@@ -296,7 +296,7 @@ sub raw_upgrade {
 
   $plugin->refresh;
 
-  return $plugin->current == $plugin->requested;
+  return $plugin->version == $plugin->requested;
 }
 
 =head1 OPTIONS
