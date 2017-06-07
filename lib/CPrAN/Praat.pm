@@ -2,7 +2,6 @@ package CPrAN::Praat;
 
 use Moose;
 use Log::Any qw( $log );
-# use Log::Any::Adapter ('File', '/var/log/praat');
 
 extends 'Praat';
 
@@ -286,6 +285,6 @@ override map_plugins => sub {
   return \%h;
 };
 
-our $VERSION = '0.0406'; # VERSION
+our $VERSION = '0.0409'; # VERSION
 
 1;

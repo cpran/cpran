@@ -2,9 +2,10 @@
 Changes
 LICENSE
 MANIFEST
+META.json
 META.yml
 Makefile.PL
-README
+README.md
 bin/cpran
 dist.ini
 lib/CPrAN.pm
@@ -31,6 +32,7 @@ lib/Types/CPrAN.pm
 lib/Types/Praat.pm
 lib/Types/SemVer.pm
 lib/WWW/GitLab/v3.pm
+t/author-pod-syntax.t
 t/data/bad/download_testos.html
 t/data/bad/releases.json
 t/data/good/download_testos.html

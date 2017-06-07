@@ -63,7 +63,6 @@ around BUILDARGS => sub {
   if (defined $args->{meta}) {
     if (ref $args->{meta} eq 'HASH') {
       $args->{name} = $args->{meta}->{name};
-      $args->{id}   = $args->{meta}->{id};
       $args->{url}  = $args->{meta}->{http_url_to_repo};
     }
     else {

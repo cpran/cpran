@@ -1,5 +1,7 @@
 package Praat::Plugin;
 
+our $VERSION = 0.01;
+
 use Moo;
 use Log::Any qw( $log );
 
@@ -35,7 +37,5 @@ sub BUILDARGS {
 
   return $args;
 }
-
-our $VERSION = '0.0406'; # VERSION
 
 1;

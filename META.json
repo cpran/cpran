@@ -1,0 +1,224 @@
+{
+   "abstract" : "A package manager for Praat",
+   "author" : [
+      "Jos\u00e9 Joaqu\u00edn Atria <jjatria@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.009, CPAN::Meta::Converter version 2.150001",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "CPrAN",
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0",
+            "perl" : "5.010"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "Test::Pod" : "1.41"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "App::Prove" : "0",
+            "Archive::Extract" : "0",
+            "Archive::Tar" : "0",
+            "Array::Utils" : "0",
+            "Capture::Tiny" : "0",
+            "Carp" : "0",
+            "Class::Load" : "0",
+            "Data::Dumper" : "0",
+            "Data::Random::WordList" : "0",
+            "Encode" : "0",
+            "English" : "0",
+            "File::Copy::Recursive" : "0",
+            "File::Path" : "0",
+            "File::Which" : "0",
+            "Getopt::Long" : "0",
+            "Git::Repository" : "0",
+            "Graph" : "0.96",
+            "JSON" : "0",
+            "JSON::Tiny" : "0",
+            "LWP::UserAgent" : "0",
+            "Lingua::EN::Inflexion" : "0",
+            "Log::Any" : "0",
+            "Log::Any::Adapter" : "0",
+            "Moo" : "0",
+            "MooX::HandlesVia" : "0",
+            "MooX::late" : "0",
+            "Moose" : "0",
+            "Moose::Role" : "0",
+            "MooseX::App::Cmd" : "0",
+            "MooseX::App::Cmd::Command" : "0",
+            "MooseX::Getopt" : "0",
+            "MooseX::NonMoose" : "0",
+            "MooseX::Types" : "0",
+            "MooseX::Types::Moose" : "0",
+            "Params::Validate" : "0",
+            "Path::Tiny" : "0",
+            "Regexp::Common" : "0",
+            "Regexp::Common::Email::Address" : "1.01",
+            "SemVer" : "0",
+            "Syntax::Keyword::Try" : "0",
+            "TAP::Harness::Archive" : "0",
+            "Term::ReadKey" : "0",
+            "Text::FormatTable" : "0",
+            "Text::Template" : "0",
+            "Type::Library" : "0.008",
+            "Type::Utils" : "0",
+            "Types::Path::Tiny" : "0",
+            "Types::Standard" : "0",
+            "URI" : "0",
+            "URI::QueryParam" : "0",
+            "YAML::XS" : "0",
+            "if" : "0",
+            "perl" : "5.021008",
+            "strict" : "0",
+            "uni::perl" : "0",
+            "warnings" : "0"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "FindBin" : "0",
+            "Net::EmptyPort" : "0",
+            "Path::Class" : "0",
+            "Plack::App::File" : "0",
+            "Plack::Runner" : "0",
+            "Test::Class::Moose" : "0",
+            "Test::Class::Moose::Load" : "0",
+            "Test::Class::Moose::Role::AutoUse" : "0",
+            "Test::Class::Moose::Runner" : "0",
+            "Test::More" : "1.302059",
+            "Test::TCP" : "0",
+            "Try::Tiny" : "0",
+            "perl" : "5.021008"
+         }
+      }
+   },
+   "provides" : {
+      "CPrAN" : {
+         "file" : "lib/CPrAN.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::create" : {
+         "file" : "lib/CPrAN/Command/create.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::deps" : {
+         "file" : "lib/CPrAN/Command/deps.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::init" : {
+         "file" : "lib/CPrAN/Command/init.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::install" : {
+         "file" : "lib/CPrAN/Command/install.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::list" : {
+         "file" : "lib/CPrAN/Command/list.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::remove" : {
+         "file" : "lib/CPrAN/Command/remove.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::search" : {
+         "file" : "lib/CPrAN/Command/search.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::show" : {
+         "file" : "lib/CPrAN/Command/show.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::test" : {
+         "file" : "lib/CPrAN/Command/test.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::update" : {
+         "file" : "lib/CPrAN/Command/update.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Command::upgrade" : {
+         "file" : "lib/CPrAN/Command/upgrade.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Plugin" : {
+         "file" : "lib/CPrAN/Plugin.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Praat" : {
+         "file" : "lib/CPrAN/Praat.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Role::Processes::Praat" : {
+         "file" : "lib/CPrAN/Role/Processes/Praat.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Role::Reads::STDIN" : {
+         "file" : "lib/CPrAN/Role/Reads/STDIN.pm",
+         "version" : "0.0409"
+      },
+      "CPrAN::Role::Reads::WorkingPlugin" : {
+         "file" : "lib/CPrAN/Role/Reads/WorkingPlugin.pm",
+         "version" : "0.0409"
+      },
+      "Praat" : {
+         "file" : "lib/Praat.pm",
+         "version" : "0.0409"
+      },
+      "Praat::Plugin" : {
+         "file" : "lib/Praat/Plugin.pm",
+         "version" : "0.0409"
+      },
+      "Praat::Version" : {
+         "file" : "lib/Praat/Version.pm",
+         "version" : "0.0409"
+      },
+      "Types::CPrAN" : {
+         "file" : "lib/Types/CPrAN.pm",
+         "version" : "0.0409"
+      },
+      "Types::Praat" : {
+         "file" : "lib/Types/Praat.pm",
+         "version" : "0.0409"
+      },
+      "Types::SemVer" : {
+         "file" : "lib/Types/SemVer.pm",
+         "version" : "0.0409"
+      },
+      "WWW::GitLab::v3" : {
+         "file" : "lib/WWW/GitLab/v3.pm",
+         "version" : "0.0409"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "mailto" : "jjatria at cpan.org",
+         "web" : "https://gitlab.com/cpran/CPrAN/issues"
+      },
+      "repository" : {
+         "type" : "git",
+         "url" : "git://gitlab.com/cpran/CPrAN.git",
+         "web" : "https://gitlab.com/cpran/CPrAN"
+      }
+   },
+   "version" : "0.0409",
+   "x_contributors" : [
+      "Daniel McCloy <dan.mccloy@gmail.com>",
+      "Ingmar Steiner <steiner@coli.uni-saarland.de>",
+      "Jos\u00e9 Joaqu\u00edn Atria <jjatria@gmail.com>"
+   ],
+   "x_serialization_backend" : "JSON::PP version 2.27300_01"
+}
+

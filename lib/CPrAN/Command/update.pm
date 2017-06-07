@@ -171,6 +171,7 @@ sub fetch_raw {
     my $plugin;
     try {
       $plugin = $self->app->new_plugin( meta => $source );
+      $self->app->fetch_plugin( $plugin );
     }
     catch {
       $log->debug('Could not initialise plugin', $source->{name});
@@ -302,7 +303,7 @@ L<CPrAN::Command::upgrade|upgrade>
 
 =cut
 
-our $VERSION = '0.0406'; # VERSION
+our $VERSION = '0.0409'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

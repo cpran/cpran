@@ -2,13 +2,13 @@
 use strict;
 use warnings;
 
-
+use 5.021008;
 
 use ExtUtils::MakeMaker;
 
 my %WriteMakefileArgs = (
   "ABSTRACT" => "A package manager for Praat",
-  "AUTHOR" => "Jos\x{e9} Joaqu\x{ed}n Atria <jjatria\@gmail.com>",
+  "AUTHOR" => "Jos\x{e9} Joaqu\x{ed}n Atria <jjatria\@cpan.org>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => 0
   },
@@ -17,6 +17,7 @@ my %WriteMakefileArgs = (
     "bin/cpran"
   ],
   "LICENSE" => "perl",
+  "MIN_PERL_VERSION" => "5.021008",
   "NAME" => "CPrAN",
   "PREREQ_PM" => {
     "App::Prove" => 0,
@@ -85,10 +86,11 @@ my %WriteMakefileArgs = (
     "Test::Class::Moose::Load" => 0,
     "Test::Class::Moose::Role::AutoUse" => 0,
     "Test::Class::Moose::Runner" => 0,
+    "Test::More" => "1.302059",
     "Test::TCP" => 0,
     "Try::Tiny" => 0
   },
-  "VERSION" => "0.0406",
+  "VERSION" => "0.0409",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -147,6 +149,7 @@ my %FallbackPrereqs = (
   "Test::Class::Moose::Load" => 0,
   "Test::Class::Moose::Role::AutoUse" => 0,
   "Test::Class::Moose::Runner" => 0,
+  "Test::More" => "1.302059",
   "Test::TCP" => 0,
   "Text::FormatTable" => 0,
   "Text::Template" => 0,
