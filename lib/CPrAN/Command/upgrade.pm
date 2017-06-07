@@ -410,7 +410,7 @@ L<CPrAN::Command::update|update>
 
 =cut
 
-our $VERSION = '0.0409'; # VERSION
+our $VERSION = '0.0408'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

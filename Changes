@@ -1,6 +1,6 @@
 Revision history for CPrAN
 
-0.0409    2017-06-07 15:25:23+01:00 Europe/London
+0.0408    2017-06-07 15:25:44+01:00 Europe/London
 
   * Fixes:
     * Fixed an error with the raw version of the update command

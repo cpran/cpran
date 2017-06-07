@@ -90,7 +90,7 @@ my %WriteMakefileArgs = (
     "Test::TCP" => 0,
     "Try::Tiny" => 0
   },
-  "VERSION" => "0.0409",
+  "VERSION" => "0.0408",
   "test" => {
     "TESTS" => "t/*.t"
   }
