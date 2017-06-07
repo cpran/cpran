@@ -3,6 +3,8 @@ package CPrAN::Command::upgrade;
 
 use Moose;
 use Log::Any qw( $log );
+use Syntax::Keyword::Try;
+use Capture::Tiny qw( capture );
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -77,7 +79,6 @@ sub validate_args {
   # 2. Git::Repository is installed
   # 3. The user has not turned it off by setting --nogit
   if ($self->git) {
-    use Syntax::Keyword::Try;
     try {
       require File::Which;
       $self->git( File::Which::which('git') ? 1 : 0 )
@@ -201,7 +202,6 @@ sub execute {
 sub git_upgrade {
   my ($self, $plugin) = @_;
 
-  use Syntax::Keyword::Try;
   try {
     require Git::Repository;
     my $repo;
@@ -236,8 +236,7 @@ sub git_upgrade {
     push @args, '--force' if defined $self->force;
 
     try {
-      require Capture::Tiny;
-      my ($STDOUT, $STDERR) = Capture::Tiny::capture {
+      my ($STDOUT, $STDERR) = capture {
         $repo->run( checkout => @args, { fatal => '!0' })
       }
     }
@@ -349,7 +348,6 @@ but will disregard those that fail.
 sub process_praat {
   my ($self) = @_;
 
-  use Syntax::Keyword::Try;
   try {
     my $praat = $self->app->praat;
     print 'Querying server for latest version...', "\n"
