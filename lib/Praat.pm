@@ -1,5 +1,7 @@
 package Praat;
 
+our $VERSION = 0.01
+
 use Moo;
 use MooX::HandlesVia;
 use MooX::late;
@@ -136,7 +138,5 @@ sub map_plugins {
   }
   return \%h;
 }
-
-# VERSION
 
 1;
