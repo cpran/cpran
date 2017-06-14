@@ -10,6 +10,7 @@ use Log::Any qw( $log );
 use Types::Standard qw( HashRef Str Undef );
 use Types::Path::Tiny qw( Path );
 use Types::Praat qw( Version );
+use autodie;
 
 require Carp;
 
@@ -103,7 +104,8 @@ sub _build_version {
   return unless defined $self->bin;
 
   my ($buffer, $version);
-  open my $fh, '<:raw', $self->bin;
+
+  open my $fh, '<:raw', $self->bin->realpath;
   # Read binary into the buffer after any residual copied from the last chunk
   while( my $read = read $fh, $buffer, 4096, pos( $buffer ) || 0 ) {
     while( $buffer =~ m[([4-9]\.\d\.\d{2})]g ) {
