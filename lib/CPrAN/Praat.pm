@@ -1,4 +1,5 @@
 package CPrAN::Praat;
+# ABSTRACT: An CPrAN-enabled wrapper for Praat
 
 use strict;
 use warnings;
