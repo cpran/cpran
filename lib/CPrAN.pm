@@ -5,12 +5,18 @@ use strict;
 use warnings;
 
 use Moose;
-require Carp;
-use Log::Any qw( $log );
-use Types::Path::Tiny qw( Path );
-use Types::CPrAN qw( Praat );
-
 extends qw( MooseX::App::Cmd );
+
+use CPrAN::Plugin;
+use CPrAN::Praat;
+use Carp;
+use Encode qw( encode decode );
+use Log::Any qw( $log );
+use Praat::Version;
+use Types::CPrAN qw( Praat );
+use Types::Path::Tiny qw( Path );
+use WWW::GitLab::v3;
+use YAML::XS qw();
 
 with 'MooseX::Getopt';
 
@@ -34,7 +40,6 @@ has praat => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    require CPrAN::Praat;
     CPrAN::Praat->new;
   },
 );
@@ -45,7 +50,6 @@ has api => (
   documentation => 'GitLab API connection',
   lazy => 1,
   default => sub {
-    require WWW::GitLab::v3;
     WWW::GitLab::v3->new(
       url   => $_[0]->url,
       token => $_[0]->token,
@@ -177,25 +181,28 @@ sub BUILD {
   my ($self) = @_;
 
   if (-e $self->root) {
-    Carp::croak 'Cannot read from CPrAN root at ', $self->root->canonpath
-      unless (-r $self->root);
+    croak 'Cannot read from CPrAN root at ', $self->root->canonpath
+      unless -r $self->root;
 
-    Carp::croak 'Cannot write to CPrAN root at ', $self->root->canonpath
-      unless (-w $self->root);
+    croak 'Cannot write to CPrAN root at ', $self->root->canonpath
+      unless -w $self->root;
   }
   else {
-    use File::Path qw();
-    File::Path::make_path( $self->root, {} )
+    $self->root->mkpath
       or warn 'Could not make directory at ', $self->root;
   }
 
   $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
 
-  Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir->canonpath
-    unless (-r $self->praat->pref_dir);
+  unless (-r $self->praat->pref_dir) {
+    croak 'Cannot read from preferences directory at ',
+      $self->praat->pref_dir->canonpath;
+  }
 
-  Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir->canonpath
-    unless (-w $self->praat->pref_dir);
+  unless (-w $self->praat->pref_dir) {
+    croak 'Cannot write to preferences directory at ',
+      $self->praat->pref_dir->canonpath;
+  }
 
   $log->debug("Initialised CPrAN instance");
 }
@@ -358,16 +365,13 @@ sub run_command {
 sub fetch_plugin {
   my ($self, $plugin) = @_;
 
-  Carp::croak 'Cannot fetch an undefined plugin' unless defined $plugin;
+  croak 'Cannot fetch an undefined plugin' unless defined $plugin;
 
   $plugin->cpran( $self->root )
     unless defined $plugin->cpran;
 
   $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
     unless defined $plugin->root;
-
-  use YAML::XS;
-  use Encode qw(encode decode);
 
   my ($id, $url, $latest, $remote);
 
@@ -385,12 +389,11 @@ sub fetch_plugin {
   }
 
   unless (defined $id and defined $url) {
-    Carp::carp $plugin->name, ' not found remotely'
+    carp $plugin->name, ' not found remotely'
       unless $self->quiet;
     return undef;
   }
 
-  require Praat::Version;
   my $tags = $self->api->tags( $id );
   my @releases;
 
@@ -408,7 +411,7 @@ sub fetch_plugin {
 
   # Ignore projects with no tags
   unless (scalar @releases) {
-    Carp::carp 'No releases for ', $plugin->name
+    carp 'No releases for ', $plugin->name
       unless $self->quiet;
     return undef;
   }
@@ -422,7 +425,7 @@ sub fetch_plugin {
     YAML::XS::Load( $remote );
   }
   catch {
-    Carp::carp 'Could not deserialise fetched remote for ', $plugin->name
+    carp 'Could not deserialise fetched remote for ', $plugin->name
       unless $self->quiet;
     return;
   }
@@ -439,7 +442,7 @@ sub test_plugin {
   my $plugin = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  Carp::croak 'Cannot test an undefined plugin' unless defined $plugin;
+  croak 'Cannot test an undefined plugin' unless defined $plugin;
 
   $plugin->cpran( $self->root )
     unless defined $plugin->cpran;
@@ -501,7 +504,7 @@ sub test_plugin {
       push @args, ('--archive', $logdir->canonpath);
     }
     catch {
-      Carp::carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
+      carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
         unless $self->quiet;
     }
   }
@@ -525,7 +528,6 @@ sub new_plugin {
     'plugin_' . ($arg->{name} // '')
   );
 
-  require CPrAN::Plugin;
   my $plugin = CPrAN::Plugin->new($arg);
 
   return $plugin->refresh;

@@ -7,6 +7,8 @@ use warnings;
 use MooseX::Types -declare => [qw( Praat )];
 
 use MooseX::Types::Moose qw( Str HashRef );
+use CPrAN::Praat;
+
 use if MooseX::Types->VERSION >= 0.42, 'namespace::autoclean';
 
 class_type('CPrAN::Praat');

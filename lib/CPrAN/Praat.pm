@@ -4,14 +4,16 @@ use strict;
 use warnings;
 
 use Moose;
-use Log::Any qw( $log );
-
 extends 'Praat';
 
+use Carp;
+use CPrAN::Plugin;
+use Log::Any qw( $log );
 use Types::Praat qw( Version );
 use Types::Standard qw( Undef );
-
-require Carp;
+use URI;
+use LWP::UserAgent;
+use JSON::MaybeXS qw( decode_json );
 
 has releases => (
   is => 'ro',
@@ -143,16 +145,12 @@ sub BUILDARGS {
 sub remove {
   my ($self) = @_;
   my $removed = $self->bin->remove
-    or Carp::carp sprintf("Could not remove %s: %s\n", $self->bin, $!);
+    or carp sprintf("Could not remove %s: %s\n", $self->bin, $!);
   return $removed;
 }
 
 sub fetch {
   my ($self) = @_;
-
-  use URI;
-  use JSON qw( decode_json );
-  use LWP::UserAgent;
 
   $self->_package_name(undef);
   $self->_package_url(undef);
@@ -215,7 +213,6 @@ sub download {
 
   $opt->{quiet} //= 0;
 
-  use LWP::UserAgent;
   my $ua = LWP::UserAgent->new;
   $ua->show_progress( 1 - $opt->{quiet} );
 
@@ -233,8 +230,6 @@ sub _build_releases {
   my ($self) = @_;
 
   $log->trace('Finding Praat releases');
-
-  use JSON qw( decode_json );
 
   my @releases;
 
