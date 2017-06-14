@@ -284,16 +284,16 @@ used multiple times to increase the number of debug messages that are printed.
 
 sub global_opt_spec {
   return (
-    [ "praat=s"             => "set path to the Praat binary" ],
-    [ "pref_dir|pref-dir=s" => "set path to Praat preferences directory" ],
-    [ "root=s"              => "set path to CPrAN root" ],
-    [ "token=s"             => "set private token for GitLab API access" ],
-    [ "url=s"               => "set url of GitLab API" ],
-    [ "group=s"             => "set the id for the GitLab CPrAN group" ],
-    [ "verbose|v+"          => "increase verbosity" ],
-    [ "quiet"               => "quietly say no to everything" ],
-    [ "yes"                 => "assume yes when prompted for confirmation" ],
-    [ "debug+"              => "increase debug level" ],
+    [ 'praat=s'             => 'set path to the Praat binary' ],
+    [ 'pref_dir|pref-dir=s' => 'set path to Praat preferences directory' ],
+    [ 'root=s'              => 'set path to CPrAN root' ],
+    [ 'token=s'             => 'set private token for GitLab API access' ],
+    [ 'url=s'               => 'set url of GitLab API' ],
+    [ 'group=s'             => 'set the id for the GitLab CPrAN group' ],
+    [ 'verbose|v+'          => 'increase verbosity' ],
+    [ 'quiet'               => 'quietly say no to everything' ],
+    [ 'yes'                 => 'assume yes when prompted for confirmation' ],
+    [ 'debug+'              => 'increase debug level' ],
   );
 }
 
@@ -326,14 +326,14 @@ sub _yesno {
     return 1;
   }
 
-  my $prompt = " [y/n] ";
+  my $prompt = ' [y/n] ';
   $prompt =~ s/($default)/\U$1/;
   print $prompt unless $self->quiet;
 
   my $input;
   $input = <STDIN>;
   chomp $input;
-  $input = $default if ($input eq "");
+  $input = $default if ($input eq q{});
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
 }
 
@@ -453,7 +453,7 @@ sub test_plugin {
   $log->debug('Testing', $plugin->name);
 
   unless (defined $self->praat->version) {
-    $log->warn("Praat is not installed; cannot test")
+    $log->warn('Praat is not installed; cannot test')
       unless $self->quiet;
     return undef;
   }
@@ -513,7 +513,7 @@ sub test_plugin {
   my $results = $prove->run;
 
   chdir $oldwd
-    or die "Could not change directory";
+    or die 'Could not change directory';
 
   return ($results) ? 1 : 0;
 }
@@ -525,7 +525,7 @@ sub new_plugin {
 
   $arg->{cpran} //= $self->root;
   $arg->{root}  //= $self->praat->pref_dir->child(
-    'plugin_' . ($arg->{name} // '')
+    'plugin_' . ($arg->{name} // q{})
   );
 
   my $plugin = CPrAN::Plugin->new($arg);

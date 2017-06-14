@@ -157,14 +157,18 @@ sub fetch {
   $self->_package_url(undef);
   my $ua = LWP::UserAgent->new;
 
-  my ($os, $bit, $ext) = map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
+  my ($os, $bit, $ext) =
+    map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
+
   my $barren = ($self->_barren) ? 'barren' : q{};
   my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${barren}${ext}/;
 
   my @haystack;
   my $url;
   if ($self->requested) {
-    $url = URI->new( $self->_releases_endpoint . '/tags/v' . $self->requested->praatify )
+    $url = URI->new(
+      $self->_releases_endpoint . '/tags/v' . $self->requested->praatify
+    )
   }
   else {
     $url = URI->new( $self->_releases_endpoint . '/latest' )
@@ -197,8 +201,13 @@ sub fetch {
     last if defined $found;
   }
 
-  $log->warn('Could not find', ($self->requested // 'latest'), 'Praat release for this system')
-    and return(undef) unless defined $found;
+  unless (defined $found) {
+    $log->warnf(
+      'Could not find %s Praat release for this system',
+      ($self->requested // 'latest'));
+
+    return undef;
+  }
 
   $self->_package_name($found->{name});
   $self->_package_url($found->{browser_download_url});
@@ -253,11 +262,11 @@ sub _build_releases {
       $tag->{semver} = Praat::Version->new($tag->{tag_name});
     }
     catch {
-      $log->trace("  Skipping '" . ($tag->{tag_name} // '') . "'");
+      $log->tracef(q{  Skipping '%s'}, ($tag->{tag_name} // q{}));
       next;
     }
 
-    $log->trace("  Pushing '" . $tag->{tag_name} . "'");
+    $log->tracef(q{  Pushing '%s'}, $tag->{tag_name});
     push @releases, $tag;
   };
 
