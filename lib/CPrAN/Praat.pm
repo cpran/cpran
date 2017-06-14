@@ -295,19 +295,18 @@ sub _build_releases {
 override map_plugins => sub {
   my ($self) = @_;
 
-  my %h;
-  foreach ($_[0]->pref_dir->children(qr/^plugin_/)) {
-    my $name = $_->basename;
-    $name =~ s/^plugin_//;
+  return {
+    map {
+      my $name = $_->basename;
+      $name =~ s/^plugin_//;
 
-    require CPrAN::Plugin;
-    $h{$name} = CPrAN::Plugin->new(
-      name  => $_->basename,
-      root  => $_,
-      cpran => $self->pref_dir->child('.cpran'),
-    );
-  }
-  return \%h;
+      $name => CPrAN::Plugin->new(
+        name  => $_->basename,
+        root  => $_,
+        cpran => $self->pref_dir->child('.cpran'),
+      )
+    } $self->pref_dir->children(qr/^plugin_/)
+  };
 };
 
 # VERSION
