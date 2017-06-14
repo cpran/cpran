@@ -85,7 +85,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 # LICENSE
 
-Copyright 2015-2016 José Joaquín Atria
+Copyright 2015-2017 José Joaquín Atria
 
 This module is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
