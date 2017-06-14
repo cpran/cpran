@@ -1,5 +1,8 @@
 package CPrAN::Praat;
 
+use strict;
+use warnings;
+
 use Moose;
 use Log::Any qw( $log );
 

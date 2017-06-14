@@ -1,6 +1,9 @@
 package CPrAN;
 # ABSTRACT: A package manager for Praat
 
+use strict;
+use warnings;
+
 use Moose;
 require Carp;
 use Log::Any qw( $log );
