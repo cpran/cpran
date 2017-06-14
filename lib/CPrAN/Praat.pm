@@ -86,6 +86,14 @@ has [qw( _os _ext _bit )] => (
   is => 'ro',
 );
 
+has ua => (
+  is => 'ro',
+  lazy => 1,
+  default => sub {
+    LWP::UserAgent->new;
+  }
+);
+
 has _ext => (
   is => 'ro',
   init_arg => undef,
@@ -164,7 +172,6 @@ sub fetch {
 
   $self->_package_name(undef);
   $self->_package_url(undef);
-  my $ua = LWP::UserAgent->new;
 
   my ($os, $bit, $ext) =
     map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
@@ -185,7 +192,7 @@ sub fetch {
 
   $log->trace('GET', $url) if $log->is_trace;
 
-  my $response = $ua->get( $url );
+  my $response = $self->ua->get( $url );
   if ($response->is_success) {
     @haystack = ( decode_json $response->decoded_content );
   }
@@ -232,11 +239,11 @@ sub download {
 
   $opt->{quiet} //= 0;
 
-  my $ua = LWP::UserAgent->new;
-  $ua->show_progress( 1 - $opt->{quiet} );
+  $self->ua->show_progress( 1 - $opt->{quiet} );
 
-  $log->trace('GET', $self->_package_url) if $log->is_trace;
-  my $response = $ua->get( $self->_package_url );
+  $log->trace('GET', $self->_package_url);
+
+  my $response = $self->ua->get( $self->_package_url );
   if ($response->is_success) {
     return $response->decoded_content;
   }
@@ -252,13 +259,14 @@ sub _build_releases {
 
   my @releases;
 
-  my $ua = LWP::UserAgent->new();
   my ($next, $response);
 
   $next = $self->_releases_endpoint;
+
   # Fetch only first page of results, to avoid busting through request limit
-  $log->trace('GET', $next) if $log->is_trace;
-  $response = $ua->get($next);
+  $log->trace('GET', $next);
+
+  $response = $self->ua->get($next);
   unless ($response->is_success) {
     $log->warn($response->status_line);
     return [];
