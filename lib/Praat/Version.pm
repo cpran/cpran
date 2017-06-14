@@ -5,7 +5,7 @@ our $VERSION = 0.01;
 use strict;
 use warnings;
 
-use Moose;
+use Moo;
 use MooseX::NonMoose;
 
 extends 'SemVer';
