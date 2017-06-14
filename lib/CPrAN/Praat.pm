@@ -100,9 +100,9 @@ has _ext => (
   lazy => 1,
   default => sub {
     use English;
-    return ($OSNAME =~ /darwin/xmsi)
+    return ($OSNAME =~ /darwin/)
       ? '.dmg'
-      : ($OSNAME =~ /mswin32/xmsi)
+      : ($OSNAME =~ /mswin32/)
         ? '.zip'
         : '.tar.gz';
   },
@@ -116,7 +116,7 @@ has _os => (
     use English;
     return ($OSNAME =~ /darwin/)
       ? 'mac'
-      : ($OSNAME =~ /mswin32/xmsi)
+      : ($OSNAME =~ /mswin32/)
         ? 'win'
         : 'linux';
   },
@@ -128,13 +128,13 @@ has _bit => (
   lazy => 1,
   default => sub {
     use English;
-    if ($OSNAME =~ /mswin32/xmsi) {
+    if ($OSNAME =~ /mswin32/) {
       $ENV{PROCESSOR_ARCHITECTURE} //= q{};
       $ENV{PROCESSOR_ARCHITEW6432} //= q{};
 
       return (
-        $ENV{PROCESSOR_ARCHITECTURE} =~ /(amd64|ia64)/xmsi or
-        $ENV{PROCESSOR_ARCHITEW6432} =~ /(amd64|ia64)/xmsi
+        $ENV{PROCESSOR_ARCHITECTURE} =~ /(?:amd64|ia64)/ or
+        $ENV{PROCESSOR_ARCHITEW6432} =~ /(?:amd64|ia64)/
       ) ? 64 : 32;
     }
     else {
@@ -144,7 +144,7 @@ has _bit => (
         open CMD, "$cmd 2>&1 |"
           or die ("Could not execute $cmd: $!");
         chomp(my $line = <CMD>);
-        return ($line =~ /\bx86_64\b/xmsi) ? 64 : 32;
+        return ($line =~ /\bx86_64\b/) ? 64 : 32;
       }
       catch {
         $log->warn('Defaulting to 32 bit');
