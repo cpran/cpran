@@ -17,8 +17,15 @@ use Types::CPrAN qw( Praat );
 use Types::Path::Tiny qw( Path );
 use WWW::GitLab::v3;
 use YAML::XS qw();
+use Class::Load qw( try_load_class );
 
 with 'MooseX::Getopt';
+
+has protocol => (
+  is => 'ro',
+  init_arg => undef,
+  default => sub { try_load_class('LWP::Protocol::https') ? 'https' : 'http' },
+);
 
 has root => (
   is  => 'rw',
@@ -72,7 +79,7 @@ has url => (
   traits => [qw(Getopt)],
   documentation => 'base URL for GitLab API',
   lazy => 1,
-  default => 'https://gitlab.com/api/v3/',
+  default => sub { $_[0]->protocol . '://gitlab.com/api/v3/' },
 );
 
 has quiet => (

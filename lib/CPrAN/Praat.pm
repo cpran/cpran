@@ -15,6 +15,13 @@ use Types::Standard qw( Undef );
 use URI;
 use LWP::UserAgent;
 use JSON::MaybeXS qw( decode_json );
+use Class::Load qw( try_load_class );
+
+has protocol => (
+  is => 'ro',
+  init_arg => undef,
+  default => sub { try_load_class('LWP::Protocol::https') ? 'http' : 'https' },
+);
 
 has releases => (
   is => 'ro',
@@ -70,7 +77,9 @@ has _package_url => (
 has _releases_endpoint => (
   is => 'ro',
   lazy => 1,
-  default => 'https://api.github.com/repos/praat/praat/releases',
+  default => sub {
+    $_[0]->protocol . '://api.github.com/repos/praat/praat/releases'
+  },
 );
 
 has [qw( _os _ext _bit )] => (
