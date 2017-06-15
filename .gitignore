@@ -5,6 +5,7 @@
 wiki
 
 .build
+blib/
 CPrAN*.tar.gz
 cover_db
 
