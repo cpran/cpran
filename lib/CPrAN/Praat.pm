@@ -202,26 +202,18 @@ sub fetch {
   }
 
   my ($latest, $found);
-  my $once = 0;
 
   foreach (@haystack) {
     $latest = $_;
     ($found) = grep { $_->{name} =~ $pkgregex } @{$latest->{assets}};
-
-    unless (defined $found) {
-      $log->info('Did not find suitable release in latest, looking back');
-      @haystack = @{$self->releases} unless $once;
-      $once = 1;
-    }
-
     last if defined $found;
   }
 
   unless (defined $found) {
     $log->warnf(
       'Could not find %s Praat release for this system',
-      ($self->requested // 'latest'));
-
+      ($self->requested // 'latest')
+    );
     return undef;
   }
 
