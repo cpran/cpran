@@ -527,7 +527,7 @@ sub get_archive {
 sub process_praat {
   my ($self, $requested) = @_;
   my $praat = $self->app->praat;
-  $praat->requested($requested) if $requested;
+  $praat->requested( $requested ? $requested : $praat->latest );
   $praat->_barren($self->barren) if $self->barren;
 
   use Syntax::Keyword::Try;
@@ -553,11 +553,11 @@ sub process_praat {
     # TODO(jja) Should we check for the target path to be in PATH?
 
     unless ($self->app->quiet) {
-      print 'Querying server for latest version...', "\n";
-      print 'Praat ', $praat->latest, ' will be INSTALLED in ', $self->path, "\n";
+      print 'Querying server for latest version...', "\n" unless $requested;
+      print 'Praat ', $praat->requested, ' will be INSTALLED in ', $self->path, "\n";
       print 'Do you want to continue?';
     }
-    if ($self->app->_yesno('y')) {
+    if ($self->app->_yesno('y') and $praat->_package_url) {
       print 'Downloading package from ', $praat->_package_url, "...\n"
         unless $self->app->quiet;
 
@@ -565,7 +565,7 @@ sub process_praat {
 
       require Path::Tiny;
       my $package = Path::Tiny->tempfile(
-        template => 'praat' . $praat->latest . '-XXXXX',
+        template => 'praat' . $praat->requested . '-XXXXX',
         suffix => $praat->_ext,
       );
 
@@ -593,15 +593,16 @@ sub process_praat {
       my $file = Path::Tiny::path( $ae->extract_path, $ae->files->[0] );
       $file->copy( $self->path->child('praat') ) and $file->remove
         or die "Could not move file: $!\n";
+
+      print "Praat succesfully installed\n" unless  $self->app->quiet;
+    }
+    else {
+      print "Abort\n" unless $self->app->quiet;
     }
   }
   catch {
     Carp::carp $@;
     Carp::croak "Could not install Praat\n";
-  }
-
-  if (!$self->app->quiet) {
-    print "Praat succesfully installed\n";
   }
 }
 
