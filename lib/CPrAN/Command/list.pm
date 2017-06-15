@@ -57,6 +57,8 @@ sub process_praat {
   }
 }
 
+=encoding UTF-8
+
 =head1 AUTHOR
 
 José Joaquín Atria <jjatria@gmail.com>
