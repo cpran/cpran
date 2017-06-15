@@ -1,6 +1,8 @@
 package CPrAN::Praat;
 # ABSTRACT: An CPrAN-enabled wrapper for Praat
 
+# VERSION
+
 use strict;
 use warnings;
 
@@ -300,7 +302,5 @@ override map_plugins => sub {
     } $self->pref_dir->children(qr/^plugin_/)
   };
 };
-
-# VERSION
 
 1;

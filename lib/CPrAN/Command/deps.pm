@@ -1,6 +1,8 @@
 package CPrAN::Command::deps;
 # ABSTRACT: list the dependencies of plugins
 
+# VERSION
+
 use Moose;
 use Log::Any qw( $log );
 # use Log::Any::Adapter 'Stderr';
@@ -227,8 +229,6 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-# VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

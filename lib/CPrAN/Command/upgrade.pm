@@ -1,6 +1,8 @@
 package CPrAN::Command::upgrade;
 # ABSTRACT: upgrade plugins to their latest version
 
+# VERSION
+
 use Moose;
 use Log::Any qw( $log );
 use Syntax::Keyword::Try;
@@ -409,8 +411,6 @@ L<CPrAN::Command::test|test>,
 L<CPrAN::Command::update|update>
 
 =cut
-
-# VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

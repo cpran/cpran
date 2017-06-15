@@ -1,6 +1,8 @@
 package Types::CPrAN;
 # ABSTRACT: CPrAN-specific types for Moose
 
+# VERSION
+
 use strict;
 use warnings;
 

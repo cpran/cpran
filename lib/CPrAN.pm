@@ -1,6 +1,8 @@
 package CPrAN;
 # ABSTRACT: A package manager for Praat
 
+# VERSION
+
 use strict;
 use warnings;
 
@@ -569,7 +571,5 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-# VERSION
 
 1;

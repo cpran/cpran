@@ -1,6 +1,8 @@
 package CPrAN::Plugin;
 # ABSTRACT: A representation of a Praat plugin
 
+# VERSION
+
 use Moose;
 
 extends 'Praat::Plugin';

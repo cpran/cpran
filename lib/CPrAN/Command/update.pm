@@ -1,6 +1,8 @@
 package CPrAN::Command::update;
 # ABSTRACT: update local plugin list
 
+# VERSION
+
 use Moose;
 use Log::Any qw( $log );
 
@@ -302,8 +304,6 @@ L<CPrAN::Command::test|test>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-# VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;
