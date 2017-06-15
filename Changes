@@ -2,6 +2,8 @@ Revision history for CPrAN
 
 {{$NEXT}}
 
+0.0410    2017-06-15 18:59:44+01:00 Europe/London
+
   * Fixes:
     * Fixed installation of barren Praat
 
