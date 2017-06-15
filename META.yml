@@ -20,7 +20,7 @@ configure_requires:
   ExtUtils::MakeMaker: '0'
   perl: '5.010'
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 6.009, CPAN::Meta::Converter version 2.150001'
+generated_by: 'Dist::Zilla version 6.009, CPAN::Meta::Converter version 2.150005'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -29,76 +29,76 @@ name: CPrAN
 provides:
   CPrAN:
     file: lib/CPrAN.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::create:
     file: lib/CPrAN/Command/create.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::deps:
     file: lib/CPrAN/Command/deps.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::init:
     file: lib/CPrAN/Command/init.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::install:
     file: lib/CPrAN/Command/install.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::list:
     file: lib/CPrAN/Command/list.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::remove:
     file: lib/CPrAN/Command/remove.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::search:
     file: lib/CPrAN/Command/search.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::show:
     file: lib/CPrAN/Command/show.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::test:
     file: lib/CPrAN/Command/test.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::update:
     file: lib/CPrAN/Command/update.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Command::upgrade:
     file: lib/CPrAN/Command/upgrade.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Plugin:
     file: lib/CPrAN/Plugin.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Praat:
     file: lib/CPrAN/Praat.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Role::Processes::Praat:
     file: lib/CPrAN/Role/Processes/Praat.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Role::Reads::STDIN:
     file: lib/CPrAN/Role/Reads/STDIN.pm
-    version: '0.0408'
+    version: '0.0409'
   CPrAN::Role::Reads::WorkingPlugin:
     file: lib/CPrAN/Role/Reads/WorkingPlugin.pm
-    version: '0.0408'
+    version: '0.0409'
   Praat:
     file: lib/Praat.pm
-    version: '0.0408'
+    version: '0.0409'
   Praat::Plugin:
     file: lib/Praat/Plugin.pm
-    version: '0.0408'
+    version: '0.0409'
   Praat::Version:
     file: lib/Praat/Version.pm
-    version: '0.0408'
+    version: '0.0409'
   Types::CPrAN:
     file: lib/Types/CPrAN.pm
-    version: '0.0408'
+    version: '0.0409'
   Types::Praat:
     file: lib/Types/Praat.pm
-    version: '0.0408'
+    version: '0.0409'
   Types::SemVer:
     file: lib/Types/SemVer.pm
-    version: '0.0408'
+    version: '0.0409'
   WWW::GitLab::v3:
     file: lib/WWW/GitLab/v3.pm
-    version: '0.0408'
+    version: '0.0409'
 requires:
   App::Prove: '0'
   Archive::Extract: '0'
@@ -112,12 +112,11 @@ requires:
   Encode: '0'
   English: '0'
   File::Copy::Recursive: '0'
-  File::Path: '0'
   File::Which: '0'
   Getopt::Long: '0'
   Git::Repository: '0'
   Graph: '0.96'
-  JSON: '0'
+  JSON::MaybeXS: '0'
   JSON::Tiny: '0'
   LWP::UserAgent: '0'
   Lingua::EN::Inflexion: '0'
@@ -151,6 +150,7 @@ requires:
   URI: '0'
   URI::QueryParam: '0'
   YAML::XS: '0'
+  autodie: '0'
   if: '0'
   perl: '5.021008'
   strict: '0'
@@ -159,9 +159,9 @@ requires:
 resources:
   bugtracker: https://gitlab.com/cpran/CPrAN/issues
   repository: git://gitlab.com/cpran/CPrAN.git
-version: '0.0408'
+version: '0.0409'
 x_contributors:
   - 'Daniel McCloy <dan.mccloy@gmail.com>'
   - 'Ingmar Steiner <steiner@coli.uni-saarland.de>'
   - 'José Joaquín Atria <jjatria@gmail.com>'
-x_serialization_backend: 'YAML::Tiny version 1.69'
+x_serialization_backend: 'YAML::Tiny version 1.70'

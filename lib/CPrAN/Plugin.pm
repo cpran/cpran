@@ -1,6 +1,8 @@
 package CPrAN::Plugin;
 # ABSTRACT: A representation of a Praat plugin
 
+our $VERSION = '0.0409'; # VERSION
+
 use Moose;
 
 extends 'Praat::Plugin';
@@ -147,13 +149,6 @@ sub remove {
   }
 }
 
-=item print(I<FIELD>)
-
-Prints the contents of the plugin descriptors, either local or remote. These
-must be asked for by name. Any other names are an error.
-
-=cut
-
 sub print {
   use Encode qw( decode );
 
@@ -223,36 +218,5 @@ sub _force_lc_hash {
     }
   }
 }
-
-# =back
-#
-# =head1 AUTHOR
-#
-# José Joaquín Atria <jjatria@gmail.com>
-#
-# =head1 LICENSE
-#
-# Copyright 2015-2016 José Joaquín Atria
-#
-# This module is free software; you may redistribute it and/or modify it under
-# the same terms as Perl itself.
-#
-# =head1 SEE ALSO
-#
-# L<CPrAN|cpran>,
-# L<CPrAN::Command::deps|deps>,
-# L<CPrAN::Command::init|init>,
-# L<CPrAN::Command::install|install>,
-# L<CPrAN::Command::list|list>,
-# L<CPrAN::Command::remove|remove>,
-# L<CPrAN::Command::search|search>,
-# L<CPrAN::Command::show|show>,
-# L<CPrAN::Command::test|test>,
-# L<CPrAN::Command::refresh|refresh>,
-# L<CPrAN::Command::upgrade|upgrade>
-#
-# =cut
-#
-# # VERSION
 
 1;

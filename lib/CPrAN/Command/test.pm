@@ -1,6 +1,8 @@
 package CPrAN::Command::test;
 # ABSTRACT: run tests for the given plugins
 
+our $VERSION = '0.0409'; # VERSION
+
 use Moose;
 use Log::Any qw( $log );
 use uni::perl;
@@ -98,8 +100,6 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-our $VERSION = '0.0408'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

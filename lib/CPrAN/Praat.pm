@@ -1,14 +1,29 @@
 package CPrAN::Praat;
+# ABSTRACT: An CPrAN-enabled wrapper for Praat
+
+our $VERSION = '0.0409'; # VERSION
+
+use strict;
+use warnings;
 
 use Moose;
-use Log::Any qw( $log );
-
 extends 'Praat';
 
+use Carp;
+use CPrAN::Plugin;
+use Log::Any qw( $log );
 use Types::Praat qw( Version );
 use Types::Standard qw( Undef );
+use URI;
+use LWP::UserAgent;
+use JSON::MaybeXS qw( decode_json );
+use Class::Load qw( try_load_class );
 
-require Carp;
+has protocol => (
+  is => 'ro',
+  init_arg => undef,
+  default => sub { try_load_class('LWP::Protocol::https') ? 'http' : 'https' },
+);
 
 has releases => (
   is => 'ro',
@@ -64,11 +79,21 @@ has _package_url => (
 has _releases_endpoint => (
   is => 'ro',
   lazy => 1,
-  default => 'https://api.github.com/repos/praat/praat/releases',
+  default => sub {
+    $_[0]->protocol . '://api.github.com/repos/praat/praat/releases'
+  },
 );
 
 has [qw( _os _ext _bit )] => (
   is => 'ro',
+);
+
+has ua => (
+  is => 'ro',
+  lazy => 1,
+  default => sub {
+    LWP::UserAgent->new;
+  }
 );
 
 has _ext => (
@@ -77,9 +102,9 @@ has _ext => (
   lazy => 1,
   default => sub {
     use English;
-    return ($OSNAME =~ /darwin/xmsi)
+    return ($OSNAME =~ /darwin/)
       ? '.dmg'
-      : ($OSNAME =~ /mswin32/xmsi)
+      : ($OSNAME =~ /mswin32/)
         ? '.zip'
         : '.tar.gz';
   },
@@ -93,7 +118,7 @@ has _os => (
     use English;
     return ($OSNAME =~ /darwin/)
       ? 'mac'
-      : ($OSNAME =~ /mswin32/xmsi)
+      : ($OSNAME =~ /mswin32/)
         ? 'win'
         : 'linux';
   },
@@ -105,13 +130,13 @@ has _bit => (
   lazy => 1,
   default => sub {
     use English;
-    if ($OSNAME =~ /mswin32/xmsi) {
+    if ($OSNAME =~ /mswin32/) {
       $ENV{PROCESSOR_ARCHITECTURE} //= q{};
       $ENV{PROCESSOR_ARCHITEW6432} //= q{};
 
       return (
-        $ENV{PROCESSOR_ARCHITECTURE} =~ /(amd64|ia64)/xmsi or
-        $ENV{PROCESSOR_ARCHITEW6432} =~ /(amd64|ia64)/xmsi
+        $ENV{PROCESSOR_ARCHITECTURE} =~ /(?:amd64|ia64)/ or
+        $ENV{PROCESSOR_ARCHITEW6432} =~ /(?:amd64|ia64)/
       ) ? 64 : 32;
     }
     else {
@@ -121,7 +146,7 @@ has _bit => (
         open CMD, "$cmd 2>&1 |"
           or die ("Could not execute $cmd: $!");
         chomp(my $line = <CMD>);
-        return ($line =~ /\bx86_64\b/xmsi) ? 64 : 32;
+        return ($line =~ /\bx86_64\b/) ? 64 : 32;
       }
       catch {
         $log->warn('Defaulting to 32 bit');
@@ -140,29 +165,28 @@ sub BUILDARGS {
 sub remove {
   my ($self) = @_;
   my $removed = $self->bin->remove
-    or Carp::carp sprintf("Could not remove %s: %s\n", $self->bin, $!);
+    or carp sprintf("Could not remove %s: %s\n", $self->bin, $!);
   return $removed;
 }
 
 sub fetch {
   my ($self) = @_;
 
-  use URI;
-  use JSON qw( decode_json );
-  use LWP::UserAgent;
-
   $self->_package_name(undef);
   $self->_package_url(undef);
-  my $ua = LWP::UserAgent->new;
 
-  my ($os, $bit, $ext) = map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
+  my ($os, $bit, $ext) =
+    map { quotemeta $_ } ($self->_os, $self->_bit, $self->_ext);
+
   my $barren = ($self->_barren) ? 'barren' : q{};
   my $pkgregex = qr/^praat(?'version'[0-9]{4})_${os}${bit}${barren}${ext}/;
 
   my @haystack;
   my $url;
   if ($self->requested) {
-    $url = URI->new( $self->_releases_endpoint . '/tags/v' . $self->requested->praatify )
+    $url = URI->new(
+      $self->_releases_endpoint . '/tags/v' . $self->requested->praatify
+    )
   }
   else {
     $url = URI->new( $self->_releases_endpoint . '/latest' )
@@ -170,7 +194,7 @@ sub fetch {
 
   $log->trace('GET', $url) if $log->is_trace;
 
-  my $response = $ua->get( $url );
+  my $response = $self->ua->get( $url );
   if ($response->is_success) {
     @haystack = ( decode_json $response->decoded_content );
   }
@@ -180,23 +204,20 @@ sub fetch {
   }
 
   my ($latest, $found);
-  my $once = 0;
 
   foreach (@haystack) {
     $latest = $_;
     ($found) = grep { $_->{name} =~ $pkgregex } @{$latest->{assets}};
-
-    unless (defined $found) {
-      $log->info('Did not find suitable release in latest, looking back');
-      @haystack = @{$self->releases} unless $once;
-      $once = 1;
-    }
-
     last if defined $found;
   }
 
-  $log->warn('Could not find', ($self->requested // 'latest'), 'Praat release for this system')
-    and return(undef) unless defined $found;
+  unless (defined $found) {
+    $log->warnf(
+      'Could not find %s Praat release for this system',
+      ($self->requested // 'latest')
+    );
+    return undef;
+  }
 
   $self->_package_name($found->{name});
   $self->_package_url($found->{browser_download_url});
@@ -212,12 +233,11 @@ sub download {
 
   $opt->{quiet} //= 0;
 
-  use LWP::UserAgent;
-  my $ua = LWP::UserAgent->new;
-  $ua->show_progress( 1 - $opt->{quiet} );
+  $self->ua->show_progress( 1 - $opt->{quiet} );
 
-  $log->trace('GET', $self->_package_url) if $log->is_trace;
-  my $response = $ua->get( $self->_package_url );
+  $log->trace('GET', $self->_package_url);
+
+  my $response = $self->ua->get( $self->_package_url );
   if ($response->is_success) {
     return $response->decoded_content;
   }
@@ -231,17 +251,16 @@ sub _build_releases {
 
   $log->trace('Finding Praat releases');
 
-  use JSON qw( decode_json );
-
   my @releases;
 
-  my $ua = LWP::UserAgent->new();
   my ($next, $response);
 
   $next = $self->_releases_endpoint;
+
   # Fetch only first page of results, to avoid busting through request limit
-  $log->trace('GET', $next) if $log->is_trace;
-  $response = $ua->get($next);
+  $log->trace('GET', $next);
+
+  $response = $self->ua->get($next);
   unless ($response->is_success) {
     $log->warn($response->status_line);
     return [];
@@ -254,11 +273,11 @@ sub _build_releases {
       $tag->{semver} = Praat::Version->new($tag->{tag_name});
     }
     catch {
-      $log->trace("  Skipping '" . ($tag->{tag_name} // '') . "'");
+      $log->tracef(q{  Skipping '%s'}, ($tag->{tag_name} // q{}));
       next;
     }
 
-    $log->trace("  Pushing '" . $tag->{tag_name} . "'");
+    $log->tracef(q{  Pushing '%s'}, $tag->{tag_name});
     push @releases, $tag;
   };
 
@@ -270,21 +289,18 @@ sub _build_releases {
 override map_plugins => sub {
   my ($self) = @_;
 
-  my %h;
-  foreach ($_[0]->pref_dir->children(qr/^plugin_/)) {
-    my $name = $_->basename;
-    $name =~ s/^plugin_//;
+  return {
+    map {
+      my $name = $_->basename;
+      $name =~ s/^plugin_//;
 
-    require CPrAN::Plugin;
-    $h{$name} = CPrAN::Plugin->new(
-      name  => $_->basename,
-      root  => $_,
-      cpran => $self->pref_dir->child('.cpran'),
-    );
-  }
-  return \%h;
+      $name => CPrAN::Plugin->new(
+        name  => $_->basename,
+        root  => $_,
+        cpran => $self->pref_dir->child('.cpran'),
+      )
+    } $self->pref_dir->children(qr/^plugin_/)
+  };
 };
-
-our $VERSION = '0.0408'; # VERSION
 
 1;

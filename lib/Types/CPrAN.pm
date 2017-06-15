@@ -1,12 +1,16 @@
 package Types::CPrAN;
 # ABSTRACT: CPrAN-specific types for Moose
 
+our $VERSION = '0.0409'; # VERSION
+
 use strict;
 use warnings;
 
 use MooseX::Types -declare => [qw( Praat )];
 
 use MooseX::Types::Moose qw( Str HashRef );
+use CPrAN::Praat;
+
 use if MooseX::Types->VERSION >= 0.42, 'namespace::autoclean';
 
 class_type('CPrAN::Praat');

@@ -1,6 +1,8 @@
 package CPrAN::Command::list;
 # ABSTRACT: list all available plugins
 
+our $VERSION = '0.0409'; # VERSION
+
 use Moose;
 use Log::Any qw( $log );
 use uni::perl;
@@ -57,6 +59,8 @@ sub process_praat {
   }
 }
 
+=encoding UTF-8
+
 =head1 AUTHOR
 
 José Joaquín Atria <jjatria@gmail.com>
@@ -83,8 +87,6 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-our $VERSION = '0.0408'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

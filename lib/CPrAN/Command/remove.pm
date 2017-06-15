@@ -1,6 +1,8 @@
 package CPrAN::Command::remove;
 # ABSTRACT: delete installed plugins from disk
 
+our $VERSION = '0.0409'; # VERSION
+
 use Moose;
 use Log::Any qw( $log );
 
@@ -183,8 +185,6 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-our $VERSION = '0.0408'; # VERSION
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

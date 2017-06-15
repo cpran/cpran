@@ -1,15 +1,33 @@
 package CPrAN;
 # ABSTRACT: A package manager for Praat
 
-use Moose;
-require Carp;
-use Log::Any qw( $log );
-use Types::Path::Tiny qw( Path );
-use Types::CPrAN qw( Praat );
+our $VERSION = '0.0409'; # VERSION
 
+use strict;
+use warnings;
+
+use Moose;
 extends qw( MooseX::App::Cmd );
 
+use CPrAN::Plugin;
+use CPrAN::Praat;
+use Carp;
+use Encode qw( encode decode );
+use Log::Any qw( $log );
+use Praat::Version;
+use Types::CPrAN qw( Praat );
+use Types::Path::Tiny qw( Path );
+use WWW::GitLab::v3;
+use YAML::XS qw();
+use Class::Load qw( try_load_class );
+
 with 'MooseX::Getopt';
+
+has protocol => (
+  is => 'ro',
+  init_arg => undef,
+  default => sub { try_load_class('LWP::Protocol::https') ? 'https' : 'http' },
+);
 
 has root => (
   is  => 'rw',
@@ -31,7 +49,6 @@ has praat => (
   coerce => 1,
   lazy => 1,
   default => sub {
-    require CPrAN::Praat;
     CPrAN::Praat->new;
   },
 );
@@ -42,7 +59,6 @@ has api => (
   documentation => 'GitLab API connection',
   lazy => 1,
   default => sub {
-    require WWW::GitLab::v3;
     WWW::GitLab::v3->new(
       url   => $_[0]->url,
       token => $_[0]->token,
@@ -65,7 +81,7 @@ has url => (
   traits => [qw(Getopt)],
   documentation => 'base URL for GitLab API',
   lazy => 1,
-  default => 'https://gitlab.com/api/v3/',
+  default => sub { $_[0]->protocol . '://gitlab.com/api/v3/' },
 );
 
 has quiet => (
@@ -174,25 +190,28 @@ sub BUILD {
   my ($self) = @_;
 
   if (-e $self->root) {
-    Carp::croak 'Cannot read from CPrAN root at ', $self->root->canonpath
-      unless (-r $self->root);
+    croak 'Cannot read from CPrAN root at ', $self->root->canonpath
+      unless -r $self->root;
 
-    Carp::croak 'Cannot write to CPrAN root at ', $self->root->canonpath
-      unless (-w $self->root);
+    croak 'Cannot write to CPrAN root at ', $self->root->canonpath
+      unless -w $self->root;
   }
   else {
-    use File::Path qw();
-    File::Path::make_path( $self->root, {} )
+    $self->root->mkpath
       or warn 'Could not make directory at ', $self->root;
   }
 
   $self->praat->pref_dir($self->_pref_dir) if defined $self->_pref_dir;
 
-  Carp::croak 'Cannot read from preferences directory at ', $self->praat->pref_dir->canonpath
-    unless (-r $self->praat->pref_dir);
+  unless (-r $self->praat->pref_dir) {
+    croak 'Cannot read from preferences directory at ',
+      $self->praat->pref_dir->canonpath;
+  }
 
-  Carp::croak 'Cannot write to preferences directory at ', $self->praat->pref_dir->canonpath
-    unless (-w $self->praat->pref_dir);
+  unless (-w $self->praat->pref_dir) {
+    croak 'Cannot write to preferences directory at ',
+      $self->praat->pref_dir->canonpath;
+  }
 
   $log->debug("Initialised CPrAN instance");
 }
@@ -274,16 +293,16 @@ used multiple times to increase the number of debug messages that are printed.
 
 sub global_opt_spec {
   return (
-    [ "praat=s"             => "set path to the Praat binary" ],
-    [ "pref_dir|pref-dir=s" => "set path to Praat preferences directory" ],
-    [ "root=s"              => "set path to CPrAN root" ],
-    [ "token=s"             => "set private token for GitLab API access" ],
-    [ "url=s"               => "set url of GitLab API" ],
-    [ "group=s"             => "set the id for the GitLab CPrAN group" ],
-    [ "verbose|v+"          => "increase verbosity" ],
-    [ "quiet"               => "quietly say no to everything" ],
-    [ "yes"                 => "assume yes when prompted for confirmation" ],
-    [ "debug+"              => "increase debug level" ],
+    [ 'praat=s'             => 'set path to the Praat binary' ],
+    [ 'pref_dir|pref-dir=s' => 'set path to Praat preferences directory' ],
+    [ 'root=s'              => 'set path to CPrAN root' ],
+    [ 'token=s'             => 'set private token for GitLab API access' ],
+    [ 'url=s'               => 'set url of GitLab API' ],
+    [ 'group=s'             => 'set the id for the GitLab CPrAN group' ],
+    [ 'verbose|v+'          => 'increase verbosity' ],
+    [ 'quiet'               => 'quietly say no to everything' ],
+    [ 'yes'                 => 'assume yes when prompted for confirmation' ],
+    [ 'debug+'              => 'increase debug level' ],
   );
 }
 
@@ -316,14 +335,14 @@ sub _yesno {
     return 1;
   }
 
-  my $prompt = " [y/n] ";
+  my $prompt = ' [y/n] ';
   $prompt =~ s/($default)/\U$1/;
   print $prompt unless $self->quiet;
 
   my $input;
   $input = <STDIN>;
   chomp $input;
-  $input = $default if ($input eq "");
+  $input = $default if ($input eq q{});
   ($input =~ /^y(es)?$/i) ? return 1 : return 0;
 }
 
@@ -355,16 +374,13 @@ sub run_command {
 sub fetch_plugin {
   my ($self, $plugin) = @_;
 
-  Carp::croak 'Cannot fetch an undefined plugin' unless defined $plugin;
+  croak 'Cannot fetch an undefined plugin' unless defined $plugin;
 
   $plugin->cpran( $self->root )
     unless defined $plugin->cpran;
 
   $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
     unless defined $plugin->root;
-
-  use YAML::XS;
-  use Encode qw(encode decode);
 
   my ($id, $url, $latest, $remote);
 
@@ -382,12 +398,11 @@ sub fetch_plugin {
   }
 
   unless (defined $id and defined $url) {
-    Carp::carp $plugin->name, ' not found remotely'
+    carp $plugin->name, ' not found remotely'
       unless $self->quiet;
     return undef;
   }
 
-  require Praat::Version;
   my $tags = $self->api->tags( $id );
   my @releases;
 
@@ -405,7 +420,7 @@ sub fetch_plugin {
 
   # Ignore projects with no tags
   unless (scalar @releases) {
-    Carp::carp 'No releases for ', $plugin->name
+    carp 'No releases for ', $plugin->name
       unless $self->quiet;
     return undef;
   }
@@ -419,7 +434,7 @@ sub fetch_plugin {
     YAML::XS::Load( $remote );
   }
   catch {
-    Carp::carp 'Could not deserialise fetched remote for ', $plugin->name
+    carp 'Could not deserialise fetched remote for ', $plugin->name
       unless $self->quiet;
     return;
   }
@@ -436,7 +451,7 @@ sub test_plugin {
   my $plugin = shift;
   my $opt = (@_) ? (@_ > 1) ? { @_ } : shift : {};
 
-  Carp::croak 'Cannot test an undefined plugin' unless defined $plugin;
+  croak 'Cannot test an undefined plugin' unless defined $plugin;
 
   $plugin->cpran( $self->root )
     unless defined $plugin->cpran;
@@ -447,7 +462,7 @@ sub test_plugin {
   $log->debug('Testing', $plugin->name);
 
   unless (defined $self->praat->version) {
-    $log->warn("Praat is not installed; cannot test")
+    $log->warn('Praat is not installed; cannot test')
       unless $self->quiet;
     return undef;
   }
@@ -498,7 +513,7 @@ sub test_plugin {
       push @args, ('--archive', $logdir->canonpath);
     }
     catch {
-      Carp::carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
+      carp 'Disabling logging. Is TAP::Harness::Archive installed?', "\n"
         unless $self->quiet;
     }
   }
@@ -507,7 +522,7 @@ sub test_plugin {
   my $results = $prove->run;
 
   chdir $oldwd
-    or die "Could not change directory";
+    or die 'Could not change directory';
 
   return ($results) ? 1 : 0;
 }
@@ -519,10 +534,9 @@ sub new_plugin {
 
   $arg->{cpran} //= $self->root;
   $arg->{root}  //= $self->praat->pref_dir->child(
-    'plugin_' . ($arg->{name} // '')
+    'plugin_' . ($arg->{name} // q{})
   );
 
-  require CPrAN::Plugin;
   my $plugin = CPrAN::Plugin->new($arg);
 
   return $plugin->refresh;
@@ -536,7 +550,7 @@ José Joaquín Atria <jjatria@gmail.com>
 
 =head1 LICENSE
 
-Copyright 2015-2016 José Joaquín Atria
+Copyright 2015-2017 José Joaquín Atria
 
 This module is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -557,7 +571,5 @@ L<CPrAN::Command::update|update>,
 L<CPrAN::Command::upgrade|upgrade>
 
 =cut
-
-our $VERSION = '0.0408'; # VERSION
 
 1;
