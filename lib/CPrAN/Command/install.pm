@@ -1,7 +1,7 @@
 package CPrAN::Command::install;
 # ABSTRACT: install new plugins
 
-our $VERSION = '0.0409'; # VERSION
+our $VERSION = '0.0410'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );
@@ -529,8 +529,11 @@ sub get_archive {
 sub process_praat {
   my ($self, $requested) = @_;
   my $praat = $self->app->praat;
-  $praat->requested( $requested ? $requested : $praat->latest );
   $praat->_barren($self->barren) if $self->barren;
+
+  # Refresh remote data to account for barren
+  $praat->fetch if defined $praat->_package_url;
+  $praat->requested( $requested ? $requested : $praat->latest );
 
   use Syntax::Keyword::Try;
   try {

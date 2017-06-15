@@ -1,7 +1,7 @@
 package CPrAN::Command::update;
 # ABSTRACT: update local plugin list
 
-our $VERSION = '0.0409'; # VERSION
+our $VERSION = '0.0410'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );

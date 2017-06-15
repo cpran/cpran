@@ -1,7 +1,7 @@
 package CPrAN;
 # ABSTRACT: A package manager for Praat
 
-our $VERSION = '0.0409'; # VERSION
+our $VERSION = '0.0410'; # VERSION
 
 use strict;
 use warnings;

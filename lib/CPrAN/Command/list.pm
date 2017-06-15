@@ -1,7 +1,7 @@
 package CPrAN::Command::list;
 # ABSTRACT: list all available plugins
 
-our $VERSION = '0.0409'; # VERSION
+our $VERSION = '0.0410'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );
