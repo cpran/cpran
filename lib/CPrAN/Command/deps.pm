@@ -1,7 +1,7 @@
 package CPrAN::Command::deps;
 # ABSTRACT: list the dependencies of plugins
 
-our $VERSION = '0.0411'; # VERSION
+our $VERSION = '0.0412'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );

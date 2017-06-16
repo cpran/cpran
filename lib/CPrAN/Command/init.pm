@@ -1,7 +1,7 @@
 package CPrAN::Command::init;
 # ABSTRACT: initialise a CPrAN installation
 
-our $VERSION = '0.0411'; # VERSION
+our $VERSION = '0.0412'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );

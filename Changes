@@ -1,5 +1,10 @@
 Revision history for CPrAN
 
+0.0412    2017-06-16 21:09:05+01:00 Europe/London
+
+  * Fixes:
+    * Fixed an error with installations not using git
+
 0.0411    2017-06-16 18:13:31+01:00 Europe/London
 
   * Fixes:

@@ -1,7 +1,7 @@
 package CPrAN::Plugin;
 # ABSTRACT: A representation of a Praat plugin
 
-our $VERSION = '0.0411'; # VERSION
+our $VERSION = '0.0412'; # VERSION
 
 use Moose;
 

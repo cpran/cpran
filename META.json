@@ -106,99 +106,99 @@
    "provides" : {
       "CPrAN" : {
          "file" : "lib/CPrAN.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::create" : {
          "file" : "lib/CPrAN/Command/create.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::deps" : {
          "file" : "lib/CPrAN/Command/deps.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::init" : {
          "file" : "lib/CPrAN/Command/init.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::install" : {
          "file" : "lib/CPrAN/Command/install.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::list" : {
          "file" : "lib/CPrAN/Command/list.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::remove" : {
          "file" : "lib/CPrAN/Command/remove.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::search" : {
          "file" : "lib/CPrAN/Command/search.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::show" : {
          "file" : "lib/CPrAN/Command/show.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::test" : {
          "file" : "lib/CPrAN/Command/test.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::update" : {
          "file" : "lib/CPrAN/Command/update.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Command::upgrade" : {
          "file" : "lib/CPrAN/Command/upgrade.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Plugin" : {
          "file" : "lib/CPrAN/Plugin.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Praat" : {
          "file" : "lib/CPrAN/Praat.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Role::Processes::Praat" : {
          "file" : "lib/CPrAN/Role/Processes/Praat.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Role::Reads::STDIN" : {
          "file" : "lib/CPrAN/Role/Reads/STDIN.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "CPrAN::Role::Reads::WorkingPlugin" : {
          "file" : "lib/CPrAN/Role/Reads/WorkingPlugin.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "Praat" : {
          "file" : "lib/Praat.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "Praat::Plugin" : {
          "file" : "lib/Praat/Plugin.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "Praat::Version" : {
          "file" : "lib/Praat/Version.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "Types::CPrAN" : {
          "file" : "lib/Types/CPrAN.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "Types::Praat" : {
          "file" : "lib/Types/Praat.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "Types::SemVer" : {
          "file" : "lib/Types/SemVer.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       },
       "WWW::GitLab::v3" : {
          "file" : "lib/WWW/GitLab/v3.pm",
-         "version" : "0.0411"
+         "version" : "0.0412"
       }
    },
    "release_status" : "stable",
@@ -213,7 +213,7 @@
          "web" : "https://gitlab.com/cpran/CPrAN"
       }
    },
-   "version" : "0.0411",
+   "version" : "0.0412",
    "x_contributors" : [
       "Daniel McCloy <dan.mccloy@gmail.com>",
       "Ingmar Steiner <steiner@coli.uni-saarland.de>",
