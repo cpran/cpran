@@ -345,11 +345,11 @@ sub raw_install {
     # $path is a Path::Tiny object for the current item in the archive
     my $path;
 
-    if ($f->name =~ /\/$/) {
-      $path = Path::Tiny::path($f->name);
+    if ($f->name !~ /\/$/ and $f->prefix) {
+      $path = Path::Tiny::path($f->prefix, $f->name);
     }
     else {
-      $path = Path::Tiny::path($f->prefix, $f->name);
+      $path = Path::Tiny::path($f->name);
     }
 
     # @components has all the items (directories and files) in the current name
