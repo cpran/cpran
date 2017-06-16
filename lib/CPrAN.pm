@@ -530,7 +530,12 @@ sub test_plugin {
 sub new_plugin {
   my $self = shift;
   my $arg = (@_) ? (@_ > 1) ? { @_ } : shift : {};
-  $arg = { name => $arg } unless ref $arg;
+
+  unless (ref $arg) {
+    my ($name, $requested) = split /:/, $arg, 2;
+    $arg = { name => $name };
+    $arg->{requested} = $requested if defined $requested;
+  }
 
   $arg->{cpran} //= $self->root;
   $arg->{root}  //= $self->praat->pref_dir->child(
