@@ -330,7 +330,7 @@ sub raw_install {
   require Archive::Tar;
 
   my $retval = 1;
-  if (-e $plugin->root and $self->force) {
+  if ($plugin->is_installed and $self->force) {
     print 'Removing ', $plugin->root, ' (because you used --force)', "\n"
       unless $self->app->quiet;
 
