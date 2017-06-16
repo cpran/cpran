@@ -7,6 +7,8 @@ devel:
   variables:
     AUTHOR_TEST: "1"
   script:
+    - dzil authordeps --missing | cpanm -nq
+    - dzil listdeps   --missing | cpanm -nq
     - dzil test
   tags:
     - cpran
