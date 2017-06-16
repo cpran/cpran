@@ -2,6 +2,8 @@ Revision history for CPrAN
 
 {{$NEXT}}
 
+0.0411    2017-06-16 18:13:31+01:00 Europe/London
+
   * Fixes:
     * Fixed an error with the installation of requested
       plugin versions
