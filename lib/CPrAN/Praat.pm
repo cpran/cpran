@@ -1,7 +1,7 @@
 package CPrAN::Praat;
 # ABSTRACT: An CPrAN-enabled wrapper for Praat
 
-our $VERSION = '0.0410'; # VERSION
+our $VERSION = '0.0411'; # VERSION
 
 use strict;
 use warnings;

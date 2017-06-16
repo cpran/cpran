@@ -1,7 +1,7 @@
 package CPrAN::Command::install;
 # ABSTRACT: install new plugins
 
-our $VERSION = '0.0410'; # VERSION
+our $VERSION = '0.0411'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );
