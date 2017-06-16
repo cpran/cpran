@@ -5,6 +5,12 @@ package CPrAN::Command::install;
 
 use Moose;
 use Log::Any qw( $log );
+use Path::Tiny qw( tempfile tempdir );
+use File::Which qw( which );
+use Class::Load qw( try_load_class );
+use English;
+use Syntax::Keyword::Try;
+use Praat::Version;
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -12,7 +18,7 @@ with 'MooseX::Getopt';
 with 'CPrAN::Role::Processes::Praat';
 with 'CPrAN::Role::Reads::STDIN';
 
-require Carp;
+use Carp;
 use Types::Path::Tiny qw( Dir );
 
 # Until the library does this by default
@@ -68,19 +74,17 @@ around git => sub {
   my $return = $self->$orig(@_);
 
   if ($return) {
-    require File::Which;
-    require Class::Load;
     my $enable = 1;
-    if (!File::Which::which('git')) {
-      Carp::carp 'Could not find path to git binary';
+    if (!which('git')) {
+      carp 'Could not find path to git binary';
       $enable = 0;
     }
-    if (!Class::Load::try_load_class 'Git::Repository') {
-      Carp::carp 'Could not load Git::Repository';
+    if (!try_load_class 'Git::Repository') {
+      carp 'Could not load Git::Repository';
       $enable = 0;
     }
     if (!$enable) {
-      Carp::carp 'Git is not enabled';
+      carp 'Git is not enabled';
       $return = $self->$orig($enable);
     }
   }
@@ -99,8 +103,6 @@ has path => (
       return $_[0]->app->praat->bin->parent;
     }
 
-    use English;
-    require Path::Tiny;
     if ($OSNAME =~ /darwin/xmsi) {
       $log->debug('Installing Praat binary to default Mac path');
       die "Praat installation not currently supported on MacOS\n";
@@ -343,7 +345,6 @@ sub raw_install {
     # $path is a Path::Tiny object for the current item in the archive
     my $path;
 
-    require Path::Tiny;
     if ($f->name =~ /\/$/) {
       $path = Path::Tiny::path($f->name);
     }
@@ -478,8 +479,6 @@ sub get_archive {
   print 'Downloading archive for ', $plugin->name, "\n"
     unless $self->app->quiet;
 
-  use Syntax::Keyword::Try;
-
   my $archive;
   try {
     my $project = shift @{$self->app->api->projects(
@@ -488,11 +487,10 @@ sub get_archive {
 
     # TODO(jja) Enable installation of specific versions
     my @tags = @{$self->app->api->tags($project->{id})};
-    Carp::croak 'No tags for ', $plugin->name unless (@tags);
+    croak 'No tags for ', $plugin->name unless (@tags);
 
     my @releases;
     foreach my $tag (@tags) {
-      require Praat::Version;
       try { $tag->{semver} = Praat::Version->new($tag->{name}) }
       catch { next }
       push @releases , $tag;
@@ -512,9 +510,8 @@ sub get_archive {
     exit 1;
   }
 
-  require Path::Tiny;
   # TODO(jja) Improve error checking. Does this work on Windows?
-  my $file = Path::Tiny->tempfile(
+  my $file = tempfile(
     dir => '.',
     template => $plugin->name . '-XXXXX',
     suffix => '.zip',
@@ -535,7 +532,8 @@ sub process_praat {
   $praat->fetch if defined $praat->_package_url;
   $praat->requested( $requested ? $requested : $praat->latest );
 
-  use Syntax::Keyword::Try;
+  require Archive::Extract;
+
   try {
     if ($praat->bin and $praat->bin->exists) {
       unless ($self->reinstall) {
@@ -568,13 +566,12 @@ sub process_praat {
 
       my $archive = $praat->download;
 
-      require Path::Tiny;
-      my $package = Path::Tiny->tempfile(
+      my $package = tempfile(
         template => 'praat' . $praat->requested . '-XXXXX',
         suffix => $praat->_ext,
       );
 
-      my $extract = Path::Tiny->tempdir(
+      my $extract = tempdir(
         template => 'praat-XXXXX',
       );
 
@@ -590,7 +587,6 @@ sub process_praat {
       }
 
       # Extract archives
-      require Archive::Extract;
       my $ae = Archive::Extract->new( archive => $package->canonpath );
       $ae->extract( to => $extract )
         or die "Could not extract package: $ae->error";
@@ -606,8 +602,8 @@ sub process_praat {
     }
   }
   catch {
-    Carp::carp $@;
-    Carp::croak "Could not install Praat\n";
+    carp $@;
+    croak "Could not install Praat\n";
   }
 }
 
