@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # ABSTRACT: A Perl client for CPrAN - the package manager for Praat
 
-our $VERSION = '0.0412'; # VERSION
+our $VERSION = '0.0413'; # VERSION
 
 BEGIN {
   our @ORIGARGV = @ARGV;

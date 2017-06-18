@@ -1,6 +1,12 @@
 Revision history for CPrAN
 
-0.0412    2017-06-16 21:09:05+01:00 Europe/London
+0.0413    2017-06-18 20:06:46+01:00 Europe/London
+
+  * Fixes:
+    * Fixed an error with detection of minimum Perl version
+      that artificially inflated it from 5.10 to 5.21
+
+0.0412    2017-06-18 20:03:16+01:00 Europe/London
 
   * Fixes:
     * Fixed an error with installations not using git

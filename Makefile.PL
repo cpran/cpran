@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use 5.021008;
+use 5.010;
 
 use ExtUtils::MakeMaker;
 
@@ -17,7 +17,7 @@ my %WriteMakefileArgs = (
     "bin/cpran"
   ],
   "LICENSE" => "perl",
-  "MIN_PERL_VERSION" => "5.021008",
+  "MIN_PERL_VERSION" => "5.010",
   "NAME" => "CPrAN",
   "PREREQ_PM" => {
     "App::Prove" => 0,
@@ -90,7 +90,7 @@ my %WriteMakefileArgs = (
     "Test::TCP" => 0,
     "Try::Tiny" => 0
   },
-  "VERSION" => "0.0412",
+  "VERSION" => "0.0413",
   "test" => {
     "TESTS" => "t/*.t"
   }

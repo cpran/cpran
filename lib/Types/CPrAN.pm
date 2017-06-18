@@ -1,7 +1,7 @@
 package Types::CPrAN;
 # ABSTRACT: CPrAN-specific types for Moose
 
-our $VERSION = '0.0412'; # VERSION
+our $VERSION = '0.0413'; # VERSION
 
 use strict;
 use warnings;
