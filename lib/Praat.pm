@@ -105,7 +105,7 @@ sub _build_version {
 
   my ($buffer, $version);
 
-  open my $fh, '<:raw', $self->bin->realpath;
+  open my $fh, '<:raw', $self->bin->canonpath;
   # Read binary into the buffer after any residual copied from the last chunk
   while( my $read = read $fh, $buffer, 4096, pos( $buffer ) || 0 ) {
     while( $buffer =~ m[([4-9]\.\d\.\d{2})]g ) {
