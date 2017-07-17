@@ -595,6 +595,9 @@ sub process_praat {
       $file->copy( $self->path->child('praat') ) and $file->remove
         or die "Could not move file: $!\n";
 
+      $self->path->child('praat')->chmod(755)
+        unless $OSNAME =~ /mswin32/;
+
       print "Praat succesfully installed\n" unless  $self->app->quiet;
     }
     else {
