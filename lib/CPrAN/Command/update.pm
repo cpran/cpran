@@ -5,6 +5,7 @@ our $VERSION = '0.0413'; # VERSION
 
 use Moose;
 use Log::Any qw( $log );
+use HTTP::Tiny;
 
 extends qw( MooseX::App::Cmd::Command );
 
@@ -39,23 +40,16 @@ has '+raw' => (
   documentation => 'compute a new list of plugins from scratch',
 );
 
-has _project => (
+has _list_url => (
   is  => 'rw',
-  isa => 'HashRef',
-  lazy => 1,
-  default => sub {
-    $_[0]->app->api->projects( { search => 'plugin_cpran' } )->[0];
-  },
+  isa => 'Str',
+  default => 'http://cpran.net/raw/list',
 );
 
-has _list => (
+has _ua => (
   is  => 'rw',
-  isa => 'HashRef',
   lazy => 1,
-  default => sub {
-    my $snippets = $_[0]->app->api->snippets($_[0]->_project->{id});
-    (grep { $_->{file_name} eq 'cpran.list' } @{$snippets})[0];
-  },
+  default => sub { HTTP::Tiny->new( verify_SSL => 1 ) },
 );
 
 has _requested => (
@@ -217,20 +211,22 @@ sub fetch_cache {
   print 'Updating plugin data...', "\n"
     unless $self->app->quiet;
 
-  my @meta = split /---/, $self->app->api->raw_snippet(
-    $self->_project->{id}, $self->_list->{id}
-  );
+  my $res = $self->_ua->get($self->_list_url);
+  $log->warn('Could not fetch package list: error ' . $res->{status})
+    unless $res->{success};
 
+  my @meta = split /---/, $res->{content};
 
   my @updated;
   foreach (@meta) {
     next unless $_;
 
+
     require Encode;
     require YAML::XS;
     require CPrAN::Plugin;
 
-    my $meta = "---" . $_;
+    my $meta = "---\n" . $_;
     my $plugin = YAML::XS::Load(Encode::encode_utf8 $meta);
 
     next if scalar keys %{$self->_requested} >= 1 and
@@ -244,10 +240,7 @@ sub fetch_cache {
     }
     else {
       my $out = $self->app->root->child( $plugin->{Plugin} )->touchpath;
-
-      my $fh = $out->openw_utf8;
-      $fh->print( $meta );
-      $fh->close;
+      $out->spew_raw( $meta );
       $plugin = $self->app->new_plugin( $plugin->{Plugin} );
     }
 
