@@ -293,7 +293,7 @@ sub git_install {
 
     unless ($plugin->url) {
       print 'Querying repository URL...', "\n" unless $self->app->quiet;
-      $self->app->fetch_plugin($plugin);
+      $self->app->fetch_plugin($plugin) or die;
     }
 
     print 'Cloning from ', $plugin->url, "\n" unless $self->app->quiet;
