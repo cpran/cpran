@@ -17,7 +17,7 @@ use Log::Any qw( $log );
 use Praat::Version;
 use Types::CPrAN qw( Praat );
 use Types::Path::Tiny qw( Path );
-use WWW::GitLab::v3;
+use GitLab::API::v4;
 use YAML::XS qw();
 use Class::Load qw( try_load_class );
 
@@ -55,11 +55,11 @@ has praat => (
 
 has api => (
   is  => 'rw',
-  isa => 'WWW::GitLab::v3',
+  isa => 'GitLab::API::v4',
   documentation => 'GitLab API connection',
   lazy => 1,
   default => sub {
-    WWW::GitLab::v3->new(
+    GitLab::API::v4->new(
       url   => $_[0]->url,
       token => $_[0]->token,
     );
@@ -81,7 +81,7 @@ has url => (
   traits => [qw(Getopt)],
   documentation => 'base URL for GitLab API',
   lazy => 1,
-  default => sub { $_[0]->protocol . '://gitlab.com/api/v3/' },
+  default => sub { $_[0]->protocol . '://gitlab.com/api/v4/' },
 );
 
 has quiet => (
@@ -382,22 +382,20 @@ sub fetch_plugin {
   $plugin->root( $self->praat->pref_dir->child( 'plugin_' . $plugin->name) )
     unless defined $plugin->root;
 
-  my ($id, $url, $latest, $remote);
+  my ( $id, $url, $latest );
 
-  foreach (@{$self->api->projects(
-      { search => 'plugin_' . $plugin->name }
-    )}) {
+  my $plugins = $self->api->projects({
+    search      => 'plugin_' . $plugin->name,
+    visibiility => 'public',
+  });
 
-    if ($_->{name} eq 'plugin_' . $plugin->name and
-        $_->{visibility_level} >= 20) {
-
-      $id  = $_->{id};
-      $url = $_->{http_url_to_repo};
-      last;
-    }
+  for (@{$plugins}) {
+    $id  = $_->{id};
+    $url = $_->{http_url_to_repo};
+    last;
   }
 
-  unless (defined $id and defined $url) {
+  unless ($id and $url) {
     carp $plugin->name, ' not found remotely'
       unless $self->quiet;
     return undef;
@@ -426,12 +424,13 @@ sub fetch_plugin {
   }
 
   $latest = $releases[0]->{commit}->{id};
-  $remote = encode('utf-8', $self->api->blob(
-    $id, $latest, { filepath => 'cpran.yaml' }
-  ), Encode::FB_CROAK );
+
+  my $remote = $self->api->raw_file(
+    $id, 'cpran.yaml', { ref => $latest }
+  );
 
   try {
-    YAML::XS::Load( $remote );
+    YAML::XS::Load( Encode::encode_utf8 $remote );
   }
   catch {
     carp 'Could not deserialise fetched remote for ', $plugin->name

@@ -384,7 +384,7 @@ sub make_schedule {
   #   b) not already installed (unless the user asks for re-installation)
   my @todo;
   foreach (@plugins) {
-    if (defined $_->_remote) {
+    if (keys %{$_->_remote}) {
       my $install = 1 - ($_->is_installed // 0);
 
       unless ($install) {
